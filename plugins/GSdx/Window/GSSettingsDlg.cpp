@@ -97,7 +97,6 @@ void GSSettingsDlg::OnInit()
 	ComboBoxInit(IDC_UPSCALE_MULTIPLIER, theApp.m_gs_upscale_multiplier, theApp.GetConfigI("upscale_multiplier"));
 	ComboBoxInit(IDC_AFCOMBO, theApp.m_gs_max_anisotropy, theApp.GetConfigI("MaxAnisotropy"));
 	ComboBoxInit(IDC_FILTER, theApp.m_gs_bifilter, theApp.GetConfigI("filter"));
-	ComboBoxInit(IDC_ACCURATE_DATE, theApp.m_gs_acc_date_level, theApp.GetConfigI("accurate_date"));
 	ComboBoxInit(IDC_ACCURATE_BLEND_UNIT, theApp.m_gs_acc_blend_level, theApp.GetConfigI("accurate_blending_unit"));
 	ComboBoxInit(IDC_ACCURATE_BLEND_UNIT_D3D11, theApp.m_gs_acc_blend_level_d3d11, theApp.GetConfigI("accurate_blending_unit_d3d11"));
 	ComboBoxInit(IDC_CRC_LEVEL, theApp.m_gs_crc_level, theApp.GetConfigI("crc_hack_level"));
@@ -105,6 +104,7 @@ void GSSettingsDlg::OnInit()
 
 	CheckDlgButton(m_hWnd, IDC_PALTEX, theApp.GetConfigB("paltex"));
 	CheckDlgButton(m_hWnd, IDC_LARGE_FB, theApp.GetConfigB("large_framebuffer"));
+	CheckDlgButton(m_hWnd, IDC_ACCURATE_DATE, theApp.GetConfigB("accurate_date"));
 	CheckDlgButton(m_hWnd, IDC_MIPMAP_SW, theApp.GetConfigB("mipmap"));
 	CheckDlgButton(m_hWnd, IDC_AA1, theApp.GetConfigB("aa1"));
 	CheckDlgButton(m_hWnd, IDC_AUTO_FLUSH_SW, theApp.GetConfigB("autoflush_sw"));
@@ -222,11 +222,6 @@ bool GSSettingsDlg::OnCommand(HWND hWnd, UINT id, UINT code)
 				theApp.SetConfig("filter", (int)data);
 			}
 
-			if(ComboBoxGetSelData(IDC_ACCURATE_DATE, data))
-			{
-				theApp.SetConfig("accurate_date", (int)data);
-			}
-
 			if(ComboBoxGetSelData(IDC_ACCURATE_BLEND_UNIT, data))
 			{
 				theApp.SetConfig("accurate_blending_unit", (int)data);
@@ -255,6 +250,7 @@ bool GSSettingsDlg::OnCommand(HWND hWnd, UINT id, UINT code)
 			theApp.SetConfig("mipmap", (int)IsDlgButtonChecked(m_hWnd, IDC_MIPMAP_SW));
 			theApp.SetConfig("paltex", (int)IsDlgButtonChecked(m_hWnd, IDC_PALTEX));
 			theApp.SetConfig("large_framebuffer", (int)IsDlgButtonChecked(m_hWnd, IDC_LARGE_FB));
+			theApp.SetConfig("accurate_date", (int)IsDlgButtonChecked(m_hWnd, IDC_ACCURATE_DATE));
 			theApp.SetConfig("aa1", (int)IsDlgButtonChecked(m_hWnd, IDC_AA1));
 			theApp.SetConfig("autoflush_sw", (int)IsDlgButtonChecked(m_hWnd, IDC_AUTO_FLUSH_SW));
 			theApp.SetConfig("UserHacks", (int)IsDlgButtonChecked(m_hWnd, IDC_HACKS_ENABLED));
@@ -353,7 +349,6 @@ void GSSettingsDlg::UpdateControls()
 			EnableWindow(GetDlgItem(m_hWnd, IDC_AFCOMBO_TEXT), hw && filter && (ogl || !IsDlgButtonChecked(m_hWnd, IDC_PALTEX)));
 		}
 		EnableWindow(GetDlgItem(m_hWnd, IDC_ACCURATE_DATE), hw);
-		EnableWindow(GetDlgItem(m_hWnd, IDC_ACCURATE_DATE_TEXT), hw);
 		EnableWindow(GetDlgItem(m_hWnd, IDC_ACCURATE_BLEND_UNIT), hw);
 		EnableWindow(GetDlgItem(m_hWnd, IDC_ACCURATE_BLEND_UNIT_D3D11), hw);
 		EnableWindow(GetDlgItem(m_hWnd, IDC_ACCURATE_BLEND_UNIT_TEXT), hw);
