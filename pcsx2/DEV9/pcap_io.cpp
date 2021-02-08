@@ -182,6 +182,11 @@ int pcap_io_init(char* adapter, bool switched, mac_address virtual_mac)
 		}
 	}
 
+	if (pcap_setnonblock(adhandle, 1, errbuf) == -1)
+	{
+		Console.Error("Error setting non-blocking: %s", pcap_geterr(adhandle));
+		Console.Error("Continuing in default mode");
+	}
 
 	dlt = pcap_datalink(adhandle);
 	dlt_name = (char*)pcap_datalink_val_to_name(dlt);
