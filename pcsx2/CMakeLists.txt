@@ -329,6 +329,8 @@ set(pcsx2DEV9Sources
 	DEV9/InternalServers/DHCP_Server.cpp
 	DEV9/PacketReader/ARP/ARP_Packet.cpp
 	DEV9/PacketReader/IP/ICMP/ICMP_Packet.cpp
+	DEV9/PacketReader/IP/TCP/TCP_Options.cpp
+	DEV9/PacketReader/IP/TCP/TCP_Packet.cpp
 	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.cpp
 	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.cpp
 	DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.cpp
@@ -357,6 +359,8 @@ set(pcsx2DEV9Headers
 	DEV9/net.h
 	DEV9/PacketReader/ARP/ARP_Packet.h
 	DEV9/PacketReader/IP/ICMP/ICMP_Packet.h
+	DEV9/PacketReader/IP/TCP/TCP_Options.h
+	DEV9/PacketReader/IP/TCP/TCP_Packet.h
 	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Options.h
 	DEV9/PacketReader/IP/UDP/DHCP/DHCP_Packet.h
 	DEV9/PacketReader/IP/UDP/DNS/DNS_Classes.h

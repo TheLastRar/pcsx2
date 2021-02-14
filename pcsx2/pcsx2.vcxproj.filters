@@ -193,6 +193,9 @@
     <Filter Include="System\Ps2\DEV9\PacketReader\IP\ICMP">
       <UniqueIdentifier>{928400ad-4db4-44ca-9a6d-c65e489c8ea0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Ps2\DEV9\PacketReader\IP\TCP">
+      <UniqueIdentifier>{7c01f24d-2141-4054-b3f9-1d9c67ae7ad6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="System\Ps2\DEV9\PacketReader\IP\UDP">
       <UniqueIdentifier>{db2fc75d-6552-4991-9155-885abd8796e4}</UniqueIdentifier>
     </Filter>
@@ -1195,6 +1198,12 @@
     </ClCompile>
     <ClCompile Include="DEV9\PacketReader\IP\ICMP\ICMP_Packet.cpp">
       <Filter>System\Ps2\DEV9\PacketReader\IP\ICMP</Filter>
+    </ClCompile>
+    <ClCompile Include="DEV9\PacketReader\IP\TCP\TCP_Options.cpp">
+      <Filter>System\Ps2\DEV9\PacketReader\IP\TCP</Filter>
+    </ClCompile>
+    <ClCompile Include="DEV9\PacketReader\IP\TCP\TCP_Packet.cpp">
+      <Filter>System\Ps2\DEV9\PacketReader\IP\TCP</Filter>
     </ClCompile>
     <ClCompile Include="DEV9\PacketReader\IP\UDP\DHCP\DHCP_Options.cpp">
       <Filter>System\Ps2\DEV9\PacketReader\IP\UDP\DHCP</Filter>
@@ -2238,6 +2247,12 @@
     </ClInclude>
     <ClInclude Include="DEV9\PacketReader\IP\ICMP\ICMP_Packet.h">
       <Filter>System\Ps2\DEV9\PacketReader\IP\ICMP</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\PacketReader\IP\TCP\TCP_Options.h">
+      <Filter>System\Ps2\DEV9\PacketReader\IP\TCP</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\PacketReader\IP\TCP\TCP_Packet.h">
+      <Filter>System\Ps2\DEV9\PacketReader\IP\TCP</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\PacketReader\IP\UDP\DHCP\DHCP_Options.h">
       <Filter>System\Ps2\DEV9\PacketReader\IP\UDP\DHCP</Filter>
