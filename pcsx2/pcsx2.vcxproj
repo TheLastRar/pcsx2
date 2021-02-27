@@ -295,6 +295,7 @@
     <ClCompile Include="DEV9\PacketReader\NetLib.cpp" />
     <ClCompile Include="DEV9\pcap_io.cpp" />
     <ClCompile Include="DEV9\Win32\pcap_io_win32.cpp" />
+    <ClCompile Include="DEV9\Sessions\BaseSession.cpp" />
     <ClCompile Include="DEV9\smap.cpp" />
     <ClCompile Include="DEV9\Win32\DEV9WinConfig.cpp" />
     <ClCompile Include="DEV9\net.cpp" />
@@ -744,6 +745,7 @@
     <ClInclude Include="DEV9\PacketReader\NetLib.h" />
     <ClInclude Include="DEV9\PacketReader\Payload.h" />
     <ClInclude Include="DEV9\pcap_io.h" />
+    <ClInclude Include="DEV9\Sessions\BaseSession.h" />
     <ClInclude Include="DEV9\SimpleQueue.h" />
     <ClInclude Include="DEV9\smap.h" />
     <ClInclude Include="DEV9\Win32\pcap_io_win32_funcs.h" />

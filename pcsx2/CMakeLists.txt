@@ -340,6 +340,7 @@ set(pcsx2DEV9Sources
 	DEV9/PacketReader/IP/IP_Packet.cpp
 	DEV9/PacketReader/EthernetFrame.cpp
 	DEV9/PacketReader/NetLib.cpp
+	DEV9/Sessions/BaseSession.cpp
 	DEV9/smap.cpp
 	DEV9/DEV9.cpp
 	DEV9/flash.cpp
@@ -375,6 +376,7 @@ set(pcsx2DEV9Headers
 	DEV9/PacketReader/NetLib.h
 	DEV9/PacketReader/Payload.h
 	DEV9/pcap_io.h
+	DEV9/Sessions/BaseSession.h
 	DEV9/SimpleQueue.h
 	DEV9/smap.h
 	${pcsx2DEV9UIHeaders}
