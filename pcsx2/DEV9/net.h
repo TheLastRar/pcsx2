@@ -94,6 +94,7 @@ private:
 	std::condition_variable internalRxCV;
 	bool internalRxHasData = false;
 
+	bool dhcpOn = false;
 	InternalServers::DHCP_Server dhcpServer = InternalServers::DHCP_Server([&] { InternalSignalReceived(); });
 
 public:
@@ -111,11 +112,11 @@ protected:
 	bool VerifyPkt(NetPacket* pkt, int read_size);
 
 #ifdef _WIN32
-	void InitInternalServer(PIP_ADAPTER_ADDRESSES adapter);
-	void ReloadInternalServer(PIP_ADAPTER_ADDRESSES adapter);
+	void InitInternalServer(PIP_ADAPTER_ADDRESSES adapter, bool dhcpForceEnable = false, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
+	void ReloadInternalServer(PIP_ADAPTER_ADDRESSES adapter, bool dhcpForceEnable = false, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
 #elif defined(__POSIX__)
-	void InitInternalServer(ifaddrs* adapter);
-	void ReloadInternalServer(ifaddrs* adapter);
+	void InitInternalServer(ifaddrs* adapter, bool dhcpForceEnable = false, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
+	void ReloadInternalServer(ifaddrs* adapter, bool dhcpForceEnable = false, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
 #endif
 
 private:

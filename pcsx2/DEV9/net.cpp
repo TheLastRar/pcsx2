@@ -268,16 +268,17 @@ bool NetAdapter::VerifyPkt(NetPacket* pkt, int read_size)
 }
 
 #ifdef _WIN32
-void NetAdapter::InitInternalServer(PIP_ADAPTER_ADDRESSES adapter)
+void NetAdapter::InitInternalServer(PIP_ADAPTER_ADDRESSES adapter, bool dhcpForceEnable, IP_Address ipOverride, IP_Address subnetOverride, IP_Address gatewayOvveride)
 #elif defined(__POSIX__)
-void NetAdapter::InitInternalServer(ifaddrs* adapter)
+void NetAdapter::InitInternalServer(ifaddrs* adapter, bool dhcpForceEnable, IP_Address ipOverride, IP_Address subnetOverride, IP_Address gatewayOvveride)
 #endif
 {
 	if (adapter == nullptr)
 		Console.Error("DEV9: InitInternalServer() got nullptr for adapter");
 
-	if (config.InterceptDHCP)
-		dhcpServer.Init(adapter);
+	dhcpOn = config.InterceptDHCP || dhcpForceEnable;
+	if (dhcpOn)
+		dhcpServer.Init(adapter, ipOverride, subnetOverride, gatewayOvveride);
 
 	if (blocks())
 	{
@@ -287,16 +288,17 @@ void NetAdapter::InitInternalServer(ifaddrs* adapter)
 }
 
 #ifdef _WIN32
-void NetAdapter::ReloadInternalServer(PIP_ADAPTER_ADDRESSES adapter)
+void NetAdapter::ReloadInternalServer(PIP_ADAPTER_ADDRESSES adapter, bool dhcpForceEnable, IP_Address ipOverride, IP_Address subnetOverride, IP_Address gatewayOvveride)
 #elif defined(__POSIX__)
-void NetAdapter::ReloadInternalServer(ifaddrs* adapter)
+void NetAdapter::ReloadInternalServer(ifaddrs* adapter, bool dhcpForceEnable, IP_Address ipOverride, IP_Address subnetOverride, IP_Address gatewayOvveride)
 #endif
 {
 	if (adapter == nullptr)
 		Console.Error("DEV9: ReloadInternalServer() got nullptr for adapter");
 
-	if (config.InterceptDHCP)
-		dhcpServer.Init(adapter);
+	dhcpOn = config.InterceptDHCP || dhcpForceEnable;
+	if (dhcpOn)
+		dhcpServer.Init(adapter, ipOverride, subnetOverride, gatewayOvveride);
 }
 
 bool NetAdapter::InternalServerRecv(NetPacket* pkt)
@@ -333,7 +335,7 @@ bool NetAdapter::InternalServerSend(NetPacket* pkt)
 			if (udppkt.destinationPort == 67)
 			{
 				//Send DHCP
-				if (config.InterceptDHCP)
+				if (dhcpOn)
 					return dhcpServer.Send(&udppkt);
 			}
 		}
