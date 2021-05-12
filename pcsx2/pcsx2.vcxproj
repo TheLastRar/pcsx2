@@ -297,6 +297,7 @@
     <ClCompile Include="DEV9\Win32\pcap_io_win32.cpp" />
     <ClCompile Include="DEV9\Sessions\BaseSession.cpp" />
     <ClCompile Include="DEV9\smap.cpp" />
+    <ClCompile Include="DEV9\sockets.cpp" />
     <ClCompile Include="DEV9\Win32\DEV9WinConfig.cpp" />
     <ClCompile Include="DEV9\net.cpp" />
     <ClCompile Include="DEV9\Win32\tap-win32.cpp" />
@@ -748,6 +749,7 @@
     <ClInclude Include="DEV9\Sessions\BaseSession.h" />
     <ClInclude Include="DEV9\SimpleQueue.h" />
     <ClInclude Include="DEV9\smap.h" />
+    <ClInclude Include="DEV9\sockets.h" />
     <ClInclude Include="DEV9\Win32\pcap_io_win32_funcs.h" />
     <ClInclude Include="DEV9\Win32\resource.h" />
     <ClInclude Include="DEV9\Win32\tap.h" />

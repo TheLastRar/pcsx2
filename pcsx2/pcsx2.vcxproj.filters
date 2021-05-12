@@ -1247,6 +1247,9 @@
     <ClCompile Include="DEV9\smap.cpp">
       <Filter>System\Ps2\DEV9</Filter>
     </ClCompile>
+    <ClCompile Include="DEV9\sockets.cpp">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClCompile>
     <ClCompile Include="DEV9\net.cpp">
       <Filter>System\Ps2\DEV9</Filter>
     </ClCompile>
@@ -2309,6 +2312,9 @@
       <Filter>System\Ps2\DEV9</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\smap.h">
+      <Filter>System\Ps2\DEV9</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\sockets.h">
       <Filter>System\Ps2\DEV9</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\Win32\pcap_io_win32_funcs.h">
