@@ -27,6 +27,7 @@
 #include "Win32/tap.h"
 #endif
 #include "pcap_io.h"
+#include "sockets.h"
 
 #include "PacketReader/EthernetFrame.h"
 #include "PacketReader/IP/IP_Packet.h"
@@ -80,6 +81,8 @@ NetAdapter* GetNetAdapter()
 		case NetApi::PCAP_Bridged:
 		case NetApi::PCAP_Switched:
 			na = static_cast<NetAdapter*>(new PCAPAdapter());
+		case NetApi::Sockets:
+			na = static_cast<SocketAdapter*>(new SocketAdapter());
 			break;
 		default:
 			return 0;
@@ -172,6 +175,8 @@ const char* NetApiToString(NetApi api)
 			return "PCAP (Switched)";
 		case NetApi::TAP:
 			return "TAP";
+		case NetApi::Sockets:
+			return "Sockets";
 		default:
 			return "UNK";
 	}
@@ -187,6 +192,8 @@ const wchar_t* NetApiToWstring(NetApi api)
 			return L"PCAP (Switched)";
 		case NetApi::TAP:
 			return L"TAP";
+		case NetApi::Sockets:
+			return L"Sockets";
 		default:
 			return L"UNK";
 	}

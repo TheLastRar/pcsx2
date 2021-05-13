@@ -29,6 +29,7 @@
 #include "DEV9/net.h"
 #include "DEV9/PacketReader\IP\IP_Address.h"
 #include "tap.h"
+#include "DEV9/sockets.h"
 #include "AppCoreThread.h"
 
 #include "DEV9/ATA/HddCreate.h"
@@ -157,10 +158,12 @@ void OnInitDialog(HWND hW)
 
 	std::vector<AdapterEntry> tapAdapters = TAPAdapter::GetAdapters();
 	std::vector<AdapterEntry> pcapAdapters = PCAPAdapter::GetAdapters();
+	std::vector<AdapterEntry> socketAdapters = SocketAdapter::GetAdapters();
 
-	adapters.reserve(tapAdapters.size() + pcapAdapters.size());
+	adapters.reserve(tapAdapters.size() + pcapAdapters.size() + socketAdapters.size());
 	adapters.insert(adapters.end(), tapAdapters.begin(), tapAdapters.end());
 	adapters.insert(adapters.end(), pcapAdapters.begin(), pcapAdapters.end());
+	adapters.insert(adapters.end(), socketAdapters.begin(), socketAdapters.end());
 
 	for (size_t i = 0; i < adapters.size(); i++)
 	{
