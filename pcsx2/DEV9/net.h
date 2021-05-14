@@ -95,6 +95,8 @@ private:
 	bool internalRxHasData = false;
 
 	bool dhcpOn = false;
+
+protected:
 	InternalServers::DHCP_Server dhcpServer = InternalServers::DHCP_Server([&] { InternalSignalReceived(); });
 
 public:
