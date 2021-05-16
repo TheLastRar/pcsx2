@@ -341,6 +341,7 @@ set(pcsx2DEV9Sources
 	DEV9/PacketReader/EthernetFrame.cpp
 	DEV9/PacketReader/NetLib.cpp
 	DEV9/Sessions/BaseSession.cpp
+	DEV9/Sessions/UDP_Session/UDP_Session.cpp
 	DEV9/smap.cpp
 	DEV9/sockets.cpp
 	DEV9/DEV9.cpp
@@ -378,6 +379,7 @@ set(pcsx2DEV9Headers
 	DEV9/PacketReader/Payload.h
 	DEV9/pcap_io.h
 	DEV9/Sessions/BaseSession.h
+	DEV9/Sessions/UDP_Session/UDP_Session.h
 	DEV9/SimpleQueue.h
 	DEV9/smap.h
 	DEV9/sockets.h

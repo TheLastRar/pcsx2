@@ -208,6 +208,9 @@
     <Filter Include="System\Ps2\DEV9\Sessions">
       <UniqueIdentifier>{cea9361b-5654-4050-9e6f-3c44f77f36da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Ps2\DEV9\Sessions\UDP_Session">
+      <UniqueIdentifier>{7b86e42b-816a-4d08-9de8-fa308d2b8d88}</UniqueIdentifier>
+    </Filter>
     <Filter Include="System\Ps2\USB">
       <UniqueIdentifier>{df9de75c-2272-4f73-b2a0-4f9f492ba1e9}</UniqueIdentifier>
     </Filter>
@@ -1240,6 +1243,9 @@
     </ClCompile>
     <ClCompile Include="DEV9\Sessions\BaseSession.cpp">
       <Filter>System\Ps2\DEV9\Sessions</Filter>
+    </ClCompile>
+    <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_Session.cpp">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClCompile>
     <ClCompile Include="DEV9\Win32\pcap_io_win32.cpp">
       <Filter>System\Ps2\DEV9</Filter>
@@ -2308,7 +2314,10 @@
     <ClInclude Include="DEV9\Sessions\BaseSession.h">
       <Filter>System\Ps2\DEV9\Sessions</Filter>
     </ClInclude>
-    <ClInclude Include="\DEV9\SimpleQueue.h">
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_Session.h">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\SimpleQueue.h">
       <Filter>System\Ps2\DEV9</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\smap.h">

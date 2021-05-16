@@ -26,13 +26,17 @@
 #include "sockets.h"
 #include "DEV9.h"
 
+#include "Sessions/UDP_Session/UDP_Session.h"
+
 #include "PacketReader/EthernetFrame.h"
 #include "PacketReader/ARP/ARP_Packet.h"
+#include "PacketReader/IP/UDP/UDP_Packet.h"
 
 using namespace Sessions;
 using namespace PacketReader;
 using namespace PacketReader::ARP;
 using namespace PacketReader::IP;
+using namespace PacketReader::IP::UDP;
 
 std::vector<AdapterEntry> SocketAdapter::GetAdapters()
 {
@@ -575,14 +579,37 @@ bool SocketAdapter::SendTCP(ConnectionKey Key, IP_Packet* ipPkt)
 
 bool SocketAdapter::SendUDP(ConnectionKey Key, IP_Packet* ipPkt)
 {
-	int res = SendFromConnection(Key, ipPkt);
+	IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ipPkt->GetPayload());
+	UDP_Packet udp(ipPayload->data, ipPayload->GetLength());
+
+	Key.ps2Port = udp.sourcePort;
+	Key.srvPort = udp.destinationPort;
+
+	const int res = SendFromConnection(Key, ipPkt);
 	if (res == 1)
 		return true;
 	else if (res == 0)
 		return false;
 	else
 	{
-		return false;
+		UDP_Session* s = nullptr;
+
+		if (udp.sourcePort == udp.destinationPort || //Used for LAN games that assume the destination port
+			ipPkt->destinationIP == dhcpServer.broadcastIP || //Broadcast packets
+			ipPkt->destinationIP == IP_Address{255, 255, 255, 255} || //Limited Broadcast packets
+			(ipPkt->destinationIP.bytes[0] & 0xF0) == 0xE0) //Multicast address start with 0b1110
+		{
+			//Fixed ports (TODO)
+			return false;
+		}
+		else
+			s = new UDP_Session(Key, adapterIP);
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+		s->destIP = ipPkt->destinationIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+		return s->Send(ipPkt->GetPayload());
 	}
 }
 
@@ -591,9 +618,7 @@ int SocketAdapter::SendFromConnection(ConnectionKey Key, IP_Packet* ipPkt)
 	BaseSession* s = nullptr;
 	connections.TryGetValue(Key, &s);
 	if (s != nullptr)
-	{
 		return s->Send(ipPkt->GetPayload()) ? 1 : 0;
-	}
 	else
 		return -1;
 }
