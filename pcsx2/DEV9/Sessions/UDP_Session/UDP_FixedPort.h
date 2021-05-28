@@ -15,7 +15,7 @@
 
 #pragma once
 #include <atomic>
-#include <chrono>
+#include <mutex>
 #ifdef _WIN32
 #include <winsock2.h>
 #elif defined(__POSIX__)
@@ -23,11 +23,14 @@
 #include <sys/socket.h>
 #endif
 
+#include "DEV9/Sessions/BaseSession.h"
 #include "UDP_BaseSession.h"
+#include "UDP_Session.h"
+#include "UDP_ServerSession.h"
 
 namespace Sessions
 {
-	class UDP_Session : public UDP_BaseSession
+	class UDP_FixedPort : public BaseSession
 	{
 	private:
 		std::atomic<bool> open{false};
@@ -38,35 +41,26 @@ namespace Sessions
 		int client = INVALID_SOCKET;
 #endif
 
-		u16 srcPort = 0;
-		u16 destPort = 0;
-		//Broadcast
-		const bool isBroadcast; // = false;
-		bool isMulticast = false;
-		const bool isFixedPort; // = false;
-		//EndBroadcast
+	public:
+		const u16 port = 0;
 
-		std::atomic<std::chrono::steady_clock::time_point> deathClockStart;
-		const static std::chrono::duration<std::chrono::steady_clock::rep, std::chrono::steady_clock::period> MAX_IDLE;
+	private:
+		std::mutex connectionSentry;
+		std::vector<UDP_BaseSession*> connections;
 
 	public:
-		//Normal Port
-		UDP_Session(ConnectionKey parKey, PacketReader::IP::IP_Address parAdapterIP);
-		//Fixed Port
-#ifdef _WIN32
-		UDP_Session(ConnectionKey parKey, PacketReader::IP::IP_Address parAdapterIP, bool parIsBroadcast, bool parIsMulticast, SOCKET parClient);
-#elif defined(__POSIX__)
-		UDP_Session(ConnectionKey parKey, PacketReader::IP::IP_Address parAdapterIP, bool parIsBroadcast, bool parIsMulticast, int parClient);
-#endif
+		UDP_FixedPort(ConnectionKey parKey, PacketReader::IP::IP_Address parAdapterIP, u16 parPort);
 
 		virtual PacketReader::IP::IP_Payload* Recv();
-		virtual bool WillRecive(PacketReader::IP::IP_Address parDestIP);
 		virtual bool Send(PacketReader::IP::IP_Payload* payload);
 		virtual void Reset();
 
-		virtual ~UDP_Session();
+		UDP_Session* NewClientSession(ConnectionKey parNewKey, bool parIsBrodcast, bool parIsMulticast);
+		UDP_ServerSession* NewListenSession(ConnectionKey parNewKey);
+
+		virtual ~UDP_FixedPort();
 
 	private:
-		void CloseSocket();
+		void HandleChildConnectionClosed(BaseSession* sender);
 	};
 } // namespace Sessions

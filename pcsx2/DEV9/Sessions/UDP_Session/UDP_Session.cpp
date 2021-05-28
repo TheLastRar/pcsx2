@@ -39,15 +39,19 @@ namespace Sessions
 	//TODO, figure out handling of multicast
 
 	UDP_Session::UDP_Session(ConnectionKey parKey, IP_Address parAdapterIP)
-		: BaseSession(parKey, parAdapterIP)
+		: UDP_BaseSession(parKey, parAdapterIP)
 		, isBroadcast(false)
 		, isFixedPort(false)
 		, deathClockStart(std::chrono::steady_clock::now())
 	{
 	}
 
+#ifdef _WIN32
 	UDP_Session::UDP_Session(ConnectionKey parKey, IP_Address parAdapterIP, bool parIsBroadcast, bool parIsMulticast, SOCKET parClient)
-		: BaseSession(parKey, parAdapterIP)
+#elif defined(__POSIX__)
+	UDP_Session::UDP_Session(ConnectionKey parKey, IP_Address parAdapterIP, bool parIsBroadcast, bool parIsMulticast, int parClient)
+#endif
+		: UDP_BaseSession(parKey, parAdapterIP)
 		, open(true)
 		, client(parClient)
 		, srcPort(parKey.ps2Port)
@@ -230,11 +234,8 @@ namespace Sessions
 				RaiseEventConnectionClosed();
 				return false;
 			}
-#ifdef _WIN32
-			const BOOL reuseAddress = true;
-#elif defined(__POSIX__)
-			const int reuseAddress = 1;
-#endif
+
+			const int reuseAddress = true; //BOOL
 			ret = setsockopt(client, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuseAddress, sizeof(reuseAddress));
 
 			if (ret == SOCKET_ERROR)

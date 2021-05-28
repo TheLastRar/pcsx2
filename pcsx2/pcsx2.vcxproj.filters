@@ -1244,6 +1244,9 @@
     <ClCompile Include="DEV9\Sessions\BaseSession.cpp">
       <Filter>System\Ps2\DEV9\Sessions</Filter>
     </ClCompile>
+    <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_FixedPort.cpp">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClCompile>
     <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_Session.cpp">
       <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClCompile>
@@ -2313,6 +2316,15 @@
     </ClInclude>
     <ClInclude Include="DEV9\Sessions\BaseSession.h">
       <Filter>System\Ps2\DEV9\Sessions</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_FixedPort.h">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_BaseSession.h">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_ServerSession.h">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_Session.h">
       <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>

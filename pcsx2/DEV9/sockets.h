@@ -118,7 +118,7 @@ class SocketAdapter : public NetAdapter
 	//Sentrys replaced by the requirment for each session class to have thread safe destructor
 
 	ThreadSafeMap<Sessions::ConnectionKey, Sessions::BaseSession*> connections;
-	//ThreadSafeMap<u16, Sessions::BaseSession*> fixedUDPPorts;
+	ThreadSafeMap<u16, Sessions::BaseSession*> fixedUDPPorts;
 
 public:
 	SocketAdapter();

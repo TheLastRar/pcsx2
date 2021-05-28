@@ -26,6 +26,7 @@
 #include "sockets.h"
 #include "DEV9.h"
 
+#include "Sessions/UDP_Session/UDP_FixedPort.h"
 #include "Sessions/UDP_Session/UDP_Session.h"
 
 #include "PacketReader/EthernetFrame.h"
@@ -599,8 +600,35 @@ bool SocketAdapter::SendUDP(ConnectionKey Key, IP_Packet* ipPkt)
 			ipPkt->destinationIP == IP_Address{255, 255, 255, 255} || //Limited Broadcast packets
 			(ipPkt->destinationIP.bytes[0] & 0xF0) == 0xE0) //Multicast address start with 0b1110
 		{
-			//Fixed ports (TODO)
-			return false;
+			UDP_FixedPort* fPort = nullptr;
+			BaseSession* fSession;
+			if (!fixedUDPPorts.TryGetValue(udp.sourcePort, &fSession))
+			{
+				//DevCon.WriteLn("DEV9: Socket: Using Existing UDPFixedPort");
+				fPort = static_cast<UDP_FixedPort*>(fSession);
+			}
+			else
+			{
+				ConnectionKey fKey{0};
+				fKey.protocol = (u8)IP_Type::UDP;
+				fKey.ps2Port = udp.sourcePort;
+				fKey.srvPort = 0;
+
+				Console.WriteLn("DEV9: Socket: Creating New UDPFixedPort with Port %d", udp.sourcePort);
+
+				fPort = new UDP_FixedPort(fKey, adapterIP, udp.sourcePort);
+				fPort->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+
+				fPort->destIP = {0, 0, 0, 0};
+				fPort->sourceIP = dhcpServer.ps2IP;
+
+				connections.Add(fKey, fPort);
+				fixedUDPPorts.Add(udp.sourcePort, fPort);
+			}
+
+			s = fPort->NewClientSession(Key,
+				ipPkt->destinationIP == dhcpServer.broadcastIP || ipPkt->destinationIP == IP_Address{255, 255, 255, 255},
+				(ipPkt->destinationIP.bytes[0] & 0xF0) == 0xE0);
 		}
 		else
 			s = new UDP_Session(Key, adapterIP);
@@ -668,7 +696,7 @@ SocketAdapter::~SocketAdapter()
 		delete session;
 	}
 	connections.Clear();
-	//fixedUDPPorts.Clear(); //fixedUDP sessions already deleted via connections
+	fixedUDPPorts.Clear(); //fixedUDP sessions already deleted via connections
 
 	//Clear out vRecBuffer
 	while (!vRecBuffer.IsQueueEmpty())
