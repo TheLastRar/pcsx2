@@ -26,17 +26,20 @@
 #include "sockets.h"
 #include "DEV9.h"
 
+#include "Sessions/TCP_Session/TCP_Session.h"
 #include "Sessions/UDP_Session/UDP_FixedPort.h"
 #include "Sessions/UDP_Session/UDP_Session.h"
 
 #include "PacketReader/EthernetFrame.h"
 #include "PacketReader/ARP/ARP_Packet.h"
+#include "PacketReader/IP/TCP/TCP_Packet.h"
 #include "PacketReader/IP/UDP/UDP_Packet.h"
 
 using namespace Sessions;
 using namespace PacketReader;
 using namespace PacketReader::ARP;
 using namespace PacketReader::IP;
+using namespace PacketReader::IP::TCP;
 using namespace PacketReader::IP::UDP;
 
 std::vector<AdapterEntry> SocketAdapter::GetAdapters()
@@ -567,6 +570,12 @@ bool SocketAdapter::SendIGMP(ConnectionKey Key, IP_Packet* ipPkt)
 
 bool SocketAdapter::SendTCP(ConnectionKey Key, IP_Packet* ipPkt)
 {
+	IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ipPkt->GetPayload());
+	TCP_Packet tcp(ipPayload->data, ipPayload->GetLength());
+
+	Key.ps2Port = tcp.sourcePort;
+	Key.srvPort = tcp.destinationPort;
+
 	int res = SendFromConnection(Key, ipPkt);
 	if (res == 1)
 		return true;
@@ -574,7 +583,13 @@ bool SocketAdapter::SendTCP(ConnectionKey Key, IP_Packet* ipPkt)
 		return false;
 	else
 	{
-		return false;
+		TCP_Session* s = new TCP_Session(Key, adapterIP);
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+		s->destIP = ipPkt->destinationIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+		return s->Send(ipPkt->GetPayload());
 	}
 }
 
