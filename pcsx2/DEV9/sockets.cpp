@@ -444,6 +444,7 @@ bool SocketAdapter::send(NetPacket* pkt)
 	switch (frame.protocol)
 	{
 		case (u16)EtherType::null:
+		case (u16)EtherType::RESET:
 		{
 			//Adapter Reset
 			std::vector<ConnectionKey> keys = connections.GetKeys();
