@@ -23,6 +23,7 @@ namespace PacketReader
 	enum struct EtherType : u16
 	{
 		null = 0x0000,
+		RESET = 0x0C00,
 		IPv4 = 0x0800,
 		ARP = 0x0806,
 		//Tags extend the ether header length
