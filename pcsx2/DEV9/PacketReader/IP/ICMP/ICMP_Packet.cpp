@@ -39,6 +39,14 @@ namespace PacketReader::IP::ICMP
 		payload = std::make_unique<PayloadPtr>(&buffer[offset], bufferSize - offset);
 		//AllDone
 	}
+	ICMP_Packet::ICMP_Packet(const ICMP_Packet& original)
+		: type{original.type}
+		, code{original.code}
+		, checksum{original.checksum}
+		, payload{original.payload->Clone()}
+	{
+		memcpy(headerData, original.headerData, 4);
+	}
 
 	Payload* ICMP_Packet::GetPayload()
 	{
@@ -58,6 +66,11 @@ namespace PacketReader::IP::ICMP
 		NetLib::WriteByteArray(buffer, offset, 4, headerData);
 
 		payload->WriteBytes(buffer, offset);
+	}
+
+	ICMP_Packet* ICMP_Packet::Clone() const
+	{
+		return new ICMP_Packet(*this);
 	}
 
 	u8 ICMP_Packet::GetProtocol()

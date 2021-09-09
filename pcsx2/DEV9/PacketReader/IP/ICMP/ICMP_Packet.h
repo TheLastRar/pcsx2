@@ -40,11 +40,13 @@ namespace PacketReader::IP::ICMP
 		//Takes ownership of payload
 		ICMP_Packet(Payload* data);
 		ICMP_Packet(u8* buffer, int bufferSize);
+		ICMP_Packet(const ICMP_Packet&);
 
 		Payload* GetPayload();
 
 		virtual int GetLength();
 		virtual void WriteBytes(u8* buffer, int* offset);
+		virtual ICMP_Packet* Clone() const;
 
 		virtual u8 GetProtocol();
 
