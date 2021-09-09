@@ -56,6 +56,22 @@ namespace PacketReader::ARP
 		NetLib::ReadByteArray(buffer, &offset, hardwareAddressLength, targetHardwareAddress.get());
 		NetLib::ReadByteArray(buffer, &offset, protocolAddressLength, targetProtocolAddress.get());
 	}
+	ARP_Packet::ARP_Packet(const ARP_Packet& original)
+		: hardwareType{original.hardwareType}
+		, protocol{original.protocol}
+		, hardwareAddressLength{original.hardwareAddressLength}
+		, protocolAddressLength{original.protocolAddressLength}
+		, op{original.protocol}
+		, senderHardwareAddress{std::make_unique<u8[]>(original.hardwareAddressLength)}
+		, senderProtocolAddress{std::make_unique<u8[]>(original.protocolAddressLength)}
+		, targetHardwareAddress{std::make_unique<u8[]>(original.hardwareAddressLength)}
+		, targetProtocolAddress{std::make_unique<u8[]>(original.protocolAddressLength)}
+	{	
+		memcpy(senderHardwareAddress.get(), original.senderHardwareAddress.get(), hardwareAddressLength);
+		memcpy(senderProtocolAddress.get(), original.senderProtocolAddress.get(), protocolAddressLength);
+		memcpy(targetHardwareAddress.get(), original.targetHardwareAddress.get(), hardwareAddressLength);
+		memcpy(targetProtocolAddress.get(), original.targetProtocolAddress.get(), protocolAddressLength);
+	}
 
 	int ARP_Packet::GetLength()
 	{
@@ -73,5 +89,10 @@ namespace PacketReader::ARP
 		NetLib::WriteByteArray(buffer, offset, protocolAddressLength, senderProtocolAddress.get());
 		NetLib::WriteByteArray(buffer, offset, hardwareAddressLength, targetHardwareAddress.get());
 		NetLib::WriteByteArray(buffer, offset, protocolAddressLength, targetProtocolAddress.get());
+	}
+
+	ARP_Packet* ARP_Packet::Clone() const
+	{
+		return new ARP_Packet(*this);
 	}
 } // namespace PacketReader::ARP

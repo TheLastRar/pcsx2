@@ -35,8 +35,10 @@ namespace PacketReader::ARP
 
 		ARP_Packet(u8 hwAddrLen, u8 procAddrLen);
 		ARP_Packet(u8* buffer, int bufferSize);
+		ARP_Packet(const ARP_Packet&);
 
 		virtual int GetLength();
 		virtual void WriteBytes(u8* buffer, int* offset);
+		virtual ARP_Packet* Clone() const;
 	};
 } // namespace PacketReader::ARP
