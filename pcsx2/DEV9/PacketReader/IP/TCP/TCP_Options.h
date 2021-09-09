@@ -29,6 +29,11 @@ namespace PacketReader::IP::TCP
 			buffer[*offset] = GetCode();
 			(*offset)++;
 		}
+
+		virtual TCPopNOP* Clone() const
+		{
+			return new TCPopNOP(*this);
+		}
 	};
 
 	class TCPopMSS : public BaseOption
@@ -43,6 +48,11 @@ namespace PacketReader::IP::TCP
 		virtual u8 GetCode() { return 2; }
 
 		virtual void WriteBytes(u8* buffer, int* offset);
+
+		virtual TCPopMSS* Clone() const
+		{
+			return new TCPopMSS(*this);
+		}
 	};
 
 	class TCPopWS : public BaseOption
@@ -57,6 +67,11 @@ namespace PacketReader::IP::TCP
 		virtual u8 GetCode() { return 3; }
 
 		virtual void WriteBytes(u8* buffer, int* offset);
+
+		virtual TCPopWS* Clone() const
+		{
+			return new TCPopWS(*this);
+		}
 	};
 
 	class TCPopTS : public BaseOption
@@ -72,5 +87,10 @@ namespace PacketReader::IP::TCP
 		virtual u8 GetCode() { return 8; }
 
 		virtual void WriteBytes(u8* buffer, int* offset);
+
+		virtual TCPopTS* Clone() const
+		{
+			return new TCPopTS(*this);
+		}
 	};
 } // namespace PacketReader::IP::TCP

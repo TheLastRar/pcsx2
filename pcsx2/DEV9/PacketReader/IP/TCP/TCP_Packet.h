@@ -80,11 +80,13 @@ namespace PacketReader::IP::TCP
 		//Takes ownership of payload
 		TCP_Packet(Payload* data);
 		TCP_Packet(u8* buffer, int bufferSize);
+		TCP_Packet(const TCP_Packet&);
 
 		Payload* GetPayload();
 
 		virtual int GetLength();
 		virtual void WriteBytes(u8* buffer, int* offset);
+		virtual TCP_Packet* Clone() const;
 
 		virtual u8 GetProtocol();
 

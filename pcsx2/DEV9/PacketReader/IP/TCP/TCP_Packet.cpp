@@ -171,6 +171,25 @@ namespace PacketReader::IP::TCP
 		//AllDone
 	}
 
+	TCP_Packet::TCP_Packet(const TCP_Packet& original)
+		: sourcePort{original.sourcePort}
+		, destinationPort{original.destinationPort}
+		, sequenceNumber{original.sequenceNumber}
+		, acknowledgementNumber{original.acknowledgementNumber}
+		, dataOffsetAndNS_Flag{original.dataOffsetAndNS_Flag}
+		, headerLength{original.headerLength}
+		, flags{original.flags}
+		, windowSize{original.windowSize}
+		, checksum{original.checksum}
+		, urgentPointer{original.urgentPointer}
+		, payload{original.payload->Clone()}
+	{
+		//Clone options
+		options.reserve(original.options.size());
+		for (size_t i = 0; i < options.size(); i++)
+			options.push_back(original.options[i]->Clone());
+	}
+
 	Payload* TCP_Packet::GetPayload()
 	{
 		return payload.get();
@@ -206,6 +225,11 @@ namespace PacketReader::IP::TCP
 		*offset = startOff + headerLength;
 
 		payload->WriteBytes(buffer, offset);
+	}
+
+	TCP_Packet* TCP_Packet::Clone() const
+	{
+		return new TCP_Packet(*this);
 	}
 
 	u8 TCP_Packet::GetProtocol()
