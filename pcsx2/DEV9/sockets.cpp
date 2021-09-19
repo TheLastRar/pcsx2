@@ -26,12 +26,14 @@
 #include "sockets.h"
 #include "DEV9.h"
 
+#include "Sessions/ICMP_Session/ICMP_Session.h"
 #include "Sessions/TCP_Session/TCP_Session.h"
 #include "Sessions/UDP_Session/UDP_FixedPort.h"
 #include "Sessions/UDP_Session/UDP_Session.h"
 
 #include "PacketReader/EthernetFrame.h"
 #include "PacketReader/ARP/ARP_Packet.h"
+#include "PacketReader/IP/ICMP/ICMP_Packet.h"
 #include "PacketReader/IP/TCP/TCP_Packet.h"
 #include "PacketReader/IP/UDP/UDP_Packet.h"
 
@@ -39,6 +41,7 @@ using namespace Sessions;
 using namespace PacketReader;
 using namespace PacketReader::ARP;
 using namespace PacketReader::IP;
+using namespace PacketReader::IP::ICMP;
 using namespace PacketReader::IP::TCP;
 using namespace PacketReader::IP::UDP;
 
@@ -551,15 +554,26 @@ bool SocketAdapter::SendIP(IP_Packet* ipPkt)
 
 bool SocketAdapter::SendICMP(ConnectionKey Key, IP_Packet* ipPkt)
 {
-	int res = SendFromConnection(Key, ipPkt);
-	if (res == 1)
-		return true;
-	else if (res == 0)
-		return false;
-	else
+	//IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ipPkt->GetPayload());
+
+	ICMP_Session* s;
+
+	//Need custom SendFromConnection
+	BaseSession* existingSession = nullptr;
+	connections.TryGetValue(Key, &existingSession);
+	if (existingSession != nullptr)
 	{
-		return false;
+		s = static_cast<ICMP_Session*>(existingSession);
+		return s->Send(ipPkt->GetPayload(), ipPkt);
 	}
+
+	s = new ICMP_Session(Key, adapterIP, &connections);
+
+	s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+	s->destIP = ipPkt->destinationIP;
+	s->sourceIP = dhcpServer.ps2IP;
+	connections.Add(Key, s);
+	return s->Send(ipPkt->GetPayload(), ipPkt);
 }
 
 bool SocketAdapter::SendIGMP(ConnectionKey Key, IP_Packet* ipPkt)
