@@ -23,7 +23,7 @@ namespace PacketReader::IP
 		virtual u8 GetLength() = 0;
 		virtual u8 GetCode() = 0;
 		virtual void WriteBytes(u8* buffer, int* offset) = 0;
-
+		virtual BaseOption* Clone() const = 0;
 		virtual ~BaseOption() {}
 	};
 
