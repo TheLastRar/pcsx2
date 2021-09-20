@@ -33,6 +33,35 @@ using namespace PacketReader;
 using namespace PacketReader::IP;
 using namespace PacketReader::IP::ICMP;
 
+/*  Ping is kindof annoying to do crossplatform
+    All platforms restrict raw sockets
+
+    Windows provides an api for ICMP
+    ICMP_ECHO_REPLY should always be used, ignore ICMP_ECHO_REPLY32
+    IP_OPTION_INFORMATION32 however does need to be used on 64bit
+
+    Linux
+    We have access to raw sockets via CAP_NET_RAW (for pcap)
+        however we may be missing that cap on some builds
+    Linux has socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP), used similar to raw sockets but for ICMP only
+        requires net.ipv4.ping_group_range sysctl, default off on alot of distros
+    We can use the ping cli
+
+	Mac
+	We have access to raw sockets via CAP_NET_RAW (for pcap)
+		I think we have this set on mac?
+	Mac also has socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP)
+		Implementation differs, is more versatile than linux, no restriction to using it
+
+	Other Unix
+	Linux capabilities conforms to a withdrawn POSIX.1e standard, probably valid in other Unix systems
+	assume ping cli is identical across Unix
+
+	Based on above, raw sockets or ping CLI is our best bet
+	Original purpose of CLR_DEV9 was to allow networking from a portable setup without admin
+	To this effect, we will utilise the ping cli on unix
+ */
+
 namespace Sessions
 {
 	ICMP_Session::Ping::Ping(int requestSize)
