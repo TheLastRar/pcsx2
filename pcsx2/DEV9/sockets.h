@@ -1,4 +1,3 @@
-#pragma once
 /*  PCSX2 - PS2 Emulator for PCs
  *  Copyright (C) 2002-2021  PCSX2 Dev Team
  *
@@ -15,13 +14,7 @@
  */
 
 #pragma once
-#include <atomic>
-#include <mutex>
-#include <shared_mutex>
-
 #include <vector>
-#include <unordered_map>
-#include <string>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -37,75 +30,10 @@
 #include "PacketReader/EthernetFrame.h"
 #include "Sessions/BaseSession.h"
 #include "SimpleQueue.h"
+#include "ThreadSafeMap.h"
 
 class SocketAdapter : public NetAdapter
 {
-	template <class Key, class T>
-	class ThreadSafeMap
-	{
-		std::shared_mutex accessMutex;
-
-		std::unordered_map<Key, T> map;
-
-	public:
-		template <class Key, class T>
-		void Add(Key key, T value)
-		{
-			std::unique_lock modifyLock(accessMutex);
-			//Todo, check if key already exists?
-			map[key] = value;
-		}
-
-		void Remove(Key key)
-		{
-			std::unique_lock modifyLock(accessMutex);
-			map.erase(key);
-		}
-
-		void Clear()
-		{
-			std::unique_lock modifyLock(accessMutex);
-			map.clear();
-		}
-
-		std::vector<Key> GetKeys()
-		{
-			std::shared_lock readLock(accessMutex);
-
-			std::vector<Key> keys;
-			keys.reserve(map.size());
-
-			for (auto iter = map.begin(); iter != map.end(); ++iter)
-				keys.push_back(iter->first);
-
-			return keys;
-		}
-
-		//Does not error or insert if no key is found
-		bool TryGetValue(Key key, T* value)
-		{
-			std::shared_lock readLock(accessMutex);
-			auto search = map.find(key);
-			if (search != map.end())
-			{
-				*value = map[key];
-				return true;
-			}
-			else
-				return false;
-		}
-
-		bool ContainsKey(Key key)
-		{
-			std::shared_lock readLock(accessMutex);
-			auto search = map.find(key);
-			if (search != map.end())
-				return true;
-			else
-				return false;
-		}
-	};
-
 	//SimpleQueue for ARP packages
 	SimpleQueue<PacketReader::EthernetFrame*> vRecBuffer;
 
