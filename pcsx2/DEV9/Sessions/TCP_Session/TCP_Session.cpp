@@ -109,7 +109,11 @@ namespace Sessions
 	{
 		if (client != INVALID_SOCKET)
 		{
+#ifdef _WIN32
 			closesocket(client);
+#elif defined(__POSIX__)
+			close(client);
+#endif
 			client = INVALID_SOCKET;
 		}
 	}

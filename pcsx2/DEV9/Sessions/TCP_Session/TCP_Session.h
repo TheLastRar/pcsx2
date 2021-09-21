@@ -19,7 +19,11 @@
 #include <mutex>
 #include <tuple>
 #include <vector>
+#ifdef _WIN32
 #include <winsock2.h>
+#elif defined(__POSIX__)
+#define INVALID_SOCKET -1
+#endif
 
 #include "DEV9/SimpleQueue.h"
 #include "DEV9/Sessions/BaseSession.h"
@@ -52,7 +56,11 @@ namespace Sessions
 
 		SimpleQueue<PacketReader::IP::TCP::TCP_Packet*> _recvBuff;
 
+#ifdef _WIN32
 		SOCKET client = INVALID_SOCKET;
+#elif defined(__POSIX__)
+		int client = INVALID_SOCKET;
+#endif
 
 		TCP_State state = TCP_State::None;
 

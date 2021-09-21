@@ -18,6 +18,17 @@
 #include <algorithm>
 #include <thread>
 
+#ifdef __POSIX__
+#define SOCKET_ERROR -1
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#define SD_RECEIVE SHUT_RD
+#define SD_SEND SHUT_WR
+#endif
+
 #include "TCP_Session.h"
 
 using namespace PacketReader;
@@ -154,7 +165,12 @@ namespace Sessions
 		client = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (client == INVALID_SOCKET)
 		{
-			Console.Error("DEV9: TCP: Failed to open socket. Error: %d", WSAGetLastError());
+			Console.Error("DEV9: TCP: Failed to open socket. Error: %d",
+#ifdef _WIN32
+				WSAGetLastError());
+#elif defined(__POSIX__)
+				errno);
+#endif
 			RaiseEventConnectionClosed();
 			return false;
 		}
@@ -169,20 +185,41 @@ namespace Sessions
 			ret = bind(client, (const sockaddr*)&endpoint, sizeof(endpoint));
 
 			if (ret != 0)
-				Console.Error("DEV9: UDP: Failed to bind socket. Error: %d", WSAGetLastError());
+				Console.Error("DEV9: UDP: Failed to bind socket. Error: %d",
+#ifdef _WIN32
+					WSAGetLastError());
+#elif defined(__POSIX__)
+					errno);
+#endif
 		}
 
+#ifdef _WIN32
 		u_long blocking = 1;
 		ret = ioctlsocket(client, FIONBIO, &blocking);
+#elif defined(__POSIX__)
+		int blocking = 1;
+		ret = ioctl(client, FIONBIO, &blocking);
+#endif
 
 		if (ret != 0)
-			Console.Error("DEV9: TCP: Failed to set non blocking. Error: %d", WSAGetLastError());
+			Console.Error("DEV9: TCP: Failed to set non blocking. Error: %d",
+#ifdef _WIN32
+				WSAGetLastError());
+#elif defined(__POSIX__)
+				errno);
+#endif
 
-		const BOOL noDelay = true;
+
+		const int noDelay = true; //BOOL
 		ret = setsockopt(client, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
 
 		if (ret != 0)
-			Console.Error("DEV9: TCP: Failed to set TCP_NODELAY. Error: %d", WSAGetLastError());
+			Console.Error("DEV9: TCP: Failed to set TCP_NODELAY. Error: %d",
+#ifdef _WIN32
+				WSAGetLastError());
+#elif defined(__POSIX__)
+				errno);
+#endif
 
 		sockaddr_in endpoint{0};
 		endpoint.sin_family = AF_INET;
@@ -193,11 +230,15 @@ namespace Sessions
 
 		if (ret != 0)
 		{
-			const int wsaErr = WSAGetLastError();
-
-			if (wsaErr != WSAEWOULDBLOCK)
+#ifdef _WIN32
+			const int err = WSAGetLastError();
+			if (err != WSAEWOULDBLOCK)
+#elif defined(__POSIX__)
+			const int err = errno;
+			if (err != EWOULDBLOCK)
+#endif
 			{
-				Console.Error("DEV9: TCP: Failed to connect socket. Error: %d", wsaErr);
+				Console.Error("DEV9: TCP: Failed to connect socket. Error: %d", err);
 				RaiseEventConnectionClosed();
 				return false;
 			}
@@ -313,13 +354,18 @@ namespace Sessions
 
 					if (sent == SOCKET_ERROR)
 					{
-						const int wsaErr = WSAGetLastError();
-						if (wsaErr == WSAEWOULDBLOCK)
+#ifdef _WIN32
+						const int err = WSAGetLastError();
+						if (err == WSAEWOULDBLOCK)
+#elif defined(__POSIX__)
+						const int err = errno;
+						if (err == EWOULDBLOCK)
+#endif
 							std::this_thread::yield();
 						else
 						{
 							CloseByRemoteRST();
-							Console.Error("DEV9: TCP: Send Error: %d", wsaErr);
+							Console.Error("DEV9: TCP: Send Error: %d", err);
 							return true;
 						}
 					}
@@ -487,7 +533,12 @@ namespace Sessions
 
 		const int result = shutdown(client, SD_SEND);
 		if (result == SOCKET_ERROR)
-			Console.Error("DEV9: TCP: Shutdown SD_SEND Error: %d", WSAGetLastError());
+			Console.Error("DEV9: TCP: Shutdown SD_SEND Error: %d",
+#ifdef _WIN32
+				WSAGetLastError());
+#elif defined(__POSIX__)
+				errno);
+#endif
 
 		//Connection Close Part 2, Send ACK to PS2
 		TCP_Packet* ret = CreateBasePacket();
@@ -549,7 +600,12 @@ namespace Sessions
 
 		int result = shutdown(client, SD_SEND);
 		if (result == SOCKET_ERROR)
-			Console.Error("DEV9: TCP: Shutdown SD_SEND Error: %d", WSAGetLastError());
+			Console.Error("DEV9: TCP: Shutdown SD_SEND Error: %d",
+#ifdef _WIN32
+				WSAGetLastError());
+#elif defined(__POSIX__)
+				errno);
+#endif
 
 		TCP_Packet* ret = CreateBasePacket();
 

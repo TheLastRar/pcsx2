@@ -17,6 +17,14 @@
 
 #include <algorithm>
 
+#ifdef __POSIX__
+#define SOCKET_ERROR -1
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#define SD_RECEIVE SHUT_RD
+#endif
+
 #include "TCP_Session.h"
 
 using namespace PacketReader;
@@ -35,8 +43,8 @@ namespace Sessions
 		{
 			case TCP_State::SendingSYN_ACK:
 			{
-				FD_SET writeSet;
-				FD_SET exceptSet;
+				fd_set writeSet;
+				fd_set exceptSet;
 
 				FD_ZERO(&writeSet);
 				FD_ZERO(&exceptSet);
@@ -86,7 +94,11 @@ namespace Sessions
 			int recived = -1;
 
 			u_long available;
+#ifdef _WIN32
 			err = ioctlsocket(client, FIONREAD, &available);
+#elif defined(__POSIX__)
+			err = ioctl(client, FIONREAD, &available);
+#endif
 			if (err != SOCKET_ERROR)
 			{
 				if (available > maxSize)
@@ -95,10 +107,15 @@ namespace Sessions
 				buffer = std::make_unique<u8[]>(maxSize);
 				recived = recv(client, (char*)buffer.get(), maxSize, 0);
 				if (recived == -1)
+#ifdef _WIN32
 					err = WSAGetLastError();
+#elif defined(__POSIX__)
+					err = errno;
+#endif
 
 				switch (err)
 				{
+#ifdef _WIN32
 					case WSAEINVAL:
 					case WSAESHUTDOWN:
 						//In theory, this should only occur when the PS2 has RST the connection
@@ -108,6 +125,15 @@ namespace Sessions
 						return nullptr;
 					case WSAEWOULDBLOCK:
 						return nullptr;
+#elif defined(__POSIX__)
+					case EINVAL:
+					case ESHUTDOWN:
+						//See WSAESHUTDOWN
+						//Console.WriteLn("DEV9: TCP: Recv() on shutdown socket");
+						return nullptr;
+					case EWOULDBLOCK:
+						return nullptr;
+#endif
 					case 0:
 						break;
 					default:
@@ -121,9 +147,14 @@ namespace Sessions
 				{
 					int result = shutdown(client, SD_RECEIVE);
 					if (result == SOCKET_ERROR)
-						Console.Error("DEV9: TCP: Shutdown SD_RECEIVE Error: %d", WSAGetLastError());
+						Console.Error("DEV9: TCP: Shutdown SD_RECEIVE Error: %d",
+#ifdef _WIN32
+							WSAGetLastError());
+#elif defined(__POSIX__)
+							errno);
+#endif
 
-                    switch (state)
+					switch (state)
 					{
 						case TCP_State::Connected:
 							return CloseByRemoteStage1();
@@ -195,9 +226,15 @@ namespace Sessions
 		else
 		{
 			int error = 0;
+#ifdef _WIN32
 			int len = sizeof(error);
 			if (getsockopt(client, SOL_SOCKET, SO_ERROR, (char*)&error, &len) < 0)
 				Console.Error("DEV9: TCP: Unkown TCP Connection Error (getsockopt Error: %d)", WSAGetLastError());
+#elif defined(__POSIX__)
+			socklen_t len = sizeof(error);
+			if (getsockopt(client, SOL_SOCKET, SO_ERROR, (char*)&error, &len) < 0)
+				Console.Error("DEV9: TCP: Unkown TCP Connection Error (getsockopt Error: %d)", errno);
+#endif
 			else
 				Console.Error("DEV9: TCP: Send Error: %d", error);
 
