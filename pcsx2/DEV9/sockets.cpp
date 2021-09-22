@@ -15,12 +15,12 @@
 
 #include "PrecompiledHeader.h"
 
-
+#ifdef __POSIX__
+#include <arpa/inet.h>
 #ifdef __linux__
 #include <sys/ioctl.h>
 #include <net/if.h>
-#elif defined(__POSIX__)
-#include <arpa/inet.h>
+#endif
 #endif
 
 #include "sockets.h"
@@ -50,8 +50,13 @@ std::vector<AdapterEntry> SocketAdapter::GetAdapters()
 	std::vector<AdapterEntry> nic;
 	AdapterEntry t;
 	t.type = NetApi::Sockets;
+#ifdef _WIN32
 	t.name = L"Auto";
 	t.guid = L"Auto";
+#else
+	t.name = "Auto";
+	t.guid = "Auto";
+#endif
 	nic.push_back(t);
 	return nic;
 }
@@ -127,7 +132,7 @@ SocketAdapter::SocketAdapter()
 #elif defined(__POSIX__)
 		sockaddr* address = nullptr;
 
-		address = adapter->ifa_addr;
+		address = adapter.ifa_addr;
 
 		if (address != nullptr)
 		{
@@ -214,7 +219,7 @@ SocketAdapter::SocketAdapter()
 	u8 hostMAC[6];
 	u8 newMAC[6];
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	memcpy(hostMAC, adapter.PhysicalAddress, 6);
 #elif defined(__linux__)
 	struct ifreq ifr;
@@ -224,7 +229,7 @@ SocketAdapter::SocketAdapter()
 		memcpy(hostMAC, ifr.ifr_hwaddr.sa_data, 6);
 	else
 		Console.Error("Could not get MAC address for adapter: %s", adapter.ifa_name);
-	close(fd);
+	::close(fd);
 #else
 	Console.Error("Could not get MAC address for adapter, OS not supported");
 #endif
@@ -366,7 +371,7 @@ bool SocketAdapter::GetIfAutoAdapter(ifaddrs* adapter, ifaddrs** buffer)
 				hasIPv4 = true;
 
 #ifdef __linux__
-			std::vector<IP_Address> gateways = DHCP_Server::GetGatewaysLinux(adapter->ifa_name);
+			std::vector<IP_Address> gateways = InternalServers::DHCP_Server::GetGatewaysLinux(adapter->ifa_name);
 
 			if (gateways.size() > 0)
 				hasGateway = true;
