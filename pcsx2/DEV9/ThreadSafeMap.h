@@ -28,7 +28,6 @@ class ThreadSafeMap
 	std::unordered_map<Key, T> map;
 
 public:
-	template <class Key, class T>
 	void Add(Key key, T value)
 	{
 		std::unique_lock modifyLock(accessMutex);
