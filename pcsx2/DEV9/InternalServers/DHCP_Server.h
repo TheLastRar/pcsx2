@@ -55,7 +55,7 @@ namespace InternalServers
 #ifdef _WIN32
 		void Init(PIP_ADAPTER_ADDRESSES adapter, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
 #elif defined(__POSIX__)
-		void Init(ifaddrs* adapter PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
+		void Init(ifaddrs* adapter, PacketReader::IP::IP_Address ipOverride = {0}, PacketReader::IP::IP_Address subnetOverride = {0}, PacketReader::IP::IP_Address gatewayOvveride = {0});
 #endif
 
 		PacketReader::IP::UDP::UDP_Packet* Recv();
