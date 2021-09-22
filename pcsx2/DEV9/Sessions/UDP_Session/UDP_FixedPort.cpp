@@ -237,7 +237,7 @@ namespace Sessions
 #ifdef _WIN32
 			closesocket(client);
 #elif defined(__POSIX__)
-			close(client);
+			::close(client);
 #endif
 			client = INVALID_SOCKET;
 		}
