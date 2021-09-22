@@ -81,6 +81,7 @@ NetAdapter* GetNetAdapter()
 		case NetApi::PCAP_Bridged:
 		case NetApi::PCAP_Switched:
 			na = static_cast<NetAdapter*>(new PCAPAdapter());
+			break;
 		case NetApi::Sockets:
 			na = static_cast<SocketAdapter*>(new SocketAdapter());
 			break;
