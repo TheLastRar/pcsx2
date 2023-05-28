@@ -12,7 +12,6 @@
 
 #ifdef __POSIX__
 #include <unistd.h>
-#include <vector>
 #include <fstream>
 #include <net/if.h>
 #include <sys/socket.h>
