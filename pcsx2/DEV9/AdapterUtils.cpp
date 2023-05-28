@@ -8,7 +8,6 @@
 #include "common/StringUtil.h"
 
 #ifdef __POSIX__
-#include <vector>
 #include <fstream>
 #include <net/if.h>
 #include <sys/socket.h>
