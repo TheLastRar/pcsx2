@@ -255,6 +255,33 @@ bool AdapterUtils::GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer)
 }
 #endif
 
+// Internal Helper Functions
+#ifdef __POSIX__
+int GetIfAdapterIndex(AdapterUtils::Adapter* adapter)
+{
+	struct if_nameindex* ifNI;
+	ifNI = if_nameindex();
+	if (ifNI == nullptr)
+	{
+		Console.Error("DEV9: if_nameindex Failed");
+		return -1;
+	}
+
+	struct if_nameindex* i = ifNI;
+	while (i->if_index != 0 && i->if_name != nullptr)
+	{
+		if (strcmp(i->if_name, adapter->ifa_name) == 0)
+		{
+			if_freenameindex(ifNI);
+			return i->if_index;
+		}
+		i++;
+	}
+	if_freenameindex(ifNI);
+	return -1;
+}
+#endif
+
 // AdapterMAC.
 #ifdef _WIN32
 std::optional<MAC_Address> AdapterUtils::GetAdapterMAC(const Adapter* adapter)
@@ -444,27 +471,7 @@ std::vector<IP_Address> AdapterUtils::GetGateways(const Adapter* adapter)
 	std::vector<IP_Address> collection;
 
 	// Get index for our adapter by matching the adapter name.
-	int ifIndex = -1;
-
-	struct if_nameindex* ifNI;
-	ifNI = if_nameindex();
-	if (ifNI == nullptr)
-	{
-		Console.Error("DEV9: if_nameindex Failed");
-		return collection;
-	}
-
-	struct if_nameindex* i = ifNI;
-	while (i->if_index != 0 && i->if_name != nullptr)
-	{
-		if (strcmp(i->if_name, adapter->ifa_name) == 0)
-		{
-			ifIndex = i->if_index;
-			break;
-		}
-		i++;
-	}
-	if_freenameindex(ifNI);
+	int ifIndex = GetIfAdapterIndex(adapter);
 
 	// Check if we found the adapter.
 	if (ifIndex == -1)
