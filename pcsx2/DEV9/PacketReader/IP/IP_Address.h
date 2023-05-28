@@ -19,3 +19,15 @@ namespace PacketReader::IP
 		bool operator!=(const IP_Address& other) const { return this->integer != other.integer; }
 	};
 } // namespace PacketReader::IP
+
+namespace std
+{
+	template <>
+	struct hash<PacketReader::IP::IP_Address>
+	{
+		size_t operator()(const PacketReader::IP::IP_Address& ip) const
+		{
+			return hash<u32>()(ip.integer);
+		}
+	};
+} // namespace std
