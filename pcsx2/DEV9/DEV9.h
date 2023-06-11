@@ -221,7 +221,7 @@ extern int ThreadRun;
 #define	  SMAP_TXFIFO_RESET	(1<<0)
 #define   SMAP_TXFIFO_DMAEN	(1<<1)
 #define	SMAP_R_TXFIFO_WR_PTR		(SMAP_REGBASE + 0xf04)
-#define SMAP_R_TXFIFO_SIZE		(SMAP_REGBASE + 0xf08)
+#define SMAP_R_TXFIFO_SIZE		(SMAP_REGBASE + 0xf08) /* No of blocks for DMA xfer, blocks are 128bytes or 64bytes */
 #define	SMAP_R_TXFIFO_FRAME_CNT		(SMAP_REGBASE + 0xf0C)
 #define	SMAP_R_TXFIFO_FRAME_INC		(SMAP_REGBASE + 0xf10)
 #define	SMAP_R_TXFIFO_DATA		(SMAP_REGBASE + 0x1000)
@@ -230,7 +230,7 @@ extern int ThreadRun;
 #define	  SMAP_RXFIFO_RESET	(1<<0)
 #define   SMAP_RXFIFO_DMAEN	(1<<1)
 #define	SMAP_R_RXFIFO_RD_PTR		(SMAP_REGBASE + 0xf34)
-#define SMAP_R_RXFIFO_SIZE		(SMAP_REGBASE + 0xf38)
+#define SMAP_R_RXFIFO_SIZE		(SMAP_REGBASE + 0xf38) /* No of blocks for DMA xfer, blocks are 128bytes or 64bytes */
 #define	SMAP_R_RXFIFO_FRAME_CNT		(SMAP_REGBASE + 0xf3C)
 #define	SMAP_R_RXFIFO_FRAME_DEC		(SMAP_REGBASE + 0xf40)
 #define	SMAP_R_RXFIFO_DATA		(SMAP_REGBASE + 0x1100)

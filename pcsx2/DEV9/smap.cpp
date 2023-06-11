@@ -93,7 +93,7 @@ void rx_process(NetPacket* pk)
 
 	if (!(pbd->ctrl_stat & SMAP_BD_RX_EMPTY))
 	{
-		Console.Error("DEV9: ERROR : Discarding %d bytes (RX%d not ready)", bytes, dev9.rxbdi);
+		Console.Error("DEV9: ERROR: Discarding %d bytes (RX%d not ready)", bytes, dev9.rxbdi);
 		return;
 	}
 
@@ -135,7 +135,7 @@ void tx_process()
 {
 	//we loop based on count ? or just *use* it ?
 	u32 cnt = dev9Ru8(SMAP_R_TXFIFO_FRAME_CNT);
-	//spams// printf("tx_process : %u cnt frames !\n",cnt);
+	//spams// printf("tx_process: %u cnt frames !\n",cnt);
 
 	NetPacket pk;
 	u32 fc = 0;
@@ -145,17 +145,17 @@ void tx_process()
 
 		if (!(pbd->ctrl_stat & SMAP_BD_TX_READY))
 		{
-			Console.Error("DEV9: SMAP: ERROR : !pbd->ctrl_stat&SMAP_BD_TX_READY");
+			Console.Error("DEV9: SMAP: ERROR: !pbd->ctrl_stat&SMAP_BD_TX_READY");
 			break;
 		}
 		if (pbd->length & 3)
 		{
-			//spams// emu_printf("WARN : pbd->length not aligned %u\n",pbd->length);
+			//spams// emu_printf("WARN: pbd->length not aligned %u\n",pbd->length);
 		}
 
 		if (pbd->length > 1514)
 		{
-			Console.Error("DEV9: SMAP: ERROR : Trying to send packet too big.");
+			Console.Error("DEV9: SMAP: ERROR: Trying to send packet too big.");
 		}
 		else
 		{
@@ -232,7 +232,7 @@ void tx_process()
 	//if some error/early exit signal TXDNV
 	if (fc != cnt || cnt == 0)
 	{
-		Console.Error("DEV9: SMAP: WARN : (fc!=cnt || cnt==0) but packet send request was made oO..");
+		Console.Error("DEV9: SMAP: WARN: (fc!=cnt || cnt==0) but packet send request was made oO..");
 		_DEV9irq(SMAP_INTR_TXDNV, 0);
 	}
 	//if we actualy send something send TXEND
@@ -321,22 +321,29 @@ u8 smap_read8(u32 addr)
 {
 	switch (addr)
 	{
+		case SMAP_R_TXFIFO_CTRL:
+			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_CTRL 8bit read %x", dev9Ru16(addr));
+			break;
 		case SMAP_R_TXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 8");
+			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT 8bit read %x", dev9Ru16(addr));
+			break;
+
+		case SMAP_R_RXFIFO_CTRL:
+			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_CTRL 8bit read %x", dev9Ru16(addr));
 			break;
 		case SMAP_R_RXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 8");
+			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT 8bit read %x", dev9Ru16(addr));
 			break;
 
 		case SMAP_R_BD_MODE:
+			DevCon.WriteLn("DEV9: SMAP_R_BD_MODE 8bit read %x", dev9.bd_swap);
 			return dev9.bd_swap;
 
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
+			DevCon.WriteLn("DEV9: SMAP: Unknown 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
 			return dev9Ru8(addr);
 	}
 
-	DevCon.WriteLn("DEV9: SMAP : error , 8 bit read @ %X,v=%X", addr, dev9Ru8(addr));
 	return dev9Ru8(addr);
 }
 
@@ -346,81 +353,57 @@ u16 smap_read16(u32 addr)
 	if (addr >= SMAP_BD_TX_BASE && addr < (SMAP_BD_TX_BASE + SMAP_BD_SIZE))
 	{
 		if (dev9.bd_swap)
-			return (rv << 8) | (rv >> 8);
-		return rv;
+			rv = (rv << 8) | (rv >> 8);
 		/*
 		switch (addr & 0x7)
 		{
-		case 0: // ctrl_stat
-			hard = dev9Ru16(addr);
-			//DevCon.WriteLn("DEV9: TX_CTRL_STAT[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 2: // unknown
-			hard = dev9Ru16(addr);
-			//DevCon.WriteLn("DEV9: TX_UNKNOWN[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 4: // length
-			hard = dev9Ru16(addr);
-			DevCon.WriteLn("DEV9: TX_LENGTH[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 6: // pointer
-			hard = dev9Ru16(addr);
-			DevCon.WriteLn("DEV9: TX_POINTER[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
+			case 0: // ctrl_stat
+				//DevCon.WriteLn("DEV9: TX_CTRL_STAT[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 2: // unknown
+				DevCon.WriteLn("DEV9: TX_UNKNOWN[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 4: // length
+				DevCon.WriteLn("DEV9: TX_LENGTH[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 6: // pointer
+				DevCon.WriteLn("DEV9: TX_POINTER[%d]: read %x", (addr - SMAP_BD_TX_BASE) / 8, dev9Ru16(addr));
+				break;
 		}
 		*/
+		return rv;
 	}
 	else if (addr >= SMAP_BD_RX_BASE && addr < (SMAP_BD_RX_BASE + SMAP_BD_SIZE))
 	{
 		if (dev9.bd_swap)
-			return (rv << 8) | (rv >> 8);
-		return rv;
+			rv = (rv << 8) | (rv >> 8);
 		/*
 		switch (addr & 0x7)
 		{
-		case 0: // ctrl_stat
-			hard = dev9Ru16(addr);
-			//DevCon.WriteLn("DEV9: RX_CTRL_STAT[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 2: // unknown
-			hard = dev9Ru16(addr);
-			//DevCon.WriteLn("DEV9: RX_UNKNOWN[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 4: // length
-			hard = dev9Ru16(addr);
-			DevCon.WriteLn("DEV9: RX_LENGTH[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
-		case 6: // pointer
-			hard = dev9Ru16(addr);
-			DevCon.WriteLn("DEV9: RX_POINTER[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, hard);
-			if(dev9.bd_swap)
-				return (hard<<8)|(hard>>8);
-			return hard;
+			case 0: // ctrl_stat
+				//DevCon.WriteLn("DEV9: RX_CTRL_STAT[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 2: // unknown
+				DevCon.WriteLn("DEV9: RX_UNKNOWN[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 4: // length
+				DevCon.WriteLn("DEV9: RX_LENGTH[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, dev9Ru16(addr));
+				break;
+			case 6: // pointer
+				DevCon.WriteLn("DEV9: RX_POINTER[%d]: read %x", (addr - SMAP_BD_RX_BASE) / 8, dev9Ru16(addr));
+				break;
 		}
 		*/
+		return rv;
 	}
 #if (0)
 	switch (addr)
 	{
 		case SMAP_R_TXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 16");
+			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT 16bit read %x", dev9Ru16(addr));
 			return dev9Ru16(addr);
 		case SMAP_R_RXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 16");
+			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT 16bit read %x", dev9Ru16(addr));
 			return dev9Ru16(addr);
 		case SMAP_R_EMAC3_MODE0_L:
 			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE0_L 16bit read %x", dev9Ru16(addr));
@@ -483,10 +466,10 @@ u16 smap_read16(u32 addr)
 			return dev9Ru16(addr);
 
 		case SMAP_R_EMAC3_STA_CTRL_H:
-			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_H 16bit read %x", dev9Ru16(addr));
+			DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_STA_CTRL_H 16bit read %x", dev9Ru16(addr));
 			return dev9Ru16(addr);
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 16 bit read @ %X,v=%X", addr, dev9Ru16(addr));
+			DevCon.WriteLn("DEV9: SMAP: Unknown 16 bit read @ %X,v=%X", addr, dev9Ru16(addr));
 			return dev9Ru16(addr);
 	}
 #endif
@@ -504,10 +487,10 @@ u32 smap_read32(u32 addr)
 	switch (addr)
 	{
 		case SMAP_R_TXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT read 32");
+			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_FRAME_CNT 32bit read value %x", dev9Ru32(addr));
 			return dev9Ru32(addr);
 		case SMAP_R_RXFIFO_FRAME_CNT:
-			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT read 32");
+			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_FRAME_CNT 32bit read value %x", dev9Ru32(addr));
 			return dev9Ru32(addr);
 		case SMAP_R_EMAC3_STA_CTRL_L:
 			DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_L 32bit read value %x", dev9Ru32(addr));
@@ -525,7 +508,7 @@ u32 smap_read32(u32 addr)
 			return rv;
 		}
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 32 bit read @ %X,v=%X", addr, dev9Ru32(addr));
+			DevCon.WriteLn("DEV9: SMAP: Unknown 32 bit read @ %X,v=%X", addr, dev9Ru32(addr));
 			return dev9Ru32(addr);
 	}
 }
@@ -595,7 +578,7 @@ void smap_write8(u32 addr, u8 value)
 			}
 			return;
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 8 bit write @ %X,v=%X", addr, value);
+			DevCon.WriteLn("DEV9: SMAP: Unknown 8 bit write @ %X,v=%X", addr, value);
 			dev9Ru8(addr) = value;
 			return;
 	}
@@ -611,56 +594,46 @@ void smap_write16(u32 addr, u16 value)
 		/*
 		switch (addr & 0x7)
 		{
-		case 0: // ctrl_stat
-			DevCon.WriteLn("DEV9: TX_CTRL_STAT[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
-			//hacky
-			dev9Ru16(addr) = value;
-			return;
-		case 2: // unknown
-			//DevCon.WriteLn("DEV9: TX_UNKNOWN[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
-			dev9Ru16(addr) = value;
-			return;
-		case 4: // length
-			DevCon.WriteLn("DEV9: TX_LENGTH[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
-			dev9Ru16(addr) = value;
-			return;
-		case 6: // pointer
-			DevCon.WriteLn("DEV9: TX_POINTER[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
-			dev9Ru16(addr) = value;
-			return;
+			case 0: // ctrl_stat
+				DevCon.WriteLn("DEV9: TX_CTRL_STAT[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+				return;
+			case 2: // unknown
+				//DevCon.WriteLn("DEV9: TX_UNKNOWN[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+				return;
+			case 4: // length
+				DevCon.WriteLn("DEV9: TX_LENGTH[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+				return;
+			case 6: // pointer
+				DevCon.WriteLn("DEV9: TX_POINTER[%d]: write %x", (addr - SMAP_BD_TX_BASE) / 8, value);
+				return;
 		}
 		*/
 		return;
 	}
 	else if (addr >= SMAP_BD_RX_BASE && addr < (SMAP_BD_RX_BASE + SMAP_BD_SIZE))
 	{
-		//int rx_index=(addr - SMAP_BD_RX_BASE)>>3;
 		if (dev9.bd_swap)
 			value = (value >> 8) | (value << 8);
 		dev9Ru16(addr) = value;
 		/*
 		switch (addr & 0x7)
 		{
-		case 0: // ctrl_stat
-			DevCon.WriteLn("DEV9: RX_CTRL_STAT[%d]: write %x", rx_index, value);
-			dev9Ru16(addr) = value;
-			if(value&0x8000)
-			{
-				DevCon.WriteLn("DEV9:  * * PACKET READ COMPLETE:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
-			}
-			return;
-		case 2: // unknown
-			//DevCon.WriteLn("DEV9: RX_UNKNOWN[%d]: write %x", rx_index, value);
-			dev9Ru16(addr) = value;
-			return;
-		case 4: // length
-			DevCon.WriteLn("DEV9: RX_LENGTH[%d]: write %x", rx_index, value);
-			dev9Ru16(addr) = value;
-			return;
-		case 6: // pointer
-			DevCon.WriteLn("DEV9: RX_POINTER[%d]: write %x", rx_index, value);
-			dev9Ru16(addr) = value;
-			return;
+			case 0: // ctrl_stat
+				DevCon.WriteLn("DEV9: RX_CTRL_STAT[%d]: write %x", (addr - SMAP_BD_RX_BASE) >> 3, value);
+				if (value & 0x8000)
+				{
+					DevCon.WriteLn("DEV9:  * * PACKET READ COMPLETE:   rd_ptr=%d, wr_ptr=%d", dev9Ru32(SMAP_R_RXFIFO_RD_PTR), dev9.rxfifo_wr_ptr);
+				}
+				return;
+			case 2: // unknown
+				DevCon.WriteLn("DEV9: RX_UNKNOWN[%d]: write %x", (addr - SMAP_BD_RX_BASE) >> 3, value);
+				return;
+			case 4: // length
+				DevCon.WriteLn("DEV9: RX_LENGTH[%d]: write %x", (addr - SMAP_BD_RX_BASE) >> 3, value);
+				return;
+			case 6: // pointer
+				DevCon.WriteLn("DEV9: RX_POINTER[%d]: write %x", (addr - SMAP_BD_RX_BASE) >> 3, value);
+				return;
 		}
 		*/
 		return;
@@ -669,17 +642,31 @@ void smap_write16(u32 addr, u16 value)
 	switch (addr)
 	{
 		case SMAP_R_INTR_CLR:
-			//DevCon.WriteLn("DEV9: SMAP: SMAP_R_INTR_CLR 16bit write %x", value);
+			//DevCon.WriteLn("DEV9: SMAP_R_INTR_CLR 16bit write %x", value);
 			dev9.irqcause &= ~value;
 			return;
 
 		case SMAP_R_TXFIFO_WR_PTR:
-			DevCon.WriteLn("DEV9: SMAP: SMAP_R_TXFIFO_WR_PTR 16bit write %x", value);
+			DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_WR_PTR 16bit write %x", value);
 			dev9Ru16(addr) = value;
 			return;
+		case SMAP_R_TXFIFO_SIZE:
+			//DevCon.WriteLn("DEV9: SMAP_R_TXFIFO_SIZE 16bit write %x", value);
+			dev9Ru16(addr) = value;
+			return;
+
+		case SMAP_R_RXFIFO_RD_PTR:
+			DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_RD_PTR 16bit write %x", value);
+			dev9Ru16(addr) = value;
+			return;
+		case SMAP_R_RXFIFO_SIZE:
+			//DevCon.WriteLn("DEV9: SMAP_R_RXFIFO_SIZE 16bit write %x", value);
+			dev9Ru16(addr) = value;
+			return;
+
 #define EMAC3_L_WRITE(name)                                   \
 	case name:                                                \
-		/* DevCon.WriteLn("DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
+		/* DevCon.WriteLn("DEV9: " #name " 16 bit write %x", value);*/ \
 		dev9Ru16(addr) = value;                               \
 		return;
 	// clang-format off
@@ -716,7 +703,7 @@ void smap_write16(u32 addr, u16 value)
 
 #define EMAC3_H_WRITE(name)                                   \
 	case name:                                                \
-		/* DevCon.WriteLn("DEV9: SMAP: " #name " 16 bit write %x", value);*/ \
+		/* DevCon.WriteLn("DEV9: " #name " 16 bit write %x", value);*/ \
 		dev9Ru16(addr) = value;                               \
 		emac3_write(addr - 2);                                \
 		return;
@@ -753,11 +740,11 @@ void smap_write16(u32 addr, u16 value)
 	// clang-format on
 			/*
 	case SMAP_R_EMAC3_MODE0_L:
-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_MODE0 write %x", value);
+		DevCon.WriteLn("DEV9: SMAP_R_EMAC3_MODE0 write %x", value);
 		dev9Ru16(addr) = value;
 		return;
 	case SMAP_R_EMAC3_TxMODE0_L:
-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_TxMODE0_L 16bit write %x", value);
+		DevCon.WriteLn("DEV9: SMAP_R_EMAC3_TxMODE0_L 16bit write %x", value);
 		dev9Ru16(addr) = value;
 		return;
 	case SMAP_R_EMAC3_TxMODE1_L:
@@ -775,13 +762,13 @@ void smap_write16(u32 addr, u16 value)
 		dev9Ru16(addr) = value;
 		return;
 	case SMAP_R_EMAC3_STA_CTRL_H:
-		DevCon.WriteLn("DEV9: SMAP: SMAP_R_EMAC3_STA_CTRL_H 16bit write %x", value);
+		DevCon.WriteLn("DEV9: SMAP_R_EMAC3_STA_CTRL_H 16bit write %x", value);
 		dev9Ru16(addr) = value;
 		return;
 		*/
 
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 16 bit write @ %X,v=%X", addr, value);
+			DevCon.WriteLn("DEV9: SMAP: Unknown 16 bit write @ %X,v=%X", addr, value);
 			dev9Ru16(addr) = value;
 			return;
 	}
@@ -803,7 +790,7 @@ void smap_write32(u32 addr, u32 value)
 			dev9Ru32(SMAP_R_TXFIFO_WR_PTR) = (dev9Ru32(SMAP_R_TXFIFO_WR_PTR) + 4) & 16383;
 			return;
 		default:
-			DevCon.WriteLn("DEV9: SMAP : Unknown 32 bit write @ %X,v=%X", addr, value);
+			DevCon.WriteLn("DEV9: SMAP: Unknown 32 bit write @ %X,v=%X", addr, value);
 			dev9Ru32(addr) = value;
 			return;
 	}
