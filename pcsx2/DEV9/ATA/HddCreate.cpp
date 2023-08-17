@@ -184,15 +184,14 @@ void HddCreate::WriteImage(const std::string& hddPath, u64 fileBytes, u64 zeroSi
 	const s32 reqMiB = (fileBytes + ((1024 * 1024) - 1)) / (1024 * 1024);
 	const s32 zeroMiB = (zeroSizeBytes + ((1024 * 1024) - 1)) / (1024 * 1024);
 
-	s32 iMiB = 0;
-	if (sparseSupported)
-		iMiB = reqMiB - zeroMiB;
+	const s32 writeMiB = sparseSupported ? zeroMiB : reqMiB;
+	const u64 writeBytes = sparseSupported ? zeroSizeBytes : fileBytes;
 
-	for (; iMiB < reqMiB; iMiB++)
+	for (s32 iMiB = 0; iMiB < writeMiB; iMiB++)
 	{
 		// Round down.
-		const s32 req4Kib = std::min<s32>(1024, (fileBytes / 1024) - (u64)iMiB * 1024) / 4;
-		for (s32 i4kb = 0; i4kb < req4Kib; i4kb++)
+		const s32 write4Kib = std::min<s32>(1024, (writeBytes / 1024) - (u64)iMiB * 1024) / 4;
+		for (s32 i4kb = 0; i4kb < write4Kib; i4kb++)
 		{
 			if (std::fwrite(buff, buffsize, 1, newImage.get()) != 1)
 			{
@@ -213,9 +212,9 @@ void HddCreate::WriteImage(const std::string& hddPath, u64 fileBytes, u64 zeroSi
 			}
 		}
 
-		if (req4Kib != 256)
+		if (write4Kib != 256)
 		{
-			const s32 remainingBytes = fileBytes - (((u64)iMiB) * (1024 * 1024) + req4Kib * 4096);
+			const s32 remainingBytes = writeBytes - (((u64)iMiB) * (1024 * 1024) + write4Kib * 4096);
 			if (std::fwrite(buff, remainingBytes, 1, newImage.get()) != 1)
 			{
 				std::fflush(newImage.get());
