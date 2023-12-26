@@ -245,6 +245,17 @@ namespace Sessions
 					errno);
 #endif
 
+			const uint rcvBuffer = 4096; //ULONG
+			ret = setsockopt(client, SOL_SOCKET, SO_RCVBUF, (const char*)&rcvBuffer, sizeof(rcvBuffer));
+
+			if (ret != 0)
+				Console.Error("DEV9: UDP: Failed to set SO_RCVBUF. Error: %d",
+#ifdef _WIN32
+					WSAGetLastError());
+#elif defined(__POSIX__)
+					errno);
+#endif
+
 			if (adapterIP.integer != 0)
 			{
 				sockaddr_in endpoint{0};
