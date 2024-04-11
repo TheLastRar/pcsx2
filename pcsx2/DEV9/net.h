@@ -33,6 +33,7 @@ struct ConfigDEV9;
 // first three recognized by Xlink as Sony PS2
 const PacketReader::MAC_Address defaultMAC = {{{0x00, 0x04, 0x1F, 0x82, 0x30, 0x31}}};
 
+#pragma pack(push, 1)
 struct NetPacket
 {
 	NetPacket() { size = 0; }
@@ -43,8 +44,12 @@ struct NetPacket
 	}
 
 	int size;
-	char buffer[2048 - sizeof(int)]; //1536 is realy needed, just pad up to 2048 bytes :)
+	// The ethernet header is 14 bytes long, which would leave the payload missaligned
+	// offset the alignement of the buffer to ensure payload is aligned to 4 byte boundary
+	u16 pad;
+	char buffer[2048 - sizeof(int) - sizeof(u16)]; //1536 is realy needed, just pad up to 2048 bytes :)
 };
+#pragma pack(pop)
 /*
 extern mtfifo<NetPacket*> rx_fifo;
 extern mtfifo<NetPacket*> tx_fifo;
