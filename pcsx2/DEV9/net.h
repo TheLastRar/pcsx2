@@ -36,18 +36,21 @@ const PacketReader::MAC_Address defaultMAC = {{{0x00, 0x04, 0x1F, 0x82, 0x30, 0x
 #pragma pack(push, 1)
 struct NetPacket
 {
-	NetPacket() { size = 0; }
-	NetPacket(void* ptr, int sz)
-	{
-		size = sz;
-		memcpy(buffer, ptr, sz);
-	}
-
 	int size;
 	// The ethernet header is 14 bytes long, which would leave the payload missaligned
 	// offset the alignement of the buffer to ensure payload is aligned to 4 byte boundary
 	u16 pad;
 	char buffer[2048 - sizeof(int) - sizeof(u16)]; //1536 is realy needed, just pad up to 2048 bytes :)
+
+	NetPacket()
+		: size{0}
+	{
+	}
+	NetPacket(void* ptr, int sz)
+	{
+		size = sz;
+		memcpy(buffer, ptr, sz);
+	}
 };
 #pragma pack(pop)
 /*
