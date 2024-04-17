@@ -14,6 +14,8 @@
 #define ICMP_SOCKETS_BSD
 #endif
 
+#define ALLOW_PING_CLI
+
 #include <algorithm>
 #include <bit>
 #include <thread>
@@ -27,6 +29,16 @@
 #include <linux/errqueue.h>
 #endif
 #include <unistd.h>
+
+#ifdef ALLOW_PING_CLI
+#include <arpa/inet.h>
+#include <fcntl.h>
+
+#include <sys/wait.h>
+#include "common/StringUtil.h"
+
+extern char** environ;
+#endif
 #endif
 
 #include "ICMP_Session.h"
@@ -154,8 +166,18 @@ namespace Sessions
 				}
 
 				DevCon.WriteLn("DEV9: ICMP: Failed To Open RAW Socket");
-
+#ifdef ALLOW_PING_CLI
+				icmpConnectionKind = ICMP_Session::Ping::PingType::CLI;
+#endif
 				[[fallthrough]];
+#endif
+#ifdef ALLOW_PING_CLI
+			case (PingType::CLI):
+#ifdef __APPLE__
+				pxAssert(false);
+#endif
+				icmpResponseBufferLen = requestSize;
+				break;
 #endif
 			default:
 				Console.Error("DEV9: ICMP: Failed To Ping");
@@ -176,6 +198,10 @@ namespace Sessions
 			case (PingType::ICMP):
 			case (PingType::RAW):
 				return icmpSocket != -1;
+#ifdef ALLOW_PING_CLI
+			case (PingType::CLI):
+				return true;
+#endif
 			default:
 				return false;
 		}
@@ -492,6 +518,147 @@ namespace Sessions
 					}
 				}
 			}
+#ifdef ALLOW_PING_CLI
+			case (PingType::CLI):
+			{
+				char buffer[128];
+				ssize_t readSize;
+				while ((readSize = read(outRedirectPipe[0], buffer, 128)) > 0)
+					pingStdOut += std::string(buffer, readSize);
+
+				if (readSize == 0)
+				{
+					int status = -1;
+					pid_t ret = waitpid(pingPid, &status, 0);
+					::close(outRedirectPipe[0]);
+					pingPid = -1;
+
+					if (ret == -1)
+					{
+						int err = errno;
+						Console.Error("DEV9: ICMP: Failed to waitpid, %d", err);
+						result.type = -1;
+						result.code = err;
+						return &result;
+					}
+					if (status != 0)
+					{
+						Console.Error("DEV9: ICMP: Failed to ping, %d", status);
+						result.type = -1;
+						result.code = status;
+						return &result;
+					}
+
+					// Ping result OK, time to read output
+					// 64 bytes from 1.1.1.1: icmp_seq=1 ttl=59 time=17.0 ms
+					// From 172.18.128.1 icmp_seq=1 Time to live exceeded
+					//                              Frag reassembly time exceeded
+					// What is timeout message (It's just blank...)
+					std::vector<std::string_view> lines = StringUtil::SplitString(pingStdOut, '\n');
+					if (lines.size() < 2)
+					{
+						Console.Error("DEV9: ICMP: Failed to split string");
+						Console.Error(pingStdOut.c_str());
+						Console.WriteLn();
+						result.type = -1;
+						result.code = 0;
+						return &result;
+					}
+					if (lines[1].length() > 0)
+					{
+						std::vector<std::string_view> words = StringUtil::SplitString(lines[1], ' ');
+						if (words[0] == "From")
+						{
+							// Packet Failed to reach
+							// Get address
+							if (inet_pton(AF_INET, std::string(words[1]).c_str(), &result.address) != 1)
+							{
+								Console.Error("DEV9: ICMP: Failed to parse IP");
+								result.type = -1;
+								result.code = 0;
+								return &result;
+							}
+
+							// Translate error
+							if (words.size() == 7 &&
+								(words[3] == "Time" && words[4] == "to" && words[5] == "live" && words[6] == "exceeded"))
+							{
+								result.type = 11;
+								result.code = 0;
+								return &result;
+							}
+							if (words.size() == 7 &&
+								(words[3] == "Frag" && words[4] == "reassembly" && words[5] == "time" && words[6] == "exceeded"))
+							{
+								result.type = 11;
+								result.code = 1;
+								return &result;
+							}
+
+							// Unkown Error
+							Console.Error("DEV9: ICMP: Unknown Response");
+							Console.Error(pingStdOut.c_str());
+							result.type = -1;
+							result.code = 0;
+							return &result;
+						}
+						else if (words[1] == "bytes")
+						{
+							// Get address (also removes traling ':')
+							if (inet_pton(AF_INET, std::string(words[3].substr(0, words[3].length() - 1)).c_str(), &result.address) != 1)
+							{
+								Console.Error("DEV9: ICMP: Failed to parse IP");
+								result.type = -1;
+								result.code = 0;
+								return &result;
+							}
+
+							// Packet succeeded to reach
+							// Note, we can get request size from the string, but we size response buffer to match anyway
+							result.type = 0;
+							result.code = 0;
+							result.dataLength = icmpResponseBufferLen;
+							// Rely on implicit object creation for u8
+							result.data = reinterpret_cast<u8*>(icmpResponseBuffer.get());
+							return &result;
+						}
+						else
+						{
+							Console.Error("DEV9: ICMP: Unknown Response");
+							Console.Error(pingStdOut.c_str());
+							result.type = -1;
+							result.code = 0;
+							return &result;
+						}
+					}
+					else
+					{
+						// timeout
+						// Return nothing
+						result.type = -2;
+						result.code = 0;
+						return &result;
+					}
+				}
+				else // readSize == -1
+				{
+					// Check if we are blocking
+					int err = errno;
+					if (err == EAGAIN)
+						return nullptr;
+					else
+					{
+						Console.Error("DEV9: ICMP: Failed to Read Pipe, %d", err);
+						kill(pingPid, SIGKILL);
+						::close(outRedirectPipe[0]);
+						pingPid = -1;
+						result.type = -1;
+						result.code = err;
+						return &result;
+					}
+				}
+			}
+#endif
 			default:
 				result.type = -1;
 				result.code = 0;
@@ -644,6 +811,187 @@ namespace Sessions
 
 				return true;
 			}
+#ifdef ALLOW_PING_CLI
+			case (PingType::CLI):
+			{
+				// See this for CLI based ping
+				// https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/Net/NetworkInformation/UnixCommandLinePing.cs
+
+				// We need provide the "LC_ALL=C" enviroment variable to ensure we can read the output
+				// Only execvpe allows both enviroment variables + shell like locating
+				// but that is a gnu extension
+
+				// Find path to ping
+				const char* paths[] = {"/bin/ping", "/sbin/ping", "/usr/bin/ping"};
+				const char* pingPath = nullptr;
+				for (size_t i = 0; i < std::size(paths); i++)
+				{
+					if (access(paths[i], F_OK) == 0)
+					{
+						pingPath = paths[i];
+						break;
+					}
+				}
+
+				if (pingPath == nullptr)
+				{
+					Console.Error("DEV9: ICMP: Failed to Find Pipe");
+					return false;
+				}
+
+				if (pipe(outRedirectPipe) == -1)
+				{
+					Console.Error("DEV9: ICMP: Failed to Create Pipe, %d", errno);
+					return false;
+				}
+
+				// Copy to response
+				memcpy(icmpResponseBuffer.get(), parPayload->data, parPayload->GetLength());
+
+				if (pipe(outRedirectPipe) == -1)
+				{
+					Console.Error("DEV9: ICMP: Failed to Create Pipe, %d", errno);
+					return false;
+				}
+
+				if (fcntl(outRedirectPipe[0], F_SETFD, FD_CLOEXEC) == -1)
+				{
+					Console.Error("DEV9: ICMP: Failed to Setup Pipe, %d", errno);
+					::close(outRedirectPipe[0]);
+					::close(outRedirectPipe[1]);
+					return false;
+				}
+
+				if (fcntl(outRedirectPipe[1], F_SETFD, FD_CLOEXEC) == -1)
+				{
+					Console.Error("DEV9: ICMP: Failed to Setup Pipe, %d", errno);
+					::close(outRedirectPipe[0]);
+					::close(outRedirectPipe[1]);
+					return false;
+				}
+
+				// Set non-blocking for read pipe
+				if (fcntl(outRedirectPipe[0], F_SETFL, fcntl(outRedirectPipe[0], F_GETFD) | O_NONBLOCK) == -1)
+				{
+					Console.Error("DEV9: ICMP: Failed to Setup Pipe, %d", errno);
+					::close(outRedirectPipe[0]);
+					::close(outRedirectPipe[1]);
+					return false;
+				}
+
+				pingPid = fork();
+				if (pingPid == 0)
+				{
+					// Clear PCSX2 signals
+					struct sigaction action{};
+					action.sa_handler = SIG_DFL;
+					if (sigaction(SIGBUS, &action, nullptr) == -1)
+						_exit(errno);
+					if (sigaction(SIGSEGV, &action, nullptr) == -1)
+						_exit(errno);
+
+					// Redirect stdout
+					if (dup2(outRedirectPipe[1], STDOUT_FILENO) == -1)
+						_exit(errno);
+
+					// Prep enviroment variables
+					std::vector<const char*> envp;
+					int length = 0;
+					while (environ[length] != nullptr)
+					{
+						envp.push_back(environ[length]);
+						length++;
+					}
+
+					// So we can always read the output
+					envp.push_back("LC_ALL=C");
+					envp.push_back(nullptr);
+
+					// Prep arguments
+					std::vector<const char*> argv;
+					argv.push_back(pingPath); // Arg 1
+					argv.push_back("-c"); // Arg 2
+					argv.push_back("1"); // Arg 3
+
+					argv.push_back("-W"); // Arg 4
+					char buffTimeout[8];
+#if defined(__FreeBSD__) || defined(__APPLE__)
+					// Timeout in MILLISECONDS
+					snprintf(buffTimeout, 8, "%lld", std::chrono::duration_cast<std::chrono::milliseconds>(ICMP_TIMEOUT).count());
+					argv.push_back(buffTimeout); // Arg 5
+					// Hops
+					argv.push_back("-m"); // Arg 6
+#else /*linux*/
+					// Timeout in SECONDS
+					snprintf(buffTimeout, 8, "%ld", std::chrono::duration_cast<std::chrono::seconds>(ICMP_TIMEOUT).count());
+					argv.push_back(buffTimeout); // Arg5
+					// Hops
+					argv.push_back("-t"); // Arg 6
+#endif
+					char ttlstr[8];
+					snprintf(ttlstr, 8, "%d", parTimeToLive);
+					argv.push_back(ttlstr); // Arg 7
+
+					argv.push_back("-s"); //Arg 8
+					char requestLenStr[8];
+					// ping does not report timing information unless at least 16 bytes are sent.
+					if (icmpResponseBufferLen < 16)
+						argv.push_back("16"); // Arg 9
+					else
+					{
+						snprintf(requestLenStr, 8, "%d", icmpResponseBufferLen);
+						argv.push_back(requestLenStr); // Arg 9
+					}
+
+					char buffSrc[INET_ADDRSTRLEN];
+					if (parAdapterIP.integer != 0)
+					{
+						inet_ntop(AF_INET, &parAdapterIP, buffSrc, INET_ADDRSTRLEN);
+
+#if defined(__FreeBSD__) || defined(__APPLE__)
+						// -S src_addr (Use the following IP address as the source address in outgoing packets. On hosts with more than one IP address, this option can be used to force the source address to be something other than the IP address of the interface the probe packet is sent on.)
+						// Dosn't actually bind to the adapter?
+						// Mac has -b boundif (Bind the socket to interface boundif for sending), but we will always use ICMP sockets instead
+						argv.push_back("-S"); // Arg 10
+						argv.push_back(buffSrc); // Arg 11
+#else /*linux*/
+						// -I interface address (Set source address to specified interface address. Argument may be numeric IP address or name of device)
+						// -I on FreeBSD & Mac only affect ICMP sent to multicast address
+						argv.push_back("-I"); // Arg 10
+						argv.push_back(buffSrc); // Arg 11
+#endif
+					}
+
+					char buffDest[INET_ADDRSTRLEN];
+					inet_ntop(AF_INET, &parDestIP, buffDest, INET_ADDRSTRLEN);
+					argv.push_back(buffDest); // Arg 10 or 12
+
+					if (argv.size() == 10)
+						execle(pingPath, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], nullptr, (char* const*)&envp[0]);
+					else if (argv.size() == 12)
+						execle(pingPath, argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], argv[11], nullptr, (char* const*)&envp[0]);
+					else
+						// Regular assert as child process
+						assert(false);
+
+					_exit(errno);
+				}
+				else if (pingPid != -1)
+				{
+					// Close our copy of the pipe write end
+					::close(outRedirectPipe[1]);
+				}
+				else
+				{
+					Console.Error("DEV9: ICMP: Failed to Initiate Fork, %d", errno);
+					::close(outRedirectPipe[0]);
+					::close(outRedirectPipe[1]);
+					return false;
+				}
+
+				return true;
+			}
+#endif
 			default:
 				return false;
 		}
@@ -670,6 +1018,14 @@ namespace Sessions
 			::close(icmpSocket);
 			icmpSocket = -1;
 		}
+#ifdef ALLOW_PING_CLI
+		if (pingPid != -1)
+		{
+			kill(pingPid, SIGKILL);
+			::close(outRedirectPipe[0]);
+			pingPid = -1;
+		}
+#endif
 #endif
 	}
 
