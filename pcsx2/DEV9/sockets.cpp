@@ -106,10 +106,14 @@ AdapterOptions SocketAdapter::GetAdapterOptions()
 
 SocketAdapter::SocketAdapter()
 {
+	bool lanMode = false;
 	bool foundAdapter;
 
 	AdapterUtils::Adapter adapter;
 	AdapterUtils::AdapterBuffer buffer;
+
+	//TODO LAN MODE
+	IP_Address ps2IP{{{internalIP.bytes[0], internalIP.bytes[1], internalIP.bytes[2], 100}}};
 
 	if (strcmp(EmuConfig.DEV9.EthDevice.c_str(), "Auto") != 0)
 	{
@@ -123,7 +127,11 @@ SocketAdapter::SocketAdapter()
 
 		std::optional<IP_Address> adIP = AdapterUtils::GetAdapterIP(&adapter);
 		if (adIP.has_value())
+		{
 			adapterIP = adIP.value();
+			if (lanMode)
+				ps2IP = adIP.value();
+		}
 		else
 		{
 			Console.Error("DEV9: Socket: Failed To Get Adapter IP");
@@ -140,12 +148,18 @@ SocketAdapter::SocketAdapter()
 			Console.Error("DEV9: Socket: Auto Selection Failed, Check You Connection or Manually Specify Adapter");
 			return;
 		}
+
+		if (lanMode)
+		{
+			std::optional<IP_Address> adIP = AdapterUtils::GetAdapterIP(&adapter);
+			if (adIP.has_value())
+				ps2IP = adIP.value();
+		}
 	}
 
 	//For DHCP, we need to override some settings
 	//DNS settings as per direct adapters
 
-	const IP_Address ps2IP{{{internalIP.bytes[0], internalIP.bytes[1], internalIP.bytes[2], 100}}};
 	const IP_Address subnet{{{255, 255, 255, 0}}};
 	const IP_Address gateway = internalIP;
 
