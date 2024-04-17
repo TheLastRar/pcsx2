@@ -981,6 +981,13 @@ struct Pcsx2Config
 		};
 		static const char* DnsModeNames[];
 
+		enum struct PortMode : int
+		{
+			UDP = 0,
+			TCP = 1,
+		};
+		static const char* PortModeNames[];
+
 		struct HostEntry
 		{
 			std::string Url;
@@ -990,6 +997,17 @@ struct Pcsx2Config
 
 			bool operator==(const HostEntry& right) const;
 			bool operator!=(const HostEntry& right) const;
+		};
+
+		struct PortEntry
+		{
+			uint Port{};
+			std::string Desc;
+			PortMode Protocol;
+			bool Enabled;
+
+			bool operator==(const PortEntry& right) const;
+			bool operator!=(const PortEntry& right) const;
 		};
 
 		bool EthEnable{false};
@@ -1010,6 +1028,8 @@ struct Pcsx2Config
 		DnsMode ModeDNS2{DnsMode::Auto};
 
 		std::vector<HostEntry> EthHosts;
+
+		std::vector<PortEntry> OpenPorts;
 
 		bool HddEnable{false};
 		std::string HddFile;

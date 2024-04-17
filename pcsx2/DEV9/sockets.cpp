@@ -106,6 +106,8 @@ AdapterOptions SocketAdapter::GetAdapterOptions()
 
 SocketAdapter::SocketAdapter()
 {
+	sendThreadId = std::this_thread::get_id();
+
 	bool foundAdapter;
 
 	AdapterUtils::Adapter adapter;
@@ -151,6 +153,64 @@ SocketAdapter::SocketAdapter()
 
 	InitInternalServer(&adapter, true, ps2IP, subnet, gateway);
 
+	for (const Pcsx2Config::DEV9Options::PortEntry& entry : EmuConfig.DEV9.OpenPorts)
+	{
+		if (!entry.Enabled)
+			continue;
+
+		ConnectionKey Key{};
+		Key.ps2Port = entry.Port;
+		Key.srvPort = entry.Port;
+
+		BaseSession* s = nullptr;
+
+		switch (entry.Protocol)
+		{
+			case Pcsx2Config::DEV9Options::PortMode::UDP:
+			{
+				Key.protocol = static_cast<u8>(IP_Type::UDP);
+
+				BaseSession* fSession;
+				if (fixedUDPPorts.TryGetValue(entry.Port, &fSession))
+					continue;
+
+				ConnectionKey fKey{};
+				fKey.protocol = static_cast<u8>(IP_Type::UDP);
+				fKey.ps2Port = entry.Port;
+				fKey.srvPort = 0;
+
+				UDP_FixedPort* fPort = new UDP_FixedPort(fKey, adapterIP, entry.Port);
+				//TODO, dispose of failed connections here rather than waiting for next send
+				fPort->AddConnectionClosedHandler([&](BaseSession* session) { HandleFixedPortClosed(session); });
+
+				fPort->destIP = {};
+				fPort->sourceIP = dhcpServer.ps2IP;
+
+				connections.Add(fKey, fPort);
+				fixedUDPPorts.Add(entry.Port, fPort);
+
+				fPort->Init();
+
+				s = fPort->NewListenSession(Key);
+				if (s == nullptr)
+				{
+					Console.Error("DEV9: Socket: Failed to Create Open Port from FixedPort");
+					continue;
+				}
+
+				break;
+			}
+			case Pcsx2Config::DEV9Options::PortMode::TCP:
+			default:
+				continue;
+		}
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+		s->destIP = dhcpServer.broadcastIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+	}
+
 	std::optional<MAC_Address> adMAC = AdapterUtils::GetAdapterMAC(&adapter);
 	if (adMAC.has_value())
 	{
@@ -180,8 +240,6 @@ SocketAdapter::SocketAdapter()
 	else
 		wsa_init = true;
 #endif
-
-	sendThreadId = std::this_thread::get_id();
 
 	initialized = true;
 }
@@ -369,6 +427,12 @@ void SocketAdapter::reloadSettings()
 		pxAssert(false);
 		ReloadInternalServer(nullptr, true, ps2IP, subnet, gateway);
 	}
+
+	/* 
+	 * TODO
+	 * Need to remove disabled ServerSessions
+	 * Then add new enabled ServerSessions
+	 */
 }
 
 bool SocketAdapter::SendIP(IP_Packet* ipPkt)
