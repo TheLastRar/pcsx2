@@ -7,6 +7,14 @@
 #include <mutex>
 #include <vector>
 
+#ifdef __POSIX__
+//Use CLI if sockets fail
+#ifdef ALLOW_PING_CLI
+#include <string>
+#include <unistd.h>
+#endif
+#endif
+
 #include "DEV9/SimpleQueue.h"
 #include "DEV9/ThreadSafeMap.h"
 #include "DEV9/Sessions/BaseSession.h"
@@ -43,6 +51,9 @@ namespace Sessions
 			{
 				ICMP,
 				RAW,
+#ifdef ALLOW_PING_CLI
+				CLI
+#endif
 			};
 
 			static PingType icmpConnectionKind;
@@ -52,6 +63,11 @@ namespace Sessions
 			std::chrono::steady_clock::time_point icmpDeathClockStart;
 			u16 icmpId;
 
+#ifdef ALLOW_PING_CLI
+			pid_t pingPid{-1};
+			int outRedirectPipe[2];
+			std::string pingStdOut;
+#endif
 #endif
 
 			// Return buffers
