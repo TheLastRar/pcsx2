@@ -187,6 +187,55 @@ SocketAdapter::SocketAdapter()
 
 	InitInternalServer(&adapter, true, ps2IP, subnet, gateway);
 
+	for (const Pcsx2Config::DEV9Options::PortEntry& entry : EmuConfig.DEV9.OpenPorts)
+	{
+		if (!entry.Enabled)
+			continue;
+
+		ConnectionKey Key{};
+		Key.ps2Port = entry.Port;
+		Key.srvPort = entry.Port;
+
+		BaseSession* s = nullptr;
+
+		switch (entry.Protocol)
+		{
+			case Pcsx2Config::DEV9Options::PortMode::UDP:
+			{
+				Key.protocol = static_cast<u8>(IP_Type::UDP);
+
+				BaseSession* fSession;
+				if (fixedUDPPorts.TryGetValue(entry.Port, &fSession))
+					continue;
+
+				ConnectionKey fKey{};
+				fKey.protocol = static_cast<u8>(IP_Type::UDP);
+				fKey.ps2Port = entry.Port;
+				fKey.srvPort = 0;
+
+				UDP_FixedPort* fPort = new UDP_FixedPort(fKey, adapterIP, entry.Port);
+				fPort->AddConnectionClosedHandler([&](BaseSession* session) { HandleFixedPortClosed(session); });
+
+				fPort->destIP = {};
+				fPort->sourceIP = dhcpServer.ps2IP;
+
+				connections.Add(fKey, fPort);
+				fixedUDPPorts.Add(entry.Port, fPort);
+
+				s = fPort->NewListenSession(Key);
+				break;
+			}
+			case Pcsx2Config::DEV9Options::PortMode::TCP:
+			default:
+				continue;
+		}
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+		s->destIP = dhcpServer.broadcastIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+	}
+
 	std::optional<MAC_Address> adMAC = AdapterUtils::GetAdapterMAC(&adapter);
 	if (adMAC.has_value())
 	{
@@ -396,6 +445,12 @@ void SocketAdapter::reloadSettings()
 		pxAssert(false);
 		ReloadInternalServer(nullptr, true, ps2IP, subnet, gateway);
 	}
+
+	/* 
+	 * TODO
+	 * Need to remove disabled ServerSessions
+	 * Then add new enabled ServerSessions
+	 */
 }
 
 bool SocketAdapter::SendIP(IP_Packet* ipPkt)
