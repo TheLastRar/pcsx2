@@ -28,11 +28,11 @@
 #ifdef __linux__
 #include <linux/errqueue.h>
 #endif
-#include <unistd.h>
 
 #ifdef ALLOW_PING_CLI
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <sys/wait.h>
 #include "common/StringUtil.h"
