@@ -126,7 +126,7 @@ bool PCAPAdapter::recv(NetPacket* pkt)
 	// This delays getting packets we need, so instead loop untill a valid packet, or no packet, is returned from pcap_next_ex.
 	while (pcap_next_ex(hpcap, &header, &pkt_data) > 0)
 	{
-		if (header->len > sizeof(pkt->buffer))
+		if (header->len > pkt->buffer.size())
 		{
 			Console.Error("DEV9: Dropped jumbo frame of size: %u", header->len);
 			continue;
@@ -134,7 +134,7 @@ bool PCAPAdapter::recv(NetPacket* pkt)
 
 		pxAssert(header->len == header->caplen);
 
-		memcpy(pkt->buffer, pkt_data, header->len);
+		memcpy(pkt->buffer.data(), pkt_data, header->len);
 		pkt->size = (int)header->len;
 
 		if (!switched)
@@ -163,7 +163,7 @@ bool PCAPAdapter::send(NetPacket* pkt)
 	if (!switched)
 		SetMACBridgedSend(pkt);
 
-	if (pcap_sendpacket(hpcap, (u_char*)pkt->buffer, pkt->size))
+	if (pcap_sendpacket(hpcap, (u_char*)pkt->buffer.data(), pkt->size))
 		return false;
 	else
 		return true;

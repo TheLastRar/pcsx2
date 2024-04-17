@@ -192,13 +192,13 @@ void tx_process()
 			if (base + pbd->length > 16384)
 			{
 				u32 was = 16384 - base;
-				memcpy(pk.buffer, dev9.txfifo + base, was);
-				memcpy(pk.buffer + was, dev9.txfifo, pbd->length - was);
+				memcpy(pk.buffer.data(), dev9.txfifo + base, was);
+				memcpy(pk.buffer.data() + was, dev9.txfifo, pbd->length - was);
 				DevCon.WriteLn("DEV9: Warped read, was=%u, sz=%u, sz-was=%u", was, pbd->length, pbd->length - was);
 			}
 			else
 			{
-				memcpy(pk.buffer, dev9.txfifo + base, pbd->length);
+				memcpy(pk.buffer.data(), dev9.txfifo + base, pbd->length);
 			}
 			tx_put(&pk);
 		}

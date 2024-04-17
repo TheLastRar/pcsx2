@@ -576,8 +576,8 @@ bool TAPAdapter::recv(NetPacket* pkt)
 {
 	DWORD read_size;
 	BOOL result = ReadFile(htap,
-		pkt->buffer,
-		sizeof(pkt->buffer),
+		pkt->buffer.data(),
+		pkt->buffer.size(),
 		&read_size,
 		&read);
 
@@ -617,7 +617,7 @@ bool TAPAdapter::send(NetPacket* pkt)
 
 	DWORD writen;
 	BOOL result = WriteFile(htap,
-		pkt->buffer,
+		pkt->buffer.data(),
 		pkt->size,
 		&writen,
 		&write);

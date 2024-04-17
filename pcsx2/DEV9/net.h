@@ -6,6 +6,7 @@
 #include <string>
 
 #include <functional>
+#include <span>
 #include <thread>
 #include <atomic>
 #include <mutex>
@@ -33,17 +34,25 @@ struct ConfigDEV9;
 // first three recognized by Xlink as Sony PS2
 const PacketReader::MAC_Address defaultMAC = {{{0x00, 0x04, 0x1F, 0x82, 0x30, 0x31}}};
 
-struct NetPacket
+class NetPacket
 {
+public:
+	int size;
+
+	// The ethernet header is 14 bytes long, which would leave the payload missaligned
+	// offset the alignement of to ensure payload is aligned to 4 byte boundary
+	std::span<u8> buffer{_buffer + sizeof(u16), sizeof(_buffer) - sizeof(u16)};
+
+private:
+	alignas(u32) u8 _buffer[2048 - sizeof(int)]; // 1536 is realy needed, just pad up to 2048 bytes :)
+
+public:
 	NetPacket() { size = 0; }
 	NetPacket(void* ptr, int sz)
 	{
 		size = sz;
-		memcpy(buffer, ptr, sz);
+		memcpy(buffer.data(), ptr, sz);
 	}
-
-	int size;
-	char buffer[2048 - sizeof(int)]; //1536 is realy needed, just pad up to 2048 bytes :)
 };
 /*
 extern mtfifo<NetPacket*> rx_fifo;

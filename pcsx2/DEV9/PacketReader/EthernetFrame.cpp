@@ -13,18 +13,18 @@ namespace PacketReader
 	EthernetFrame::EthernetFrame(NetPacket* pkt)
 	{
 		int offset = 0;
-		NetLib::ReadMACAddress((u8*)pkt->buffer, &offset, &destinationMAC);
-		NetLib::ReadMACAddress((u8*)pkt->buffer, &offset, &sourceMAC);
+		NetLib::ReadMACAddress(pkt->buffer.data(), &offset, &destinationMAC);
+		NetLib::ReadMACAddress(pkt->buffer.data(), &offset, &sourceMAC);
 
 		headerLength = 14; //(6+6+2)
 
 		//Note: we don't have to worry about the Ethernet Frame CRC as it is not included in the packet
 
-		NetLib::ReadUInt16((u8*)pkt->buffer, &offset, &protocol);
+		NetLib::ReadUInt16(pkt->buffer.data(), &offset, &protocol);
 
 		//Note: We don't support tagged frames
 
-		payload = std::make_unique<PayloadPtr>((u8*)&pkt->buffer[offset], pkt->size - headerLength);
+		payload = std::make_unique<PayloadPtr>(&pkt->buffer[offset], pkt->size - headerLength);
 	}
 
 	Payload* EthernetFrame::GetPayload()
@@ -37,11 +37,11 @@ namespace PacketReader
 		int counter = 0;
 
 		pkt->size = headerLength + payload->GetLength();
-		NetLib::WriteMACAddress((u8*)pkt->buffer, &counter, destinationMAC);
-		NetLib::WriteMACAddress((u8*)pkt->buffer, &counter, sourceMAC);
+		NetLib::WriteMACAddress(pkt->buffer.data(), &counter, destinationMAC);
+		NetLib::WriteMACAddress(pkt->buffer.data(), &counter, sourceMAC);
 		//
-		NetLib::WriteUInt16((u8*)pkt->buffer, &counter, protocol);
+		NetLib::WriteUInt16(pkt->buffer.data(), &counter, protocol);
 		//
-		payload->WriteBytes((u8*)pkt->buffer, &counter);
+		payload->WriteBytes(pkt->buffer.data(), &counter);
 	}
 } // namespace PacketReader
