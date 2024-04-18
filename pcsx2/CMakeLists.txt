@@ -51,6 +51,11 @@ if(WIN32)
 	)
 endif(WIN32)
 
+if(UNIX AND NOT APPLE)
+	target_include_directories(PCSX2 PRIVATE ${DBUS_INCLUDE_DIRS})
+	target_link_libraries(PCSX2 PRIVATE ${DBUS_LINK_LIBRARIES})
+endif()
+
 # Main pcsx2 source
 set(pcsx2Sources
 	Achievements.cpp
