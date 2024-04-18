@@ -760,24 +760,34 @@ namespace Sessions
 				{
 					case 3:
 					{
-						Console.Error("DEV9: ICMP: Recived Packet Rejected, Port Closed");
+						Console.Error("DEV9: ICMP: Received Packet Rejected, Port Closed");
 
-						//RE:Outbreak Hackfix
-						//TODO, check if still needed
-
+						/*
+						 * RE:Outbreak Hackfix
+						 * ICMP port closed messages has an extra 4 bytes of padding before the packet copy
+						 * this can be tested by trying to connect without using the resurrection server DNS
+						 * turbo mode may be needed to trigger the bug, depending on the DNS server's speed
+						 */
 						std::unique_ptr<IP_Packet> retPkt;
 						if ((icmpPayload->data[0] & 0xF0) == (4 << 4))
 							retPkt = std::make_unique<IP_Packet>(icmpPayload->data, icmpPayload->GetLength(), true);
 						else
 						{
 							Console.Error("DEV9: ICMP: Malformed ICMP Packet");
-							int off = 1;
-							while ((icmpPayload->data[off] & 0xF0) != (4 << 4))
-								off += 1;
+							int off = 2; //Assume aligned to word boundary
+							while ((icmpPayload->data[off] & 0xF0) != (4 << 4) && icmpPayload->GetLength() - off - 24 >= 0)
+								off += 2;
+
+							if ((icmpPayload->data[off] & 0xF0) == (4 << 4))
+							{
+								Console.Error("DEV9: ICMP: Unable To Recover Data");
+								Console.Error("DEV9: ICMP: Failed To Reset Rejected Connection");
+								break;
+							}
 
 							Console.Error("DEV9: ICMP: Payload delayed %d bytes", off);
 
-							retPkt = std::make_unique<IP_Packet>(&icmpPayload->data[off], icmpPayload->GetLength(), true);
+							retPkt = std::make_unique<IP_Packet>(&icmpPayload->data[off], icmpPayload->GetLength() - off, true);
 						}
 
 						IP_Address srvIP = retPkt->sourceIP;
