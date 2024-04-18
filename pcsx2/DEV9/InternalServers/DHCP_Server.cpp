@@ -345,6 +345,7 @@ namespace InternalServers
 
 		retPay->options.push_back(new DHCPopSERVIP(NetAdapter::internalIP));
 		retPay->options.push_back(new DHCPopEND());
+		retPay->EnsureOptionsAligned();
 
 		retPay->maxLength = maxMs;
 		UDP_Packet* retUdp = new UDP_Packet(retPay);

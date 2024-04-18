@@ -164,6 +164,21 @@ namespace PacketReader::IP::UDP::DHCP
 			options.push_back(original.options[i]->Clone());
 	}
 
+	void DHCP_Packet::EnsureOptionsAligned()
+	{
+		int feildAlign = 2;
+		for (size_t i = 0; i < options.size(); i++)
+		{
+			BaseOption* cur = options[i];
+			while (feildAlign % options[i]->WriteAlignment() != 0)
+			{
+				options.insert(options.begin() + i, new DHCPopNOP());
+				feildAlign++;
+				i++;
+			}
+			feildAlign += cur->GetLength();
+		}
+	}
 
 	int DHCP_Packet::GetLength()
 	{

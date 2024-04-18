@@ -32,6 +32,8 @@ namespace PacketReader::IP::UDP::DHCP
 		//used by GetLength & WriteBytes
 		int maxLength = 576;
 
+		void EnsureOptionsAligned();
+
 		DHCP_Packet() {}
 		DHCP_Packet(u8* buffer, int bufferSize);
 		DHCP_Packet(const DHCP_Packet&);
