@@ -19,6 +19,9 @@
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <unordered_set>
+#include <dbus/dbus.h>
+#include "common/ScopedGuard.h"
 
 #if defined(__FreeBSD__) || (__APPLE__)
 #include <sys/types.h>
@@ -256,7 +259,7 @@ bool AdapterUtils::GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer)
 
 // Internal Helper Functions
 #ifdef __POSIX__
-int GetIfAdapterIndex(AdapterUtils::Adapter* adapter)
+int GetIfAdapterIndex(const AdapterUtils::Adapter* adapter)
 {
 	struct if_nameindex* ifNI;
 	ifNI = if_nameindex();
@@ -554,9 +557,183 @@ std::vector<IP_Address> AdapterUtils::GetDNS(const Adapter* adapter)
 	return collection;
 }
 #elif defined(__POSIX__)
+#ifdef __linux__
+std::vector<IP_Address> GetSystemdDNS(const Adapter* adapter)
+{
+	std::vector<IP_Address> collection;
+
+	// Get index for our adapter by matching the adapter name.
+	int ifIndex = GetIfAdapterIndex(adapter);
+
+	// Check if we found the adapter.
+	if (ifIndex == -1)
+	{
+		Console.Error("DEV9: Failed to get index for adapter");
+		return collection;
+	}
+
+	// "errorDBus" doesn't need to be cleared in the end with "dbus_message_unref" at least if there is
+	// no error set, since calling "dbus_error_free" reinitializes it like "dbus_error_init" after freeing.
+	DBusError errorDBus;
+	dbus_error_init(&errorDBus);
+	ScopedGuard errorCleanup = [&errorDBus]()
+	{
+		if (dbus_error_is_set(&errorDBus))
+		{
+			Console.Error("DEV9: DBUS error %s, %s", errorDBus.name, errorDBus.message);
+			dbus_error_free(&errorDBus);
+		}
+	};
+
+	// "dbus_bus_get" gets a pointer to the same connection in libdbus, if exists, without creating a new connection.
+	// for existing connections the ref counter is incremented, so we must call "dbus_connection_unref" when we are done.
+	DBusConnection* connection = nullptr;
+	if (!(connection = dbus_bus_get(DBUS_BUS_SYSTEM, &errorDBus)))
+		return collection;
+	ScopedGuard connectionCleanup = [&connection]() { dbus_connection_unref(connection); };
+
+	// Connection will contain regular DNS entries, followed by FallbackDNS entries.
+	const char* resolverIface = "org.freedesktop.resolve1.Manager";
+	const char* dnsProperties[] = {"DNS", "FallbackDNS"};
+
+	for (size_t i = 0; i < std::size(dnsProperties); i++)
+	{
+		DBusMessage* messageGet = nullptr;
+		if (!(messageGet = dbus_message_new_method_call("org.freedesktop.resolve1", "/org/freedesktop/resolve1", "org.freedesktop.DBus.Properties", "Get")))
+			return collection;
+		ScopedGuard MessageGetCleanup = [&messageGet]() { dbus_message_unref(messageGet); };
+
+		dbus_message_append_args(messageGet,
+			DBUS_TYPE_STRING, &resolverIface,
+			DBUS_TYPE_STRING, &dnsProperties[i],
+			DBUS_TYPE_INVALID);
+
+		// Send message and get response.
+		DBusMessage* response = nullptr;
+		if (!(response = dbus_connection_send_with_reply_and_block(connection, messageGet, DBUS_TIMEOUT_USE_DEFAULT, &errorDBus)))
+			return collection;
+		ScopedGuard responseCleanup = [&response] { dbus_message_unref(response); };
+
+		DBusMessageIter retVariant;
+		DBusMessageIter retArray;
+		DBusMessageIter retIter;
+
+		// Initialize an iterator for the response, gets freed with the response message.
+		dbus_message_iter_init(response, &retVariant);
+
+		// DBus documentation advises us to validate type.
+		if (dbus_message_iter_get_arg_type(&retVariant) != DBUS_TYPE_VARIANT)
+		{
+			Console.Error("DEV9: Unexpected type in DBus response");
+			return collection;
+		}
+		dbus_message_iter_recurse(&retVariant, &retArray);
+
+		if (dbus_message_iter_get_arg_type(&retArray) != DBUS_TYPE_ARRAY)
+		{
+			Console.Error("DEV9: Unexpected type in DBus variant");
+			return collection;
+		}
+		dbus_message_iter_recurse(&retArray, &retIter);
+
+		if (dbus_message_iter_get_arg_type(&retIter) != DBUS_TYPE_STRUCT)
+		{
+			Console.Error("DEV9: Unexpected type in DBus array");
+			return collection;
+		}
+
+		std::vector<IP_Address> collectionAdapter;
+		std::vector<IP_Address> collectionGlobal;
+		do
+		{
+			DBusMessageIter retStruct;
+			dbus_message_iter_recurse(&retIter, &retStruct);
+
+			/* 
+			 * Structure has layout
+			 * Interface Index
+			 * Address Family
+			 * DNS Address
+			 */
+
+			int index = -1;
+			int af = 0;
+			IP_Address* dns = nullptr;
+
+			if (dbus_message_iter_get_arg_type(&retStruct) != DBUS_TYPE_INT32)
+			{
+				Console.Error("DEV9: Error reading DBus DNS struct");
+				break;
+			}
+			dbus_message_iter_get_basic(&retStruct, &index);
+
+			if (!dbus_message_iter_next(&retStruct) ||
+				dbus_message_iter_get_arg_type(&retStruct) != DBUS_TYPE_INT32)
+			{
+				Console.Error("DEV9: Error reading DBus DNS struct");
+				break;
+			}
+			dbus_message_iter_get_basic(&retStruct, &af);
+
+			// We only want IPv4
+			if (af != AF_INET)
+				continue;
+
+			if (!dbus_message_iter_next(&retStruct) ||
+				dbus_message_iter_get_arg_type(&retStruct) != DBUS_TYPE_ARRAY)
+			{
+				Console.Error("DEV9: Error reading DBus DNS struct");
+				break;
+			}
+
+			DBusMessageIter retDNS;
+			dbus_message_iter_recurse(&retStruct, &retDNS);
+
+			int ipSize = 4;
+			if (dbus_message_iter_get_element_count(&retStruct) != ipSize ||
+				dbus_message_iter_get_arg_type(&retDNS) != DBUS_TYPE_BYTE)
+			{
+				Console.Error("DEV9: Error reading DBus DNS struct");
+				break;
+			}
+			dbus_message_iter_get_fixed_array(&retDNS, &dns, &ipSize);
+
+			if (index == 0)
+				collectionGlobal.push_back(*dns);
+			if (index == ifIndex)
+				collectionAdapter.push_back(*dns);
+
+		} while (dbus_message_iter_next(&retIter));
+
+		// List adapter DNS addresses before global addresses.
+		// Preallocate memory.
+		collection.reserve(collection.size() + collectionAdapter.size() + collectionGlobal.size());
+		collection.insert(collection.end(), collectionAdapter.begin(), collectionAdapter.end());
+		collection.insert(collection.end(), collectionGlobal.begin(), collectionGlobal.end());
+	}
+
+	// Remove duplicates without sorting
+	std::unordered_set<IP_Address> seen;
+
+	auto newEnd = std::remove_if(collection.begin(), collection.end(), [&seen](const IP_Address& value)
+	{
+		if (seen.find(value) != seen.end())
+			return true;
+
+		seen.insert(value);
+		return false;
+	});
+
+	collection.erase(newEnd, collection.end());
+
+	return collection;
+}
+#endif
+
 std::vector<IP_Address> AdapterUtils::GetDNS(const Adapter* adapter)
 {
 	// On Linux and OSX, DNS is system wide, not adapter specific, so we can ignore the adapter parameter.
+	// Except when systemd resolved is in use, which provides that feature on linux.
 
 	// Parse /etc/resolv.conf for all of the "nameserver" entries.
 	// These are the DNS servers the machine is configured to use.
@@ -582,7 +759,6 @@ std::vector<IP_Address> AdapterUtils::GetDNS(const Adapter* adapter)
 		serversLines.push_back(line);
 	servers.close();
 
-	const IP_Address systemdDNS{{{127, 0, 0, 53}}};
 	for (size_t i = 1; i < serversLines.size(); i++)
 	{
 		const std::string line = serversLines[i];
@@ -597,8 +773,11 @@ std::vector<IP_Address> AdapterUtils::GetDNS(const Adapter* adapter)
 			if (inet_pton(AF_INET, dns.c_str(), &address) != 1)
 				continue;
 
+#ifdef __linux__
+			const IP_Address systemdDNS{{{127, 0, 0, 53}}};
 			if (address == systemdDNS)
-				Console.Error("DEV9: systemd-resolved DNS server is not supported");
+				return GetSystemdDNS(adapter);
+#endif
 
 			collection.push_back(address);
 		}
