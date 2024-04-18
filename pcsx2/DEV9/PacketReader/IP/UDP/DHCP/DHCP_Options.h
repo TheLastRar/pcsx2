@@ -11,9 +11,18 @@
 namespace PacketReader::IP::UDP::DHCP
 {
 	//Unlike IPOptions, DCHP length field does not count the option header
-	//GetLength(), howver, includes the option header
-	class DHCPopNOP : public BaseOption
+	//GetLength() & ReadLength(), however, includes the option header
+	class DHCPOption : public BaseOption
 	{
+public:
+		static u8 ReadLength(u8* buffer, int* offset) { return buffer[*offset + 1] + 2; }
+	};
+
+	class DHCPopNOP : public DHCPOption
+	{
+public:
+		DHCPopNOP() {}
+
 		virtual u8 GetLength() { return 1; }
 		virtual u8 GetCode() { return 0; }
 
@@ -29,7 +38,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopSubnet : public BaseOption
+	class DHCPopSubnet : public DHCPOption
 	{
 	public:
 		IP_Address subnetMask{};
@@ -48,10 +57,11 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopRouter : public BaseOption //can be longer then 1 address
+	class DHCPopRouter : public DHCPOption //can be longer then 1 address
 	{
 	public:
 		std::vector<IP_Address> routers;
+
 		DHCPopRouter(const std::vector<IP_Address>& routerIPs);
 		DHCPopRouter(u8* data, int offset); //Offset will include Kind and Len
 
@@ -66,10 +76,11 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopDNS : public BaseOption //can be longer then 1 address
+	class DHCPopDNS : public DHCPOption //can be longer then 1 address
 	{
 	public:
 		std::vector<IP_Address> dnsServers;
+
 		DHCPopDNS(const std::vector<IP_Address>& dnsIPs);
 		DHCPopDNS(u8* data, int offset); //Offset will include Kind and Len
 
@@ -84,7 +95,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopHostName : public BaseOption
+	class DHCPopHostName : public DHCPOption
 	{
 	public:
 		//ASCII encoding
@@ -104,7 +115,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopDnsName : public BaseOption
+	class DHCPopDnsName : public DHCPOption
 	{
 	public:
 		//ASCII encoding
@@ -124,7 +135,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopBCIP : public BaseOption //The IP to send broadcasts to
+	class DHCPopBCIP : public DHCPOption //The IP to send broadcasts to
 	{
 	public:
 		IP_Address broadcastIP{};
@@ -144,7 +155,7 @@ namespace PacketReader::IP::UDP::DHCP
 	};
 
 	//What even sent this?
-	class DHCPopNBIOSType : public BaseOption
+	class DHCPopNBIOSType : public DHCPOption
 	{
 	private:
 		u8 type = 0;
@@ -176,7 +187,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopREQIP : public BaseOption //The IP to send broadcasts to
+	class DHCPopREQIP : public DHCPOption //The IP to send broadcasts to
 	{
 	public:
 		IP_Address requestedIP{};
@@ -195,7 +206,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopIPLT : public BaseOption
+	class DHCPopIPLT : public DHCPOption
 	{
 	public:
 		u32 ipLeaseTime;
@@ -206,6 +217,9 @@ namespace PacketReader::IP::UDP::DHCP
 		virtual u8 GetLength() { return 6; }
 		virtual u8 GetCode() { return 51; }
 
+		static size_t ReadAlignment() { return alignof(u32); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
+
 		virtual void WriteBytes(u8* buffer, int* offset);
 
 		virtual DHCPopIPLT* Clone() const
@@ -214,7 +228,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopMSG : public BaseOption
+	class DHCPopMSG : public DHCPOption
 	{
 	public:
 		u8 message;
@@ -232,7 +246,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopSERVIP : public BaseOption //DHCP server ip
+	class DHCPopSERVIP : public DHCPOption //DHCP server ip
 	{
 	public:
 		IP_Address serverIP{};
@@ -251,7 +265,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopREQLIST : public BaseOption
+	class DHCPopREQLIST : public DHCPOption
 	{
 	public:
 		std::vector<u8> requests;
@@ -270,7 +284,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopMSGStr : public BaseOption
+	class DHCPopMSGStr : public DHCPOption
 	{
 	public:
 		//ASCII encoding
@@ -290,13 +304,16 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopMMSGS : public BaseOption
+	class DHCPopMMSGS : public DHCPOption
 	{
 	public:
 		u16 maxMessageSize;
 
 		DHCPopMMSGS(u16 mms);
 		DHCPopMMSGS(u8* data, int offset); //Offset will include Kind and Len
+
+		static size_t ReadAlignment() { return alignof(u16); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
 
 		virtual u8 GetLength() { return 4; }
 		virtual u8 GetCode() { return 57; }
@@ -309,13 +326,16 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopT1 : public BaseOption
+	class DHCPopT1 : public DHCPOption
 	{
 	public:
 		u32 ipRenewalTimeT1;
 
 		DHCPopT1(u32 t1);
 		DHCPopT1(u8* data, int offset); //Offset will include Kind and Len
+
+		static size_t ReadAlignment() { return alignof(u32); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
 
 		virtual u8 GetLength() { return 6; }
 		virtual u8 GetCode() { return 58; }
@@ -328,13 +348,16 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopT2 : public BaseOption
+	class DHCPopT2 : public DHCPOption
 	{
 	public:
 		u32 ipRebindingTimeT2;
 
 		DHCPopT2(u32 t2);
 		DHCPopT2(u8* data, int offset); //Offset will include Kind and Len
+
+		static size_t ReadAlignment() { return alignof(u32); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
 
 		virtual u8 GetLength() { return 6; }
 		virtual u8 GetCode() { return 59; }
@@ -347,7 +370,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopClassID : public BaseOption
+	class DHCPopClassID : public DHCPOption
 	{
 	public:
 		//ASCII encoding
@@ -367,7 +390,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopClientID final : public BaseOption
+	class DHCPopClientID final : public DHCPOption
 	{
 	public:
 		std::vector<u8> clientID;
@@ -386,7 +409,7 @@ namespace PacketReader::IP::UDP::DHCP
 		}
 	};
 
-	class DHCPopEND : public BaseOption
+	class DHCPopEND : public DHCPOption
 	{
 	public:
 		DHCPopEND() {}

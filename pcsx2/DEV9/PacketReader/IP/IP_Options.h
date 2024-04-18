@@ -12,6 +12,8 @@ namespace PacketReader::IP
 	class BaseOption
 	{
 	public:
+		static size_t ReadAlignment() { return alignof(u8); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
 		virtual u8 GetLength() = 0;
 		virtual u8 GetCode() = 0;
 		virtual void WriteBytes(u8* buffer, int* offset) = 0;
@@ -74,6 +76,9 @@ namespace PacketReader::IP
 
 		IPopRouterAlert(u16 parValue);
 		IPopRouterAlert(u8* data, int offset);
+
+		static size_t ReadAlignment() { return alignof(u16); }
+		virtual size_t WriteAlignment() { return ReadAlignment(); }
 
 		virtual u8 GetLength() { return 4; }
 		virtual u8 GetCode() { return 148; }
