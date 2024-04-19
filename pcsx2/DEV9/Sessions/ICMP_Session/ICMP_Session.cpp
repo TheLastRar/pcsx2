@@ -785,7 +785,7 @@ namespace Sessions
 								break;
 							}
 
-							Console.Error("DEV9: ICMP: Payload delayed %d bytes", off);
+							Console.Error("DEV9: ICMP: Payload Delayed %d Bytes", off);
 
 							retPkt = std::make_unique<IP_Packet>(&icmpPayload->data[off], icmpPayload->GetLength() - off, true);
 						}
@@ -801,6 +801,12 @@ namespace Sessions
 								//Read ports directly from the payload
 								//both UDP and TCP have the same locations for ports
 								IP_PayloadPtr* payload = static_cast<IP_PayloadPtr*>(retPkt->GetPayload());
+								if (payload->GetLength() < 4)
+								{
+									Console.Error("DEV9: ICMP: Insufficient Data To Identify Connection");
+									Console.Error("DEV9: ICMP: Failed To Reset Rejected Connection");
+									break;
+								}
 								int offset = 0;
 								NetLib::ReadUInt16(payload->data, &offset, &srvPort); //src
 								NetLib::ReadUInt16(payload->data, &offset, &ps2Port); //dst
