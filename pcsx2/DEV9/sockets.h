@@ -27,6 +27,7 @@ class SocketAdapter : public NetAdapter
 
 	ThreadSafeMap<Sessions::ConnectionKey, Sessions::BaseSession*> connections;
 	ThreadSafeMap<u16, Sessions::BaseSession*> fixedUDPPorts;
+	ThreadSafeMap<PacketReader::IP::IP_Address, Sessions::BaseSession*> knownGroups;
 
 	std::thread::id sendThreadId;
 	std::vector<Sessions::BaseSession*> deleteQueueSendThread;
@@ -59,4 +60,5 @@ private:
 	//Event must only be raised once per connection
 	void HandleConnectionClosed(Sessions::BaseSession* sender);
 	void HandleFixedPortClosed(Sessions::BaseSession* sender);
+	void HandleIGMPClosed(Sessions::BaseSession* sender);
 };

@@ -22,6 +22,7 @@
 #include "DEV9.h"
 
 #include "Sessions/ICMP_Session/ICMP_Session.h"
+#include "Sessions/IGMP_Session/IGMP_Session.h"
 #include "Sessions/TCP_Session/TCP_Session.h"
 #include "Sessions/UDP_Session/UDP_FixedPort.h"
 #include "Sessions/UDP_Session/UDP_Session.h"
@@ -29,6 +30,7 @@
 #include "PacketReader/EthernetFrame.h"
 #include "PacketReader/ARP/ARP_Packet.h"
 #include "PacketReader/IP/ICMP/ICMP_Packet.h"
+#include "PacketReader/IP/IGMP/IGMP_Packet.h"
 #include "PacketReader/IP/TCP/TCP_Packet.h"
 #include "PacketReader/IP/UDP/UDP_Packet.h"
 
@@ -37,6 +39,7 @@ using namespace PacketReader;
 using namespace PacketReader::ARP;
 using namespace PacketReader::IP;
 using namespace PacketReader::IP::ICMP;
+using namespace PacketReader::IP::IGMP;
 using namespace PacketReader::IP::TCP;
 using namespace PacketReader::IP::UDP;
 
@@ -455,8 +458,39 @@ bool SocketAdapter::SendICMP(ConnectionKey Key, IP_Packet* ipPkt)
 
 bool SocketAdapter::SendIGMP(ConnectionKey Key, IP_Packet* ipPkt)
 {
-	Console.Error("DEV9: Socket: IGMP Packets not supported in socket mode");
-	return false;
+	//Console.Error("DEV9: Socket: IGMP Packets not supported in socket mode");
+	//return false;
+
+	Console.WriteLn("DEV9: IGMP: Packet Sent To %i.%i.%i.%i",
+		ipPkt->destinationIP.bytes[0], ipPkt->destinationIP.bytes[1], ipPkt->destinationIP.bytes[2], ipPkt->destinationIP.bytes[3]);
+
+	IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ipPkt->GetPayload());
+	IGMP_Packet igmp(ipPayload->data, ipPayload->GetLength());
+
+	// IGMP Leave messages should be sent to 224.0.0.2
+	// Our tracking of sessions is designed to match the same IP
+	// so lets pretend that it was sent to the group IP
+	// Metal Gear Online actually already sends leave messages to the group
+	if (igmp.type == (u8)IGMP_Type::Leave)
+		Key.ip = igmp.groupAddress;
+
+	const int res = SendFromConnection(Key, ipPkt);
+	if (res == 1)
+		return true;
+	else if (res == 0)
+		return false;
+	else
+	{
+		Console.WriteLn("DEV9: Socket: Creating New IGMP Connection");
+		IGMP_Session* s = new IGMP_Session(Key, adapterIP, &fixedUDPPorts);
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleIGMPClosed(session); });
+		s->destIP = ipPkt->destinationIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+		knownGroups.Add(Key.ip, s);
+		return s->Send(ipPkt->GetPayload());
+	}
 }
 
 bool SocketAdapter::SendTCP(ConnectionKey Key, IP_Packet* ipPkt)
@@ -533,10 +567,23 @@ bool SocketAdapter::SendUDP(ConnectionKey Key, IP_Packet* ipPkt)
 				fixedUDPPorts.Add(udp.sourcePort, fPort);
 			}
 
+			const bool isMulticast = (ipPkt->destinationIP.bytes[0] & 0xF0) == 0xE0;
+			if (isMulticast)
+			{
+				BaseSession* iSession;
+				if (knownGroups.TryGetValue(Key.ip, &iSession))
+				{
+					IGMP_Session* igmpSession = static_cast<IGMP_Session*>(iSession);
+					//Do stuff to add tracking
+					igmpSession->AddToFixedPort(fPort);
+					//fPort->JoinGroup(Key.ip);
+				}
+			}
+
 			Console.WriteLn("DEV9: Socket: Creating New UDP Connection from FixedPort %d to %d", udp.sourcePort, udp.destinationPort);
 			s = fPort->NewClientSession(Key,
 				ipPkt->destinationIP == dhcpServer.broadcastIP || ipPkt->destinationIP == IP_Address{{{255, 255, 255, 255}}},
-				(ipPkt->destinationIP.bytes[0] & 0xF0) == 0xE0);
+				isMulticast);
 		}
 		else
 		{
@@ -584,9 +631,6 @@ void SocketAdapter::HandleConnectionClosed(BaseSession* sender)
 		case (int)IP_Type::ICMP:
 			Console.WriteLn("DEV9: Socket: Closed Dead ICMP Connection");
 			break;
-		case (int)IP_Type::IGMP:
-			Console.WriteLn("DEV9: Socket: Closed Dead ICMP Connection");
-			break;
 		default:
 			Console.WriteLn("DEV9: Socket: Closed Dead Unk Connection");
 			break;
@@ -606,6 +650,22 @@ void SocketAdapter::HandleFixedPortClosed(BaseSession* sender)
 		deleteQueueRecvThread.push_back(sender);
 
 	Console.WriteLn("DEV9: Socket: Closed Dead UDP Fixed Port to %d", key.ps2Port);
+}
+
+void SocketAdapter::HandleIGMPClosed(BaseSession* sender)
+{
+	ConnectionKey key = sender->key;
+	connections.Remove(key);
+	knownGroups.Remove(key.ip);
+
+	// Defer deleting the connection untill we have left the calling session's callstack
+	if (std::this_thread::get_id() == sendThreadId)
+		deleteQueueSendThread.push_back(sender);
+	else
+		deleteQueueRecvThread.push_back(sender);
+	delete sender;
+
+	Console.WriteLn("DEV9: Socket: Closed Dead IGMP session");
 }
 
 void SocketAdapter::close()
