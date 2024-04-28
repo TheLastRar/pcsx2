@@ -19,3 +19,18 @@ namespace PacketReader::IP
 		bool operator!=(const IP_Address& other) const { return this->integer != other.integer; }
 	};
 } // namespace PacketReader::IP
+
+//IP_Address Hash function
+template <>
+struct std::hash<PacketReader::IP::IP_Address>
+{
+	size_t operator()(PacketReader::IP::IP_Address const& ip) const noexcept
+	{
+		size_t hash = 17;
+		hash = hash * 23 + std::hash<u8>{}(ip.bytes[0]);
+		hash = hash * 23 + std::hash<u8>{}(ip.bytes[1]);
+		hash = hash * 23 + std::hash<u8>{}(ip.bytes[2]);
+		hash = hash * 23 + std::hash<u8>{}(ip.bytes[3]);
+		return hash;
+	}
+};
