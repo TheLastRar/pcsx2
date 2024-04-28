@@ -172,12 +172,14 @@
     <ClCompile Include="DEV9\PacketReader\IP\IP_Packet.cpp" />
     <ClCompile Include="DEV9\pcap_io.cpp" />
     <ClCompile Include="DEV9\Sessions\ICMP_Session\ICMP_Session.cpp" />
+    <ClCompile Include="DEV9\Sessions\IGMP_Session\IGMP_Session.cpp" />
     <ClCompile Include="DEV9\Sessions\TCP_Session\TCP_Session.cpp" />
     <ClCompile Include="DEV9\Sessions\TCP_Session\TCP_Session_In.cpp" />
     <ClCompile Include="DEV9\Sessions\TCP_Session\TCP_Session_Out.cpp" />
     <ClCompile Include="DEV9\Win32\pcap_io_win32.cpp" />
     <ClCompile Include="DEV9\Sessions\BaseSession.cpp" />
     <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_FixedPort.cpp" />
+    <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_IGMPSession.cpp" />
     <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_Session.cpp" />
     <ClCompile Include="DEV9\smap.cpp" />
     <ClCompile Include="DEV9\sockets.cpp" />
@@ -519,9 +521,11 @@
     <ClInclude Include="DEV9\pcap_io.h" />
     <ClInclude Include="DEV9\Sessions\BaseSession.h" />
     <ClInclude Include="DEV9\Sessions\ICMP_Session\ICMP_Session.h" />
+    <ClInclude Include="DEV9\Sessions\IGMP_Session\IGMP_Session.h" />
     <ClInclude Include="DEV9\Sessions\TCP_Session\TCP_Session.h" />
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_FixedPort.h" />
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_BaseSession.h" />
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_IGMPSession.h" />
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_Session.h" />
     <ClInclude Include="DEV9\SimpleQueue.h" />
     <ClInclude Include="DEV9\smap.h" />

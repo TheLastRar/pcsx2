@@ -166,6 +166,9 @@
     <Filter Include="System\Ps2\DEV9\Sessions\ICMP_Session">
       <UniqueIdentifier>{18d51d37-34bc-489c-b84f-31362bbb9243}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\Ps2\DEV9\Sessions\IGMP_Session">
+      <UniqueIdentifier>{a3413bea-707a-4fc7-8e6e-bd541049f4fb}</UniqueIdentifier>
+    </Filter>
     <Filter Include="System\Ps2\DEV9\Sessions\TCP_Session">
       <UniqueIdentifier>{7e1e6046-08a0-456e-8e03-47bb3813d9b0}</UniqueIdentifier>
     </Filter>
@@ -950,6 +953,9 @@
     <ClCompile Include="DEV9\Sessions\ICMP_Session\ICMP_Session.cpp">
       <Filter>System\Ps2\DEV9\Sessions\ICMP_Session</Filter>
     </ClCompile>
+    <ClCompile Include="DEV9\Sessions\IGMP_Session\IGMP_Session.cpp">
+      <Filter>System\Ps2\DEV9\Sessions\IGMP_Session</Filter>
+    </ClCompile>
     <ClCompile Include="DEV9\Sessions\TCP_Session\TCP_Session.cpp">
       <Filter>System\Ps2\DEV9\Sessions\TCP_Session</Filter>
     </ClCompile>
@@ -960,6 +966,9 @@
       <Filter>System\Ps2\DEV9\Sessions\TCP_Session</Filter>
     </ClCompile>
     <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_FixedPort.cpp">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClCompile>
+    <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_IGMPSession.cpp">
       <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClCompile>
     <ClCompile Include="DEV9\Sessions\UDP_Session\UDP_Session.cpp">
@@ -1826,6 +1835,9 @@
     <ClInclude Include="DEV9\Sessions\ICMP_Session\ICMP_Session.h">
       <Filter>System\Ps2\DEV9\Sessions\ICMP_Session</Filter>
     </ClInclude>
+    <ClInclude Include="DEV9\Sessions\IGMP_Session\IGMP_Session.h">
+      <Filter>System\Ps2\DEV9\Sessions\IGMP_Session</Filter>
+    </ClInclude>
     <ClInclude Include="DEV9\Sessions\TCP_Session\TCP_Session.h">
       <Filter>System\Ps2\DEV9\Sessions\TCP_Session</Filter>
     </ClInclude>
@@ -1833,6 +1845,9 @@
       <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_BaseSession.h">
+      <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
+    </ClInclude>
+    <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_IGMPSession.h">
       <Filter>System\Ps2\DEV9\Sessions\UDP_Session</Filter>
     </ClInclude>
     <ClInclude Include="DEV9\Sessions\UDP_Session\UDP_Session.h">

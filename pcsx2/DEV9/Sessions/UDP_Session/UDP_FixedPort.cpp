@@ -208,6 +208,19 @@ namespace Sessions
 			connections[i]->Reset();
 	}
 
+	UDP_IGMPSession* UDP_FixedPort::NewIGMPSession(ConnectionKey parNewKey)
+	{
+		UDP_IGMPSession* s = new UDP_IGMPSession(parNewKey, adapterIP, client);
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleChildConnectionClosed(session); });
+
+		{
+			std::lock_guard numberlock(connectionSentry);
+			connections.push_back(s);
+		}
+		return s;
+	}
+
 	UDP_Session* UDP_FixedPort::NewClientSession(ConnectionKey parNewKey, bool parIsBrodcast, bool parIsMulticast)
 	{
 		UDP_Session* s = new UDP_Session(parNewKey, adapterIP, parIsBrodcast, parIsMulticast, client);

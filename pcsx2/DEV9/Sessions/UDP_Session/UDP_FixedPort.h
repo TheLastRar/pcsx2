@@ -13,6 +13,7 @@
 
 #include "DEV9/Sessions/BaseSession.h"
 #include "UDP_BaseSession.h"
+#include "UDP_IGMPSession.h"
 #include "UDP_Session.h"
 
 namespace Sessions
@@ -43,6 +44,7 @@ namespace Sessions
 		virtual void Reset();
 
 		UDP_Session* NewClientSession(ConnectionKey parNewKey, bool parIsBrodcast, bool parIsMulticast);
+		UDP_IGMPSession* NewIGMPSession(ConnectionKey parNewKey);
 
 		virtual ~UDP_FixedPort();
 
