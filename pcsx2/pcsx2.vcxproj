@@ -160,6 +160,7 @@
     <ClCompile Include="DEV9\PacketReader\EthernetFrameEditor.cpp" />
     <ClCompile Include="DEV9\PacketReader\EthernetFrame.cpp" />
     <ClCompile Include="DEV9\PacketReader\IP\ICMP\ICMP_Packet.cpp" />
+    <ClCompile Include="DEV9\PacketReader\IP\IGMP\IGMP_Packet.cpp" />
     <ClCompile Include="DEV9\PacketReader\IP\TCP\TCP_Options.cpp" />
     <ClCompile Include="DEV9\PacketReader\IP\TCP\TCP_Packet.cpp" />
     <ClCompile Include="DEV9\PacketReader\IP\UDP\DHCP\DHCP_Options.cpp" />
@@ -500,6 +501,7 @@
     <ClInclude Include="DEV9\PacketReader\EthernetFrame.h" />
     <ClInclude Include="DEV9\PacketReader\MAC_Address.h" />
     <ClInclude Include="DEV9\PacketReader\IP\ICMP\ICMP_Packet.h" />
+    <ClInclude Include="DEV9\PacketReader\IP\IGMP\IGMP_Packet.h" />
     <ClInclude Include="DEV9\PacketReader\IP\TCP\TCP_Options.h" />
     <ClInclude Include="DEV9\PacketReader\IP\TCP\TCP_Packet.h" />
     <ClInclude Include="DEV9\PacketReader\IP\UDP\DHCP\DHCP_Options.h" />
