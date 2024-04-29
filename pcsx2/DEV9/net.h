@@ -27,6 +27,7 @@
 #include "InternalServers/DHCP_Server.h"
 #include "InternalServers/DNS_Logger.h"
 #include "InternalServers/DNS_Server.h"
+#include "InternalServers/IGP_Logger.h"
 
 struct ConfigDEV9;
 
@@ -102,6 +103,7 @@ protected:
 	InternalServers::DHCP_Server dhcpServer = InternalServers::DHCP_Server([&] { InternalSignalReceived(); });
 	InternalServers::DNS_Logger dnsLogger;
 	InternalServers::DNS_Server dnsServer = InternalServers::DNS_Server([&] { InternalSignalReceived(); });
+	InternalServers::IGP_Logger igpLogger;
 
 public:
 	NetAdapter();

@@ -205,14 +205,16 @@ NetAdapter::~NetAdapter()
 
 void NetAdapter::InspectSend(NetPacket* pkt)
 {
-	if (EmuConfig.DEV9.EthLogDNS)
+	EthernetFrame frame(pkt);
+	if (frame.protocol == (u16)EtherType::IPv4)
 	{
-		EthernetFrame frame(pkt);
-		if (frame.protocol == (u16)EtherType::IPv4)
-		{
-			PayloadPtr* payload = static_cast<PayloadPtr*>(frame.GetPayload());
-			IP_Packet ippkt(payload->data, payload->GetLength());
+		PayloadPtr* payload = static_cast<PayloadPtr*>(frame.GetPayload());
+		IP_Packet ippkt(payload->data, payload->GetLength());
 
+		igpLogger.InspectSend(&ippkt);
+
+		if (EmuConfig.DEV9.EthLogDNS)
+		{
 			if (ippkt.protocol == (u16)IP_Type::UDP)
 			{
 				IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ippkt.GetPayload());
@@ -230,14 +232,16 @@ void NetAdapter::InspectSend(NetPacket* pkt)
 }
 void NetAdapter::InspectRecv(NetPacket* pkt)
 {
-	if (EmuConfig.DEV9.EthLogDNS)
+	EthernetFrame frame(pkt);
+	if (frame.protocol == (u16)EtherType::IPv4)
 	{
-		EthernetFrame frame(pkt);
-		if (frame.protocol == (u16)EtherType::IPv4)
-		{
-			PayloadPtr* payload = static_cast<PayloadPtr*>(frame.GetPayload());
-			IP_Packet ippkt(payload->data, payload->GetLength());
+		PayloadPtr* payload = static_cast<PayloadPtr*>(frame.GetPayload());
+		IP_Packet ippkt(payload->data, payload->GetLength());
 
+		igpLogger.InspectRecv(&ippkt);
+
+		if (EmuConfig.DEV9.EthLogDNS)
+		{
 			if (ippkt.protocol == (u16)IP_Type::UDP)
 			{
 				IP_PayloadPtr* ipPayload = static_cast<IP_PayloadPtr*>(ippkt.GetPayload());
