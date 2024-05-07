@@ -32,6 +32,10 @@ private Q_SLOTS:
 	void onEthHostImport();
 	void onEthHostPerGame();
 	void onEthHostEdit(QStandardItem* item);
+	void onEthPortAdd();
+	void onEthPortDel();
+	void onEthPortPerGame();
+	void onEthPortEdit(QStandardItem* item);
 
 	void onHddEnabledChanged(Qt::CheckState state);
 	void onHddBrowseFileClicked();
@@ -60,6 +64,13 @@ private:
 	void AddNewHostConfig(const HostEntryUi& host);
 	void DeleteHostConfig(int index);
 
+	void RefreshPortList();
+	int CountPortsConfig();
+	std::optional<std::vector<PortEntryUi>> ListPortsConfig();
+	std::vector<PortEntryUi> ListBasePortsConfig();
+	void AddNewPortConfig(const PortEntryUi& port);
+	void DeletePortConfig(int index);
+
 	void UpdateHddSizeUIEnabled();
 	void UpdateHddSizeUIValues();
 
@@ -71,6 +82,9 @@ private:
 
 	QStandardItemModel* m_ethHost_model;
 	QSortFilterProxyModel* m_ethHosts_proxy;
+
+	QStandardItemModel* m_ethPort_model;
+	QSortFilterProxyModel* m_ethPorts_proxy;
 
 	bool m_adaptersLoaded{false};
 	std::vector<Pcsx2Config::DEV9Options::NetApi> m_api_list;

@@ -101,7 +101,7 @@ std::vector<AdapterEntry> SocketAdapter::GetAdapters()
 
 AdapterOptions SocketAdapter::GetAdapterOptions()
 {
-	return (AdapterOptions::DHCP_ForcedOn | AdapterOptions::DHCP_OverrideIP | AdapterOptions::DHCP_OverideSubnet | AdapterOptions::DHCP_OverideGateway);
+	return (AdapterOptions::DHCP_ForcedOn | AdapterOptions::DHCP_OverrideIP | AdapterOptions::DHCP_OverideSubnet | AdapterOptions::DHCP_OverideGateway | AdapterOptions::HasPortForwarding);
 }
 
 SocketAdapter::SocketAdapter()
