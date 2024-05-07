@@ -45,6 +45,17 @@ on:
         default: false
 
 jobs:
+  codespell:
+    name: Check code spelling
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check Spelling
+        uses: codespell-project/actions-codespell@v2
+        with:
+            check_filenames: true
+
   build_linux:
     name: ${{ inputs.jobName }}
     runs-on: ${{ inputs.os }}
