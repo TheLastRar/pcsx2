@@ -45,6 +45,19 @@ on:
         default: Release
 
 jobs:
+  codespell:
+    name: Check code spelling
+    runs-on: ${{ inputs.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check Spelling
+        uses: codespell-project/actions-codespell@v2
+        with:
+            check_filenames: true
+            skip: "./3rdparty/*,./bin/resources/game_controller_db.txt,./pcsx2-qt/Translations/*"
+            ignore_words_list: lod,wil,inout
+
   build_linux:
     name: ${{ inputs.jobName }}
     runs-on: ${{ inputs.os }}
