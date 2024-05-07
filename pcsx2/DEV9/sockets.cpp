@@ -106,7 +106,7 @@ AdapterOptions SocketAdapter::GetAdapterOptions()
 
 SocketAdapter::SocketAdapter()
 {
-	bool lanMode = false;
+	bool lanMode = true;
 	bool foundAdapter;
 
 	AdapterUtils::Adapter adapter;
