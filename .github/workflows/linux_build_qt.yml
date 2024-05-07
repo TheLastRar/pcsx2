@@ -55,8 +55,8 @@ jobs:
         uses: codespell-project/actions-codespell@v2
         with:
             check_filenames: true
-            skip: "./3rdparty/*,./bin/resources/game_controller_db.txt,./bin/resources/shader,pcsx2-qt/Translations/*"
-            ignore_words_list: lod,wil
+            skip: "./3rdparty/*,./bin/resources/game_controller_db.txt,./pcsx2-qt/Translations/*"
+            ignore_words_list: lod,wil,inout
 
   build_linux:
     name: ${{ inputs.jobName }}
