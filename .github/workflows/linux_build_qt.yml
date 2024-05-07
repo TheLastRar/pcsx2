@@ -55,7 +55,9 @@ jobs:
         uses: codespell-project/actions-codespell@v2
         with:
             check_filenames: true
-            exclude_file: 3rdparty,bin/resources/game_controller_db.txt,bin/resources/shader,pcsx2-qt/Translations
+            exclude_file: 3rdparty
+            exclude_file: bin/resources/game_controller_db.txt
+            exclude_file: bin/resources/shader,pcsx2-qt/Translations
             ignore_words_list: lod, wil
 
   build_linux:
