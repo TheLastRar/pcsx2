@@ -20,6 +20,18 @@ jobs:
       - name: Verify VS Project Files
         run: .github\workflows\scripts\windows\validate-vs-filters.ps1
 
+  codespell:
+    name: Check code spelling
+    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
+    runs-on: windows-2019
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check Spelling
+        run: codespell-project/actions-codespell@v2
+        with:
+            check_filenames: true
+
   build_qt_sse4:
     needs: lint_vs_proj_files
     name: "SSE4"
