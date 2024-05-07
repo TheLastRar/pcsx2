@@ -28,7 +28,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
       - name: Check Spelling
-        run: codespell-project/actions-codespell@v2
+        uses: codespell-project/actions-codespell@v2
         with:
             check_filenames: true
 
