@@ -300,7 +300,7 @@ namespace Sessions
 				if (ret == -1)
 				{
 					hasData = false;
-					Console.WriteLn("DEV9: ICMP: select failed. Error Code: %d", errno);
+					Console.WriteLn("DEV9: ICMP: select failed. Error: %d", errno);
 				}
 				else if (FD_ISSET(icmpSocket, &sExcept))
 				{
@@ -310,9 +310,9 @@ namespace Sessions
 
 					socklen_t len = sizeof(error);
 					if (getsockopt(icmpSocket, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &len) < 0)
-						Console.Error("DEV9: ICMP: Unknown ICMP Connection Error (getsockopt Error: %d)", errno);
+						Console.Error("DEV9: ICMP: Unknown ICMP connection error (getsockopt error: %d)", errno);
 					else
-						Console.Error("DEV9: ICMP: Recv Error: %d", error);
+						Console.Error("DEV9: ICMP: Recv error: %d", error);
 				}
 				else
 					hasData = FD_ISSET(icmpSocket, &sReady);
@@ -441,7 +441,7 @@ namespace Sessions
 					}
 					else
 					{
-						Console.Error("DEV9: ICMP: Recv Error %d", exError.ee_errno);
+						Console.Error("DEV9: ICMP: Recv error %d", exError.ee_errno);
 						result.type = -1;
 						result.code = exError.ee_errno;
 						return &result;
@@ -561,7 +561,7 @@ namespace Sessions
 
 		if (ret != ERROR_IO_PENDING)
 		{
-			Console.Error("DEV9: ICMP: Failed to Send Echo, %d", GetLastError());
+			Console.Error("DEV9: ICMP: Failed to send echo, %d", GetLastError());
 			return false;
 		}
 
@@ -656,7 +656,7 @@ namespace Sessions
 				const int ret = sendto(icmpSocket, buffer.get(), icmp.GetLength(), 0, reinterpret_cast<const sockaddr*>(&endpoint), sizeof(endpoint));
 				if (ret == -1)
 				{
-					Console.Error("DEV9: ICMP: Send Error %d", errno);
+					Console.Error("DEV9: ICMP: Send error %d", errno);
 					::close(icmpSocket);
 					icmpSocket = -1;
 					return false;
@@ -759,11 +759,11 @@ namespace Sessions
 				// Free ping
 				delete ping;
 
-				if (--open == 0)
-					RaiseEventConnectionClosed();
-
 				if (ret.has_value())
 					DevCon.WriteLn("DEV9: ICMP: Return Ping");
+
+				if (--open == 0)
+					RaiseEventConnectionClosed();
 
 				// Return packet
 				return ret;
