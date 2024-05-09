@@ -164,7 +164,7 @@ namespace Sessions
 #endif
 	}
 
-	bool ICMP_Session::Ping::IsInitialised()
+	bool ICMP_Session::Ping::IsInitialised() const
 	{
 #ifdef _WIN32
 		return icmpFile != INVALID_HANDLE_VALUE;
@@ -188,7 +188,7 @@ namespace Sessions
 		{
 			ResetEvent(icmpEvent);
 
-			[[maybe_unused]] int count = IcmpParseReplies(icmpResponseBuffer.get(), icmpResponseBufferLen);
+			[[maybe_unused]] const int count = IcmpParseReplies(icmpResponseBuffer.get(), icmpResponseBufferLen);
 			pxAssert(count == 1);
 
 			// Rely on implicit object creation
@@ -463,7 +463,7 @@ namespace Sessions
 					{
 						// Rely on implicit object creation
 						ip* ipHeader = reinterpret_cast<ip*>(icmpResponseBuffer.get());
-						int headerLength = ipHeader->ip_hl << 2;
+						const int headerLength = ipHeader->ip_hl << 2;
 						pxAssert(headerLength == 20);
 
 						offset = headerLength;
@@ -593,7 +593,7 @@ namespace Sessions
 				}
 
 #if defined(ICMP_SOCKETS_LINUX)
-				int value = 1;
+				const int value = 1;
 				if (setsockopt(icmpSocket, SOL_IP, IP_RECVERR, reinterpret_cast<const char*>(&value), sizeof(value)))
 				{
 					Console.Error("DEV9: ICMP: Failed to setsockopt IP_RECVERR. Error: %d", errno);
@@ -730,7 +730,7 @@ namespace Sessions
 						// Allocate fullsize buffer
 						u8* temp = new u8[ping->originalPacket->GetLength()];
 						// Allocate returned ICMP payload
-						int responseSize = ping->originalPacket->GetHeaderLength() + 8;
+						const int responseSize = ping->originalPacket->GetHeaderLength() + 8;
 						data = new PayloadData(responseSize);
 
 						// Write packet into buffer
@@ -820,7 +820,7 @@ namespace Sessions
 						}
 
 						IP_Address srvIP = retPkt->sourceIP;
-						u8 prot = retPkt->protocol;
+						const u8 prot = retPkt->protocol;
 						u16 srvPort = 0;
 						u16 ps2Port = 0;
 						switch (prot)
