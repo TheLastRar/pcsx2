@@ -290,6 +290,7 @@ set(pcsx2DEV9Sources
 	DEV9/InternalServers/DHCP_Server.cpp
 	DEV9/InternalServers/DNS_Logger.cpp
 	DEV9/InternalServers/DNS_Server.cpp
+	DEV9/InternalServers/Pkt_Dumper.cpp
 	DEV9/PacketReader/ARP/ARP_Packet.cpp
 	DEV9/PacketReader/ARP/ARP_PacketEditor.cpp
 	DEV9/PacketReader/IP/ICMP/ICMP_Packet.cpp
@@ -329,6 +330,7 @@ set(pcsx2DEV9Headers
 	DEV9/InternalServers/DHCP_Server.h
 	DEV9/InternalServers/DNS_Logger.h
 	DEV9/InternalServers/DNS_Server.h
+	DEV9/InternalServers/Pkt_Dumper.h
 	DEV9/net.h
 	DEV9/PacketReader/ARP/ARP_Packet.h
 	DEV9/PacketReader/ARP/ARP_PacketEditor.h

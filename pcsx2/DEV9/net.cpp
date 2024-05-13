@@ -205,6 +205,7 @@ NetAdapter::~NetAdapter()
 
 void NetAdapter::InspectSend(NetPacket* pkt)
 {
+	pktDumper.InspectSend(pkt);
 	if (EmuConfig.DEV9.EthLogDNS || EmuConfig.DEV9.EthLogDHCP)
 	{
 		EthernetFrame frame(pkt);
@@ -237,6 +238,7 @@ void NetAdapter::InspectSend(NetPacket* pkt)
 }
 void NetAdapter::InspectRecv(NetPacket* pkt)
 {
+	pktDumper.InspectRecv(pkt);
 	if (EmuConfig.DEV9.EthLogDNS || EmuConfig.DEV9.EthLogDHCP)
 	{
 		EthernetFrame frame(pkt);
@@ -315,6 +317,8 @@ void NetAdapter::InitInternalServer(ifaddrs* adapter, bool dhcpForceEnable, IP_A
 
 	dnsServer.Init(adapter);
 
+	pktDumper.Init(adapter);
+
 	if (blocks())
 	{
 		internalRxThreadRunning.store(true);
@@ -336,6 +340,8 @@ void NetAdapter::ReloadInternalServer(ifaddrs* adapter, bool dhcpForceEnable, IP
 		dhcpServer.Init(adapter, ipOverride, subnetOverride, gatewayOveride);
 
 	dnsServer.Init(adapter);
+
+	pktDumper.Init(adapter);
 }
 
 bool NetAdapter::InternalServerRecv(NetPacket* pkt)
