@@ -137,7 +137,7 @@ jobs:
           aria2c -Z "${{ inputs.patchesUrl }}/patches.zip"
 
       - name: Generate CMake Clang
-        if: ${{ inputs.compiler == "clang"}}
+        if: inputs.compiler == "clang"
         env:
           ADDITIONAL_CMAKE_ARGS: ${{ inputs.cmakeflags }}
         run: |
@@ -155,7 +155,7 @@ jobs:
             $ADDITIONAL_CMAKE_ARGS
 
       - name: Generate CMake GCC
-        if: ${{ inputs.compiler == "gcc"}}
+        if: inputs.compiler == "gcc"
         env:
           ADDITIONAL_CMAKE_ARGS: ${{ inputs.cmakeflags }}
         run: |
