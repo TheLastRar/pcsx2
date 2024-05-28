@@ -28,8 +28,8 @@ if(MSVC)
 else()
 	target_compile_options(PCSX2_FLAGS INTERFACE
 		-ffp-contract=fast
-		-fno-strict-aliasing
-		-Wstrict-aliasing # Allow to track strict aliasing issue.
+		-fstrict-aliasing # strict aliasing needed to emit strict aliasing warnings
+		-Wstrict-aliasing=1 # Allow to track strict aliasing issue.
 		-Wno-parentheses
 		-Wno-missing-braces
 		-Wno-unknown-pragmas
