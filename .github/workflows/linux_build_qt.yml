@@ -128,7 +128,8 @@ jobs:
           cd bin/resources
           aria2c -Z "${{ inputs.patchesUrl }}/patches.zip"
 
-      - name: Generate CMake
+      - name: Generate CMake Clang
+        if: inputs.compiler == 'clang'
         env:
           ADDITIONAL_CMAKE_ARGS: ${{ inputs.cmakeflags }}
         run: |
@@ -140,6 +141,22 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-17 \
             -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
             -DCMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DENABLE_SETCAP=OFF \
+            -DDISABLE_ADVANCE_SIMD=TRUE \
+            $ADDITIONAL_CMAKE_ARGS
+
+      - name: Generate CMake GCC
+        if: inputs.compiler == 'gcc'
+        env:
+          ADDITIONAL_CMAKE_ARGS: ${{ inputs.cmakeflags }}
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+            -DCMAKE_PREFIX_PATH="$HOME/deps" \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DENABLE_SETCAP=OFF \
             -DDISABLE_ADVANCE_SIMD=TRUE \
