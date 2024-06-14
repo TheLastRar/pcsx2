@@ -79,6 +79,8 @@ static constexpr size_t FASTMEM_AREA_SIZE = 0x100000000ULL;
 static constexpr u32 FASTMEM_PAGE_COUNT = FASTMEM_AREA_SIZE / VTLB_PAGE_SIZE;
 static constexpr u32 NO_FASTMEM_MAPPING = 0xFFFFFFFFu;
 
+static size_t s_host_pagesize = HostSys::GetRuntimePageSize();
+
 static std::unique_ptr<SharedMemoryMappingArea> s_fastmem_area;
 static std::vector<u32> s_fastmem_virtual_mapping; // maps vaddr -> mainmem offset
 static std::unordered_multimap<u32, u32> s_fastmem_physical_mapping; // maps mainmem offset -> vaddr
@@ -804,62 +806,6 @@ __fi u32 vtlb_V2P(u32 vaddr)
 	return paddr;
 }
 
-static constexpr bool vtlb_MismatchedHostPageSize()
-{
-	return (__pagesize != VTLB_PAGE_SIZE);
-}
-
-static bool vtlb_IsHostAligned(u32 paddr)
-{
-	if constexpr (!vtlb_MismatchedHostPageSize())
-		return true;
-
-	return ((paddr & __pagemask) == 0);
-}
-
-static u32 vtlb_HostPage(u32 page)
-{
-	if constexpr (!vtlb_MismatchedHostPageSize())
-		return page;
-
-	return page >> (__pageshift - VTLB_PAGE_BITS);
-}
-
-static u32 vtlb_HostAlignOffset(u32 offset)
-{
-	if constexpr (!vtlb_MismatchedHostPageSize())
-		return offset;
-
-	return offset & ~__pagemask;
-}
-
-static bool vtlb_IsHostCoalesced(u32 page)
-{
-	if constexpr (__pagesize == VTLB_PAGE_SIZE)
-	{
-		return true;
-	}
-	else
-	{
-		static constexpr u32 shift = __pageshift - VTLB_PAGE_BITS;
-		static constexpr u32 count = (1u << shift);
-		static constexpr u32 mask = count - 1;
-
-		const u32 base = page & ~mask;
-		const u32 base_offset = s_fastmem_virtual_mapping[base];
-		if ((base_offset & __pagemask) != 0)
-			return false;
-
-		for (u32 i = 0, expected_offset = base_offset; i < count; i++, expected_offset += VTLB_PAGE_SIZE)
-		{
-			if (s_fastmem_virtual_mapping[base + i] != expected_offset)
-				return false;
-		}
-
-		return true;
-	}
-}
-
 static bool vtlb_GetMainMemoryOffsetFromPtr(uptr ptr, u32* mainmem_offset, u32* mainmem_size, PageProtectionMode* prot)
 {
 	const uptr page_end = ptr + VTLB_PAGE_SIZE;
@@ -915,28 +861,136 @@ static bool vtlb_GetMainMemoryOffset(u32 paddr, u32* mainmem_offset, u32* mainme
 	return vtlb_GetMainMemoryOffsetFromPtr(vm.raw(), mainmem_offset, mainmem_size, prot);
 }
 
-static void vtlb_CreateFastmemMapping(u32 vaddr, u32 mainmem_offset, const PageProtectionMode& mode)
+template <unsigned int PageSize>
+class vtlb_FastMemMapper
 {
-	FASTMEM_LOG("Create fastmem mapping @ vaddr %08X mainmem %08X", vaddr, mainmem_offset);
+private:
+	constexpr static unsigned int PageMask = PageSize - 1;
+	constexpr static unsigned int PageShift = std::bit_width(PageMask);
 
-	const u32 page = vaddr / VTLB_PAGE_SIZE;
-
-	if (s_fastmem_virtual_mapping[page] == mainmem_offset)
+	static constexpr bool MismatchedHostPageSize()
 	{
-		// current mapping is fine
-		return;
+		return (PageSize != VTLB_PAGE_SIZE);
 	}
 
-	if (s_fastmem_virtual_mapping[page] != NO_FASTMEM_MAPPING)
+	static bool IsHostAligned(u32 paddr)
 	{
-		// current mapping needs to be removed
-		const bool was_coalesced = vtlb_IsHostCoalesced(page);
+		if constexpr (!MismatchedHostPageSize())
+			return true;
 
+		return ((paddr & PageMask) == 0);
+	}
+
+	static u32 HostPage(u32 page)
+	{
+		if constexpr (!MismatchedHostPageSize())
+			return page;
+
+		return page >> (PageShift - VTLB_PAGE_BITS);
+	}
+
+	static u32 HostAlignOffset(u32 offset)
+	{
+		if constexpr (!MismatchedHostPageSize())
+			return offset;
+
+		return offset & ~PageMask;
+	}
+
+	static bool IsHostCoalesced(u32 page)
+	{
+		if constexpr (PageSize == VTLB_PAGE_SIZE)
+		{
+			return true;
+		}
+		else
+		{
+			static constexpr u32 shift = PageShift - VTLB_PAGE_BITS;
+			static constexpr u32 count = (1u << shift);
+			static constexpr u32 mask = count - 1;
+
+			const u32 base = page & ~mask;
+			const u32 base_offset = s_fastmem_virtual_mapping[base];
+			if ((base_offset & PageMask) != 0)
+				return false;
+
+			for (u32 i = 0, expected_offset = base_offset; i < count; i++, expected_offset += VTLB_PAGE_SIZE)
+			{
+				if (s_fastmem_virtual_mapping[base + i] != expected_offset)
+					return false;
+			}
+
+			return true;
+		}
+	}
+
+	//vtlb_GetMainMemoryOffsetFromPtr
+	//vtlb_GetMainMemoryOffset
+public:
+	static void CreateFastmemMapping(u32 vaddr, u32 mainmem_offset, const PageProtectionMode& mode)
+	{
+		FASTMEM_LOG("Create fastmem mapping @ vaddr %08X mainmem %08X", vaddr, mainmem_offset);
+
+		const u32 page = vaddr / VTLB_PAGE_SIZE;
+
+		if (s_fastmem_virtual_mapping[page] == mainmem_offset)
+		{
+			// current mapping is fine
+			return;
+		}
+
+		if (s_fastmem_virtual_mapping[page] != NO_FASTMEM_MAPPING)
+		{
+			// current mapping needs to be removed
+			const bool was_coalesced = IsHostCoalesced(page);
+
+			s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
+			if (was_coalesced && !s_fastmem_area->Unmap(s_fastmem_area->PagePointer(HostPage(page)), PageSize))
+				Console.Error("Failed to unmap vaddr %08X", vaddr);
+
+			// remove reverse mapping
+			auto range = s_fastmem_physical_mapping.equal_range(mainmem_offset);
+			for (auto it = range.first; it != range.second;)
+			{
+				auto this_it = it++;
+				if (this_it->second == vaddr)
+					s_fastmem_physical_mapping.erase(this_it);
+			}
+		}
+
+		s_fastmem_virtual_mapping[page] = mainmem_offset;
+		if (IsHostCoalesced(page))
+		{
+			const u32 host_page = HostPage(page);
+			const u32 host_offset = HostAlignOffset(mainmem_offset);
+
+			if (!s_fastmem_area->Map(SysMemory::GetDataFileHandle(), host_offset,
+					s_fastmem_area->PagePointer(host_page), PageSize, mode))
+			{
+				Console.Error("Failed to map vaddr %08X to mainmem offset %08X", HostAlignOffset(vaddr), host_offset);
+				s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
+				return;
+			}
+		}
+
+		s_fastmem_physical_mapping.emplace(mainmem_offset, vaddr);
+	}
+
+	static void RemoveFastmemMapping(u32 vaddr)
+	{
+		const u32 page = vaddr / VTLB_PAGE_SIZE;
+		if (s_fastmem_virtual_mapping[page] == NO_FASTMEM_MAPPING)
+			return;
+
+		const u32 mainmem_offset = s_fastmem_virtual_mapping[page];
+		const bool was_coalesced = IsHostCoalesced(page);
+		FASTMEM_LOG("Remove fastmem mapping @ vaddr %08X mainmem %08X", vaddr, mainmem_offset);
 		s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
-		if (was_coalesced && !s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), __pagesize))
-			Console.Error("Failed to unmap vaddr %08X", vaddr);
 
-		// remove reverse mapping
+		if (was_coalesced && !s_fastmem_area->Unmap(s_fastmem_area->PagePointer(HostPage(page)), PageSize))
+			Console.Error("Failed to unmap vaddr %08X", HostAlignOffset(vaddr));
+
+		// remove from reverse map
 		auto range = s_fastmem_physical_mapping.equal_range(mainmem_offset);
 		for (auto it = range.first; it != range.second;)
 		{
@@ -946,81 +1000,92 @@ static void vtlb_CreateFastmemMapping(u32 vaddr, u32 mainmem_offset, const PageP
 		}
 	}
 
-	s_fastmem_virtual_mapping[page] = mainmem_offset;
-	if (vtlb_IsHostCoalesced(page))
+	static void RemoveFastmemMappings(u32 vaddr, u32 size)
 	{
-		const u32 host_page = vtlb_HostPage(page);
-		const u32 host_offset = vtlb_HostAlignOffset(mainmem_offset);
+		pxAssert((vaddr & VTLB_PAGE_MASK) == 0);
+		pxAssert(size > 0 && (size & VTLB_PAGE_MASK) == 0);
 
-		if (!s_fastmem_area->Map(SysMemory::GetDataFileHandle(), host_offset,
-				s_fastmem_area->PagePointer(host_page), __pagesize, mode))
+		const u32 num_pages = size / VTLB_PAGE_SIZE;
+		for (u32 i = 0; i < num_pages; i++, vaddr += VTLB_PAGE_SIZE)
+			RemoveFastmemMapping(vaddr);
+	}
+
+	static void RemoveFastmemMappings()
+	{
+		if (s_fastmem_virtual_mapping.empty())
 		{
-			Console.Error("Failed to map vaddr %08X to mainmem offset %08X", vtlb_HostAlignOffset(vaddr), host_offset);
-			s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
+			// not initialized yet
 			return;
 		}
-	}
 
-	s_fastmem_physical_mapping.emplace(mainmem_offset, vaddr);
-}
-
-static void vtlb_RemoveFastmemMapping(u32 vaddr)
-{
-	const u32 page = vaddr / VTLB_PAGE_SIZE;
-	if (s_fastmem_virtual_mapping[page] == NO_FASTMEM_MAPPING)
-		return;
-
-	const u32 mainmem_offset = s_fastmem_virtual_mapping[page];
-	const bool was_coalesced = vtlb_IsHostCoalesced(page);
-	FASTMEM_LOG("Remove fastmem mapping @ vaddr %08X mainmem %08X", vaddr, mainmem_offset);
-	s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
-
-	if (was_coalesced && !s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), __pagesize))
-		Console.Error("Failed to unmap vaddr %08X", vtlb_HostAlignOffset(vaddr));
-
-	// remove from reverse map
-	auto range = s_fastmem_physical_mapping.equal_range(mainmem_offset);
-	for (auto it = range.first; it != range.second;)
-	{
-		auto this_it = it++;
-		if (this_it->second == vaddr)
-			s_fastmem_physical_mapping.erase(this_it);
-	}
-}
-
-static void vtlb_RemoveFastmemMappings(u32 vaddr, u32 size)
-{
-	pxAssert((vaddr & VTLB_PAGE_MASK) == 0);
-	pxAssert(size > 0 && (size & VTLB_PAGE_MASK) == 0);
-
-	const u32 num_pages = size / VTLB_PAGE_SIZE;
-	for (u32 i = 0; i < num_pages; i++, vaddr += VTLB_PAGE_SIZE)
-		vtlb_RemoveFastmemMapping(vaddr);
-}
-
-static void vtlb_RemoveFastmemMappings()
-{
-	if (s_fastmem_virtual_mapping.empty())
-	{
-		// not initialized yet
-		return;
-	}
-
-	for (u32 page = 0; page < FASTMEM_PAGE_COUNT; page++)
-	{
-		if (s_fastmem_virtual_mapping[page] == NO_FASTMEM_MAPPING)
-			continue;
-
-		if (vtlb_IsHostCoalesced(page))
+		for (u32 page = 0; page < FASTMEM_PAGE_COUNT; page++)
 		{
-			if (!s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), __pagesize))
-				Console.Error("Failed to unmap vaddr %08X", page * __pagesize);
+			if (s_fastmem_virtual_mapping[page] == NO_FASTMEM_MAPPING)
+				continue;
+
+			if (vtlb_IsHostCoalesced(page))
+			{
+				if (!s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), PageSize))
+					Console.Error("Failed to unmap vaddr %08X", page * PageSize);
+			}
+
+			s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
 		}
 
-		s_fastmem_virtual_mapping[page] = NO_FASTMEM_MAPPING;
+		s_fastmem_physical_mapping.clear();
 	}
 
-	s_fastmem_physical_mapping.clear();
+	//vtlb_ResolveFastmemMapping
+	//vtlb_GetGuestAddress
+
+	static void UpdateFastmemProtection(u32 paddr, u32 size, PageProtectionMode prot)
+	{
+		if (!CHECK_FASTMEM)
+			return;
+
+		pxAssert((paddr & VTLB_PAGE_MASK) == 0);
+		pxAssert(size > 0 && (size & VTLB_PAGE_MASK) == 0);
+
+		u32 mainmem_start, mainmem_size;
+		PageProtectionMode old_prot;
+		if (!vtlb_GetMainMemoryOffset(paddr, &mainmem_start, &mainmem_size, &old_prot))
+			return;
+
+		FASTMEM_LOG("UpdateFastmemProtection %08X mmoffset %08X %08X", paddr, mainmem_start, size);
+
+		u32 current_mainmem = mainmem_start;
+		const u32 num_pages = std::min(size, mainmem_size) / VTLB_PAGE_SIZE;
+		for (u32 i = 0; i < num_pages; i++, current_mainmem += VTLB_PAGE_SIZE)
+		{
+			// update virtual mapping mapping
+			auto range = s_fastmem_physical_mapping.equal_range(current_mainmem);
+			for (auto it = range.first; it != range.second; ++it)
+			{
+				FASTMEM_LOG("  valias %08X (size %u)", it->second, VTLB_PAGE_SIZE);
+
+				if (IsHostAligned(it->second))
+					HostSys::MemProtect(s_fastmem_area->OffsetPointer(it->second), PageSize, prot);
+			}
+		}
+	}
+};
+
+
+static void vtlb_CreateFastmemMapping(u32 vaddr, u32 mainmem_offset, const PageProtectionMode& mode)
+{
+	vtlb_FastMemMapper<__pagesize>::CreateFastmemMapping(vaddr, mainmem_offset, mode);
+}
+static void vtlb_RemoveFastmemMapping(u32 vaddr)
+{
+	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMapping(vaddr);
+}
+static void vtlb_RemoveFastmemMappings(u32 vaddr, u32 size)
+{
+	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMappings(vaddr, size);
+}
+static void vtlb_RemoveFastmemMappings()
+{
+	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMappings();
 }
 
 bool vtlb_ResolveFastmemMapping(uptr* addr)
@@ -1060,33 +1125,7 @@ bool vtlb_GetGuestAddress(uptr host_addr, u32* guest_addr)
 
 void vtlb_UpdateFastmemProtection(u32 paddr, u32 size, PageProtectionMode prot)
 {
-	if (!CHECK_FASTMEM)
-		return;
-
-	pxAssert((paddr & VTLB_PAGE_MASK) == 0);
-	pxAssert(size > 0 && (size & VTLB_PAGE_MASK) == 0);
-
-	u32 mainmem_start, mainmem_size;
-	PageProtectionMode old_prot;
-	if (!vtlb_GetMainMemoryOffset(paddr, &mainmem_start, &mainmem_size, &old_prot))
-		return;
-
-	FASTMEM_LOG("UpdateFastmemProtection %08X mmoffset %08X %08X", paddr, mainmem_start, size);
-
-	u32 current_mainmem = mainmem_start;
-	const u32 num_pages = std::min(size, mainmem_size) / VTLB_PAGE_SIZE;
-	for (u32 i = 0; i < num_pages; i++, current_mainmem += VTLB_PAGE_SIZE)
-	{
-		// update virtual mapping mapping
-		auto range = s_fastmem_physical_mapping.equal_range(current_mainmem);
-		for (auto it = range.first; it != range.second; ++it)
-		{
-			FASTMEM_LOG("  valias %08X (size %u)", it->second, VTLB_PAGE_SIZE);
-
-			if (vtlb_IsHostAligned(it->second))
-				HostSys::MemProtect(s_fastmem_area->OffsetPointer(it->second), __pagesize, prot);
-		}
-	}
+	vtlb_FastMemMapper<__pagesize>::UpdateFastmemProtection(paddr, size, prot);
 }
 
 void vtlb_ClearLoadStoreInfo()
