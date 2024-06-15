@@ -1023,7 +1023,7 @@ public:
 			if (s_fastmem_virtual_mapping[page] == NO_FASTMEM_MAPPING)
 				continue;
 
-			if (vtlb_IsHostCoalesced(page))
+			if (IsHostCoalesced(page))
 			{
 				if (!s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), PageSize))
 					Console.Error("Failed to unmap vaddr %08X", page * PageSize);
