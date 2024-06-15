@@ -81,6 +81,25 @@ static constexpr u32 NO_FASTMEM_MAPPING = 0xFFFFFFFFu;
 
 static size_t s_host_pagesize = HostSys::GetRuntimePageSize();
 
+#define MULTI_PAGESIZE(fn, ...) \
+{ \
+	switch (s_host_pagesize) \
+	{ \
+		case _4kb: \
+			vtlb_FastMem_Functions<_4kb>::fn(__VA_ARGS__); \
+			break; \
+		case _16kb: \
+			vtlb_FastMem_Functions<_16kb>::fn(__VA_ARGS__); \
+			break; \
+		case _64kb: \
+			vtlb_FastMem_Functions<_64kb>::fn(__VA_ARGS__); \
+			break; \
+		default: \
+			pxAssert(false); \
+			break; \
+	} \
+}
+
 static std::unique_ptr<SharedMemoryMappingArea> s_fastmem_area;
 static std::vector<u32> s_fastmem_virtual_mapping; // maps vaddr -> mainmem offset
 static std::unordered_multimap<u32, u32> s_fastmem_physical_mapping; // maps mainmem offset -> vaddr
@@ -862,7 +881,7 @@ static bool vtlb_GetMainMemoryOffset(u32 paddr, u32* mainmem_offset, u32* mainme
 }
 
 template <unsigned int PageSize>
-class vtlb_FastMemMapper
+class vtlb_FastMem_Functions
 {
 private:
 	constexpr static unsigned int PageMask = PageSize - 1;
@@ -1073,19 +1092,19 @@ public:
 
 static void vtlb_CreateFastmemMapping(u32 vaddr, u32 mainmem_offset, const PageProtectionMode& mode)
 {
-	vtlb_FastMemMapper<__pagesize>::CreateFastmemMapping(vaddr, mainmem_offset, mode);
+	MULTI_PAGESIZE(CreateFastmemMapping, vaddr, mainmem_offset, mode);
 }
 static void vtlb_RemoveFastmemMapping(u32 vaddr)
 {
-	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMapping(vaddr);
+	MULTI_PAGESIZE(RemoveFastmemMapping, vaddr);
 }
 static void vtlb_RemoveFastmemMappings(u32 vaddr, u32 size)
 {
-	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMappings(vaddr, size);
+	MULTI_PAGESIZE(RemoveFastmemMappings, vaddr, size);
 }
 static void vtlb_RemoveFastmemMappings()
 {
-	vtlb_FastMemMapper<__pagesize>::RemoveFastmemMappings();
+	MULTI_PAGESIZE(RemoveFastmemMappings);
 }
 
 bool vtlb_ResolveFastmemMapping(uptr* addr)
@@ -1125,7 +1144,7 @@ bool vtlb_GetGuestAddress(uptr host_addr, u32* guest_addr)
 
 void vtlb_UpdateFastmemProtection(u32 paddr, u32 size, PageProtectionMode prot)
 {
-	vtlb_FastMemMapper<__pagesize>::UpdateFastmemProtection(paddr, size, prot);
+	MULTI_PAGESIZE(UpdateFastmemProtection, paddr, size, prot);
 }
 
 void vtlb_ClearLoadStoreInfo()
