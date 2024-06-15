@@ -863,7 +863,7 @@ private:
 
 	static bool IsHostCoalesced(u32 page)
 	{
-		if constexpr (PageSize == VTLB_PAGE_SIZE)
+		if constexpr (!MismatchedHostPageSize())
 		{
 			return true;
 		}
@@ -989,7 +989,7 @@ public:
 
 			if (IsHostCoalesced(page))
 			{
-				if (!s_fastmem_area->Unmap(s_fastmem_area->PagePointer(vtlb_HostPage(page)), PageSize))
+				if (!s_fastmem_area->Unmap(s_fastmem_area->PagePointer(HostPage(page)), PageSize))
 					Console.Error("Failed to unmap vaddr %08X", page * PageSize);
 			}
 
