@@ -96,7 +96,7 @@ namespace PacketReader::IP::UDP::DNS
 		flags2 = (flags2 & ~(0xF)) | ((value & 0xF));
 	}
 
-	DNS_Packet::DNS_Packet(u8* buffer, int bufferSize)
+	DNS_Packet::DNS_Packet(const u8* buffer, int bufferSize)
 	{
 		int offset = 0;
 		//Bits 0-31 //Bytes 0-3

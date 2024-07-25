@@ -8,7 +8,7 @@
 
 namespace PacketReader::IP::UDP::DHCP
 {
-	DHCP_Packet::DHCP_Packet(u8* buffer, int bufferSize)
+	DHCP_Packet::DHCP_Packet(const u8* buffer, int bufferSize)
 	{
 		int offset = 0;
 		//Bits 0-31 //Bytes 0-3

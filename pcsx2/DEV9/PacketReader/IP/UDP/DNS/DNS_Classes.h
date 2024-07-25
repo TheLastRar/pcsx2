@@ -37,7 +37,7 @@ namespace PacketReader::IP::UDP::DNS
 		std::vector<u8> data;
 
 		DNS_ResponseEntry(const std::string& rName, u16 rType, u16 rClass, const std::vector<u8>& rData, u32 rTTL);
-		DNS_ResponseEntry(u8* buffer, int* offset);
+		DNS_ResponseEntry(const u8* buffer, int* offset);
 
 		virtual int GetLength() const;
 		virtual void WriteBytes(u8* buffer, int* offset) const;

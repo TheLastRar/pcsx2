@@ -105,7 +105,7 @@ namespace PacketReader::IP::UDP::DNS
 	{
 	}
 
-	DNS_ResponseEntry::DNS_ResponseEntry(u8* buffer, int* offset)
+	DNS_ResponseEntry::DNS_ResponseEntry(const u8* buffer, int* offset)
 		: DNS_QuestionEntry(buffer, offset)
 	{
 		u16 dataLen;

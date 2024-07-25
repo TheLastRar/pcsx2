@@ -64,7 +64,7 @@ namespace PacketReader::IP::UDP::DNS
 		void SetRCode(u8 value);
 
 		DNS_Packet() {}
-		DNS_Packet(u8* buffer, int bufferSize);
+		DNS_Packet(const u8* buffer, int bufferSize);
 
 		virtual int GetLength();
 		virtual void WriteBytes(u8* buffer, int* offset);
