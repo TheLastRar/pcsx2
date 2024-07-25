@@ -49,7 +49,7 @@ namespace PacketReader::IP::UDP::DHCP
 
 		do
 		{
-			u8 opKind = buffer[offset];
+			const u8 opKind = buffer[offset];
 			if (opKind == 255)
 			{
 				options.push_back(new DHCPopEND());
@@ -64,7 +64,7 @@ namespace PacketReader::IP::UDP::DHCP
 				opReadFin = true;
 				continue;
 			}
-			u8 opLen = buffer[offset + 1];
+			const u8 opLen = buffer[offset + 1];
 			switch (opKind)
 			{
 				case 0:
@@ -172,7 +172,7 @@ namespace PacketReader::IP::UDP::DHCP
 
 	void DHCP_Packet::WriteBytes(u8* buffer, int* offset)
 	{
-		int start = *offset;
+		const int start = *offset;
 		NetLib::WriteByte08(buffer, offset, op);
 		NetLib::WriteByte08(buffer, offset, hardwareType);
 		NetLib::WriteByte08(buffer, offset, hardwareAddressLength);
@@ -221,8 +221,8 @@ namespace PacketReader::IP::UDP::DHCP
 			}
 		}
 
-		int end = start + GetLength();
-		int delta = end - *offset;
+		const int end = start + GetLength();
+		const int delta = end - *offset;
 
 		memset(&buffer[*offset], 0, delta);
 		*offset = start + GetLength();
