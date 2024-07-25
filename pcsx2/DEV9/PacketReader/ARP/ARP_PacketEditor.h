@@ -10,10 +10,10 @@ namespace PacketReader::ARP
 	class ARP_PacketEditor
 	{
 	private:
-		const PayloadPtr* basePkt;
+		const PayloadPtrEditor* basePkt;
 
 	public:
-		ARP_PacketEditor(PayloadPtr* pkt);
+		ARP_PacketEditor(PayloadPtrEditor* pkt);
 
 		u16 GetHardwareType() const;
 		u16 GetProtocol() const;

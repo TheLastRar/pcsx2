@@ -16,7 +16,7 @@ namespace PacketReader
 		//Length
 	private:
 		NetPacket* basePkt;
-		std::unique_ptr<PayloadPtr> payload;
+		std::unique_ptr<PayloadPtrEditor> payload;
 
 	public:
 		EthernetFrameEditor(NetPacket* pkt);
@@ -28,6 +28,6 @@ namespace PacketReader
 
 		u16 GetProtocol() const;
 
-		PayloadPtr* GetPayload() const;
+		PayloadPtrEditor* GetPayload() const;
 	};
 } // namespace PacketReader
