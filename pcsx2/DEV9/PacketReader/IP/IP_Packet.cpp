@@ -4,7 +4,7 @@
 #include "IP_Packet.h"
 #include "DEV9/PacketReader/NetLib.h"
 
-#include "common//BitUtils.h"
+#include "common/BitUtils.h"
 #include "common/Console.h"
 
 namespace PacketReader::IP
