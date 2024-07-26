@@ -9,14 +9,24 @@
 
 namespace PacketReader::IP::TCP
 {
+	int TCP_Packet::GetHeaderLength() const
+	{
+		int opOffset = 20;
+		for (size_t i = 0; i < options.size(); i++)
+			opOffset += options[i]->GetLength();
+
+		//needs to be a whole number of 32bits
+		return Common::AlignUpPow2(opOffset, 4);
+	}
+
 	//Need flags
 	bool TCP_Packet::GetNS() const
 	{
-		return (dataOffsetAndNS_Flag & 1);
+		return (flag_ns & 1);
 	}
 	void TCP_Packet::SetNS(bool value)
 	{
-		dataOffsetAndNS_Flag = (dataOffsetAndNS_Flag & ~0x1) | (value & 0x1);
+		flag_ns = (flag_ns & ~0x1) | (value & 0x1);
 	}
 
 	bool TCP_Packet::GetCWR() const
@@ -92,8 +102,7 @@ namespace PacketReader::IP::TCP
 	}
 
 	TCP_Packet::TCP_Packet(Payload* data)
-		: headerLength{20}
-		, payload{data}
+		: payload{data}
 	{
 	}
 	TCP_Packet::TCP_Packet(const u8* buffer, int bufferSize)
@@ -110,8 +119,10 @@ namespace PacketReader::IP::TCP
 		NetLib::ReadUInt32(buffer, &offset, &acknowledgementNumber);
 
 		//Bits 96-127
-		NetLib::ReadByte08(buffer, &offset, &dataOffsetAndNS_Flag);
-		headerLength = (dataOffsetAndNS_Flag >> 4) << 2;
+		NetLib::ReadByte08(buffer, &offset, &flag_ns);
+		const int headerLength = (flag_ns >> 4) << 2;
+		flag_ns &= 0x0F; // Only store flags
+
 		NetLib::ReadByte08(buffer, &offset, &flags);
 		NetLib::ReadUInt16(buffer, &offset, &windowSize);
 
@@ -157,6 +168,8 @@ namespace PacketReader::IP::TCP
 		}
 		offset = headerLength;
 
+		pxAssert(headerLength == GetHeaderLength());
+
 		payload = std::make_unique<PayloadPtr>(&buffer[offset], bufferSize - offset);
 		//AllDone
 	}
@@ -166,8 +179,7 @@ namespace PacketReader::IP::TCP
 		, destinationPort{original.destinationPort}
 		, sequenceNumber{original.sequenceNumber}
 		, acknowledgementNumber{original.acknowledgementNumber}
-		, dataOffsetAndNS_Flag{original.dataOffsetAndNS_Flag}
-		, headerLength{original.headerLength}
+		, flag_ns{original.flag_ns}
 		, flags{original.flags}
 		, windowSize{original.windowSize}
 		, checksum{original.checksum}
@@ -185,20 +197,20 @@ namespace PacketReader::IP::TCP
 		return payload.get();
 	}
 
-	int TCP_Packet::GetLength()
+	int TCP_Packet::GetLength() const
 	{
-		ReComputeHeaderLen();
-		return headerLength + payload->GetLength();
+		return GetHeaderLength() + payload->GetLength();
 	}
 
-	void TCP_Packet::WriteBytes(u8* buffer, int* offset)
+	void TCP_Packet::WriteBytes(u8* buffer, int* offset) const
 	{
+		const int headerLength = GetHeaderLength();
 		const int startOff = *offset;
 		NetLib::WriteUInt16(buffer, offset, sourcePort);
 		NetLib::WriteUInt16(buffer, offset, destinationPort);
 		NetLib::WriteUInt32(buffer, offset, sequenceNumber);
 		NetLib::WriteUInt32(buffer, offset, acknowledgementNumber);
-		NetLib::WriteByte08(buffer, offset, dataOffsetAndNS_Flag);
+		NetLib::WriteByte08(buffer, offset, ((headerLength >> 2) << 4) | flag_ns);
 		NetLib::WriteByte08(buffer, offset, flags);
 		NetLib::WriteUInt16(buffer, offset, windowSize);
 		NetLib::WriteUInt16(buffer, offset, checksum);
@@ -227,24 +239,9 @@ namespace PacketReader::IP::TCP
 		return (u8)protocol;
 	}
 
-	void TCP_Packet::ReComputeHeaderLen()
-	{
-		int opOffset = 20;
-		for (size_t i = 0; i < options.size(); i++)
-			opOffset += options[i]->GetLength();
-
-		//needs to be a whole number of 32bits
-		headerLength = Common::AlignUpPow2(opOffset, 4);
-
-		//Also write into dataOffsetAndNS_Flag
-		const u8 ns = dataOffsetAndNS_Flag & 1;
-		dataOffsetAndNS_Flag = (headerLength >> 2) << 4;
-		dataOffsetAndNS_Flag |= ns;
-	}
-
 	void TCP_Packet::CalculateChecksum(IP_Address srcIP, IP_Address dstIP)
 	{
-		ReComputeHeaderLen();
+		const int headerLength = GetHeaderLength();
 		int pHeaderLen = (12) + headerLength + payload->GetLength();
 		if ((pHeaderLen & 1) != 0)
 			pHeaderLen += 1;
@@ -270,9 +267,9 @@ namespace PacketReader::IP::TCP
 		checksum = IP_Packet::InternetChecksum(headerSegment, pHeaderLen);
 		delete[] headerSegment;
 	}
-	bool TCP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP)
+	bool TCP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP) const
 	{
-		ReComputeHeaderLen();
+		const int headerLength = GetHeaderLength();
 		int pHeaderLen = (12) + headerLength + payload->GetLength();
 		if ((pHeaderLen & 1) != 0)
 			pHeaderLen += 1;

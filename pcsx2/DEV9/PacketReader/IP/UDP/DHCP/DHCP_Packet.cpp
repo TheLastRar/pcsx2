@@ -165,7 +165,7 @@ namespace PacketReader::IP::UDP::DHCP
 	}
 
 
-	int DHCP_Packet::GetLength()
+	int DHCP_Packet::GetLength() const
 	{
 		return maxLength - (8 + 20);
 	}

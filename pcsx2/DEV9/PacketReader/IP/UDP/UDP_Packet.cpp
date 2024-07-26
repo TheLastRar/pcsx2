@@ -47,12 +47,12 @@ namespace PacketReader::IP::UDP
 		return payload.get();
 	}
 
-	int UDP_Packet::GetLength()
+	int UDP_Packet::GetLength() const
 	{
 		return headerLength + payload->GetLength();
 	}
 
-	void UDP_Packet::WriteBytes(u8* buffer, int* offset)
+	void UDP_Packet::WriteBytes(u8* buffer, int* offset) const
 	{
 		NetLib::WriteUInt16(buffer, offset, sourcePort);
 		NetLib::WriteUInt16(buffer, offset, destinationPort);
@@ -99,7 +99,7 @@ namespace PacketReader::IP::UDP
 		checksum = IP_Packet::InternetChecksum(headerSegment, pHeaderLen);
 		delete[] headerSegment;
 	}
-	bool UDP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP)
+	bool UDP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP) const
 	{
 		int pHeaderLen = (12) + headerLength + payload->GetLength();
 		if ((pHeaderLen & 1) != 0)

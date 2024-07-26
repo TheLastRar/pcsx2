@@ -11,7 +11,12 @@ namespace PacketReader::IP
 {
 	int IP_Packet::GetHeaderLength() const
 	{
-		return headerLength;
+		int opOffset = 20;
+		for (size_t i = 0; i < options.size(); i++)
+			opOffset += options[i]->GetLength();
+
+		//needs to be a whole number of 32bits
+		return Common::AlignUpPow2(opOffset, 4);
 	}
 
 	u8 IP_Packet::GetDscpValue() const
@@ -73,7 +78,7 @@ namespace PacketReader::IP
 		//Bits 0-31
 		u8 v_hl;
 		NetLib::ReadByte08(buffer, &offset, &v_hl);
-		headerLength = ((v_hl & 0xF) << 2);
+		const int headerLength = ((v_hl & 0xF) << 2);
 		NetLib::ReadByte08(buffer, &offset, &dscp);
 
 		u16 length;
@@ -132,12 +137,13 @@ namespace PacketReader::IP
 		}
 		offset = headerLength;
 
+		pxAssert(headerLength == GetHeaderLength());
+
 		payload = std::make_unique<IP_PayloadPtr>(&buffer[offset], length - offset, protocol);
 	}
 
 	IP_Packet::IP_Packet(const IP_Packet& original)
-		: headerLength{original.headerLength}
-		, dscp{original.dscp}
+		: dscp{original.dscp}
 		, id{original.id}
 		, fragmentFlags1{original.fragmentFlags1}
 		, fragmentFlags2{original.fragmentFlags2}
@@ -159,16 +165,16 @@ namespace PacketReader::IP
 		return payload.get();
 	}
 
-	int IP_Packet::GetLength()
+	int IP_Packet::GetLength() const
 	{
-		ReComputeHeaderLen();
-		return headerLength + payload->GetLength();
+		return GetHeaderLength() + payload->GetLength();
 	}
 
 	void IP_Packet::WriteBytes(u8* buffer, int* offset)
 	{
+		const int headerLength = GetHeaderLength();
 		const int startOff = *offset;
-		CalculateChecksum(); //ReComputeHeaderLen called in CalculateChecksum
+		CalculateChecksum();
 		payload->CalculateChecksum(sourceIP, destinationIP);
 
 		NetLib::WriteByte08(buffer, offset, (_verHi + (headerLength >> 2)));
@@ -204,20 +210,10 @@ namespace PacketReader::IP
 		return new IP_Packet(*this);
 	}
 
-	void IP_Packet::ReComputeHeaderLen()
-	{
-		int opOffset = 20;
-		for (size_t i = 0; i < options.size(); i++)
-			opOffset += options[i]->GetLength();
-
-		//needs to be a whole number of 32bits
-		headerLength = Common::AlignUpPow2(opOffset, 4);
-	}
-
 	void IP_Packet::CalculateChecksum()
 	{
 		//if (!(i == 5)) //checksum field is 10-11th byte (5th short), which is skipped
-		ReComputeHeaderLen();
+		const int headerLength = GetHeaderLength();
 		u8* headerSegment = new u8[headerLength];
 		int counter = 0;
 		NetLib::WriteByte08(headerSegment, &counter, (_verHi + (headerLength >> 2)));
@@ -248,9 +244,9 @@ namespace PacketReader::IP
 		checksum = InternetChecksum(headerSegment, headerLength);
 		delete[] headerSegment;
 	}
-	bool IP_Packet::VerifyChecksum()
+	bool IP_Packet::VerifyChecksum() const
 	{
-		ReComputeHeaderLen();
+		const int headerLength = GetHeaderLength();
 		u8* headerSegment = new u8[headerLength];
 		int counter = 0;
 		NetLib::WriteByte08(headerSegment, &counter, (_verHi + (headerLength >> 2)));

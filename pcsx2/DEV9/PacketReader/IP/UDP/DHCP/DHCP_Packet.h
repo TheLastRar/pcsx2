@@ -36,7 +36,7 @@ namespace PacketReader::IP::UDP::DHCP
 		DHCP_Packet(const u8* buffer, int bufferSize);
 		DHCP_Packet(const DHCP_Packet&);
 
-		virtual int GetLength();
+		virtual int GetLength() const;
 		virtual void WriteBytes(u8* buffer, int* offset);
 		virtual DHCP_Packet* Clone() const;
 

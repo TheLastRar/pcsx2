@@ -136,7 +136,7 @@ namespace PacketReader::IP::UDP::DNS
 		}
 	}
 
-	int DNS_Packet::GetLength()
+	int DNS_Packet::GetLength() const
 	{
 		int length = 2 * 2 + 4 * 2;
 
