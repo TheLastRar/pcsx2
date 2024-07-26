@@ -59,7 +59,7 @@ namespace PacketReader::ARP
 		memcpy(targetProtocolAddress.get(), original.targetProtocolAddress.get(), protocolAddressLength);
 	}
 
-	int ARP_Packet::GetLength()
+	int ARP_Packet::GetLength() const
 	{
 		return 8 + 2 * hardwareAddressLength + 2 * protocolAddressLength;
 	}
