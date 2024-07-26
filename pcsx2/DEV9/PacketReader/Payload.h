@@ -14,7 +14,8 @@ namespace PacketReader
 	class Payload
 	{
 	public:
-		virtual int GetLength() = 0;
+		virtual int GetLength() const = 0;
+		// Not const, as IP_Packet needs to update checksums
 		virtual void WriteBytes(u8* buffer, int* offset) = 0;
 		virtual Payload* Clone() const = 0;
 		virtual ~Payload() {}
@@ -45,7 +46,7 @@ namespace PacketReader
 				memcpy(data.get(), original.data.get(), length);
 			}
 		}
-		virtual int GetLength()
+		virtual int GetLength() const
 		{
 			return length;
 		}
@@ -79,7 +80,7 @@ namespace PacketReader
 		{
 		}
 		PayloadPtr(const PayloadPtr&) = delete;
-		virtual int GetLength()
+		virtual int GetLength() const
 		{
 			return length;
 		}
@@ -117,7 +118,7 @@ namespace PacketReader
 		{
 		}
 		PayloadPtrEditor(const PayloadPtrEditor&) = delete;
-		virtual int GetLength()
+		virtual int GetLength() const
 		{
 			return length;
 		}

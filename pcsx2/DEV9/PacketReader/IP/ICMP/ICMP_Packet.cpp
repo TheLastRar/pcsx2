@@ -39,12 +39,12 @@ namespace PacketReader::IP::ICMP
 		return payload.get();
 	}
 
-	int ICMP_Packet::GetLength()
+	int ICMP_Packet::GetLength() const
 	{
 		return headerLength + payload->GetLength();
 	}
 
-	void ICMP_Packet::WriteBytes(u8* buffer, int* offset)
+	void ICMP_Packet::WriteBytes(u8* buffer, int* offset) const
 	{
 		NetLib::WriteByte08(buffer, offset, type);
 		NetLib::WriteByte08(buffer, offset, code);
@@ -85,7 +85,7 @@ namespace PacketReader::IP::ICMP
 		checksum = IP_Packet::InternetChecksum(segment, pHeaderLen);
 		delete[] segment;
 	}
-	bool ICMP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP)
+	bool ICMP_Packet::VerifyChecksum(IP_Address srcIP, IP_Address dstIP) const
 	{
 		int pHeaderLen = headerLength + payload->GetLength();
 		if ((pHeaderLen & 1) != 0)

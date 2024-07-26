@@ -17,8 +17,7 @@ namespace PacketReader::IP::TCP
 		u32 acknowledgementNumber;
 
 	private:
-		u8 dataOffsetAndNS_Flag = 0;
-		int headerLength; //Can have varying Header Len
+		u8 flag_ns = 0;
 		u8 flags = 0;
 
 	public:
@@ -37,6 +36,8 @@ namespace PacketReader::IP::TCP
 		std::unique_ptr<Payload> payload;
 
 	public:
+		int GetHeaderLength() const;
+
 		//Flags
 		bool GetNS() const;
 		void SetNS(bool value);
@@ -72,16 +73,13 @@ namespace PacketReader::IP::TCP
 
 		Payload* GetPayload() const;
 
-		virtual int GetLength();
-		virtual void WriteBytes(u8* buffer, int* offset);
+		virtual int GetLength() const;
+		virtual void WriteBytes(u8* buffer, int* offset) const;
 		virtual TCP_Packet* Clone() const;
 
 		virtual u8 GetProtocol() const;
 
-		virtual bool VerifyChecksum(IP_Address srcIP, IP_Address dstIP);
+		virtual bool VerifyChecksum(IP_Address srcIP, IP_Address dstIP) const;
 		virtual void CalculateChecksum(IP_Address srcIP, IP_Address dstIP);
-
-	private:
-		void ReComputeHeaderLen();
 	};
 } // namespace PacketReader::IP::TCP

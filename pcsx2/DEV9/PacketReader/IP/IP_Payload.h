@@ -10,10 +10,10 @@ namespace PacketReader::IP
 	class IP_Payload
 	{
 	public: //Nedd GetProtocol
-		virtual int GetLength() = 0;
-		virtual void WriteBytes(u8* buffer, int* offset) = 0;
+		virtual int GetLength() const = 0;
+		virtual void WriteBytes(u8* buffer, int* offset) const = 0;
 		virtual u8 GetProtocol() const = 0;
-		virtual bool VerifyChecksum(IP_Address srcIP, IP_Address dstIP) { return false; }
+		virtual bool VerifyChecksum(IP_Address srcIP, IP_Address dstIP) const { return false; }
 		virtual void CalculateChecksum(IP_Address srcIP, IP_Address dstIP) {}
 		virtual IP_Payload* Clone() const = 0;
 		virtual ~IP_Payload() {}
@@ -46,11 +46,11 @@ namespace PacketReader::IP
 				memcpy(data.get(), original.data.get(), length);
 			}
 		}
-		virtual int GetLength()
+		virtual int GetLength() const
 		{
 			return length;
 		}
-		virtual void WriteBytes(u8* buffer, int* offset)
+		virtual void WriteBytes(u8* buffer, int* offset) const
 		{
 			if (length == 0)
 				return;
@@ -86,11 +86,11 @@ namespace PacketReader::IP
 		{
 		}
 		IP_PayloadPtr(const IP_PayloadPtr&) = delete;
-		virtual int GetLength()
+		virtual int GetLength() const
 		{
 			return length;
 		}
-		virtual void WriteBytes(u8* buffer, int* offset)
+		virtual void WriteBytes(u8* buffer, int* offset) const
 		{
 			//If buffer & data point to the same location
 			//Then no copy is needed

@@ -25,7 +25,7 @@ namespace PacketReader::ARP
 		ARP_Packet(const u8* buffer, int bufferSize);
 		ARP_Packet(const ARP_Packet&);
 
-		virtual int GetLength();
+		virtual int GetLength() const;
 		virtual void WriteBytes(u8* buffer, int* offset);
 		virtual ARP_Packet* Clone() const;
 	};

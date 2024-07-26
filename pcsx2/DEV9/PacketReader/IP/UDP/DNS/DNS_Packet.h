@@ -66,7 +66,7 @@ namespace PacketReader::IP::UDP::DNS
 		DNS_Packet() {}
 		DNS_Packet(const u8* buffer, int bufferSize);
 
-		virtual int GetLength();
+		virtual int GetLength() const;
 		virtual void WriteBytes(u8* buffer, int* offset);
 		virtual DNS_Packet* Clone() const;
 	};

@@ -26,7 +26,6 @@ namespace PacketReader::IP
 	{
 	private:
 		const u8 _verHi = 4 << 4;
-		int headerLength = 20;
 
 		u8 dscp = 0;
 		//Flags
@@ -119,17 +118,16 @@ namespace PacketReader::IP
 
 		IP_Payload* GetPayload() const;
 
-		virtual int GetLength();
+		virtual int GetLength() const;
 		virtual void WriteBytes(u8* buffer, int* offset);
 		virtual IP_Packet* Clone() const;
 
-		bool VerifyChecksum();
+		bool VerifyChecksum() const;
 		static u16 InternetChecksum(const u8* buffer, int length);
 
 		~IP_Packet();
 
 	private:
-		void ReComputeHeaderLen();
 		void CalculateChecksum();
 	};
 } // namespace PacketReader::IP
