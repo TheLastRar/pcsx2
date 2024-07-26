@@ -211,7 +211,7 @@ namespace PacketReader::IP
 			opOffset += options[i]->GetLength();
 
 		//needs to be a whole number of 32bits
-		headerLength = headerLength = Common::AlignUpPow2(opOffset, 4);
+		headerLength = Common::AlignUpPow2(opOffset, 4);
 	}
 
 	void IP_Packet::CalculateChecksum()
