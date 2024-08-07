@@ -112,15 +112,23 @@ struct FPControlRegister
 
 	__fi static FPControlRegister GetCurrent()
 	{
+#if defined(_MSC_VER) && !defined(__clang__)
+		return FPControlRegister{static_cast<u64>(_ReadStatusReg(ARM64_FPCR))};
+#else
 		u64 value;
 		asm volatile("\tmrs %0, FPCR\n"
 					 : "=r"(value));
 		return FPControlRegister{value};
+#endif
 	}
 
 	__fi static void SetCurrent(FPControlRegister value)
 	{
+#if defined(_MSC_VER) && !defined(__clang__)
+		_WriteStatusReg(ARM64_FPCR, value.bitmask);
+#else
 		asm volatile("\tmsr FPCR, %0\n" ::"r"(value.bitmask));
+#endif
 	}
 
 	__fi static constexpr FPControlRegister GetDefault()
