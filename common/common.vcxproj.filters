@@ -360,6 +360,9 @@
     <MASM Include="FastJmp.asm">
       <Filter>Source Files</Filter>
     </MASM>
+    <MARMASM Include="FastJmp_arm64.asm">
+      <Filter>Source Files</Filter>
+    </MARMASM>
   </ItemGroup>
   <ItemGroup>
     <MARMASM Include="FastJmp_arm64.asm">
