@@ -1961,7 +1961,45 @@ public:
 
 	// clang-format off
 
-
+#if defined(_MSC_VER) && !defined(__clang__)
+	#define VECTOR4i_SHUFFLE_4(xs, xn, ys, yn, zs, zn, ws, wn) \
+		__forceinline GSVector4i xs##ys##zs##ws() const \
+		{ \
+			constexpr uint8_t idx[]{ \
+				xn * 4, xn * 4 + 1, xn * 4 + 2, xn * 4 + 3, \
+				yn * 4, yn * 4 + 1, yn * 4 + 2, yn * 4 + 3, \
+				zn * 4, zn * 4 + 1, zn * 4 + 2, zn * 4 + 3, \
+				wn * 4, wn * 4 + 1, wn * 4 + 2, wn * 4 + 3}; \
+			return GSVector4i(vreinterpretq_s32_s8(vqtbl1q_s8(vreinterpretq_s8_s32(v4s), vld1q_u8(idx)))); \
+		} \
+		__forceinline GSVector4i xs##ys##zs##ws##l() const \
+		{ \
+			constexpr uint8_t idx[]{ \
+				xn * 2, xn * 2 + 1, yn * 2, yn * 2 + 1, \
+				zn * 2, zn * 2 + 1, wn * 2, wn * 2 + 1, \
+				8,      9,          10,     11, \
+				12,     13,         14,     15}; \
+			return GSVector4i(vreinterpretq_s32_s8(vqtbl1q_s8(vreinterpretq_s8_s32(v4s), vld1q_u8(idx)))); \
+		} \
+		__forceinline GSVector4i xs##ys##zs##ws##h() const \
+		{ \
+			constexpr uint8_t idx[]{ \
+				0,          1,              2,          3, \
+				4,          5,              6,          7,  \
+				8 + xn * 2, 8 + xn * 2 + 1, 8 + yn * 2, 8 + yn * 2 + 1, \
+				8 + zn * 2, 8 + zn * 2 + 1, 8 + wn * 2, 8 + wn * 2 + 1}; \
+			return GSVector4i(vreinterpretq_s32_s8(vqtbl1q_s8(vreinterpretq_s8_s32(v4s), vld1q_u8(idx)))); \
+		} \
+		__forceinline GSVector4i xs##ys##zs##ws##lh() const \
+		{ \
+			constexpr uint8_t idx[]{ \
+				xn * 2,     xn * 2 + 1,     yn * 2,     yn * 2 + 1, \
+				zn * 2,     zn * 2 + 1,     wn * 2,     wn * 2 + 1, \
+				8 + xn * 2, 8 + xn * 2 + 1, 8 + yn * 2, 8 + yn * 2 + 1, \
+				8 + zn * 2, 8 + zn * 2 + 1, 8 + wn * 2, 8 + wn * 2 + 1}; \
+			return GSVector4i(vreinterpretq_s32_s8(vqtbl1q_s8(vreinterpretq_s8_s32(v4s), vld1q_u8(idx)))); \
+		}
+#else
 	#define VECTOR4i_SHUFFLE_4(xs, xn, ys, yn, zs, zn, ws, wn) \
 		__forceinline GSVector4i xs##ys##zs##ws() const { return GSVector4i(__builtin_shufflevector(v4s, v4s, xn, yn, zn, wn)); }
 
@@ -1969,6 +2007,7 @@ public:
 		// __forceinline GSVector4i xs##ys##zs##ws##l() const {return GSVector4i(_mm_shufflelo_epi16(m, _MM_SHUFFLE(wn, zn, yn, xn)));}
 		// __forceinline GSVector4i xs##ys##zs##ws##h() const {return GSVector4i(_mm_shufflehi_epi16(m, _MM_SHUFFLE(wn, zn, yn, xn)));}
 		// __forceinline GSVector4i xs##ys##zs##ws##lh() const {return GSVector4i(_mm_shufflehi_epi16(_mm_shufflelo_epi16(m, _MM_SHUFFLE(wn, zn, yn, xn)), _MM_SHUFFLE(wn, zn, yn, xn)));}
+#endif
 
 	#define VECTOR4i_SHUFFLE_3(xs, xn, ys, yn, zs, zn) \
 		VECTOR4i_SHUFFLE_4(xs, xn, ys, yn, zs, zn, x, 0) \
@@ -1993,6 +2032,7 @@ public:
 	VECTOR4i_SHUFFLE_1(z, 2)
 	VECTOR4i_SHUFFLE_1(w, 3)
 
+#if !defined(_MSC_VER) || defined(__clang__)
 	// TODO: Make generic like above.
 	__forceinline GSVector4i xxzzlh() const { return GSVector4i(vreinterpretq_s32_s16(__builtin_shufflevector(vreinterpretq_s16_s32(v4s), vreinterpretq_s16_s32(v4s), 0, 0, 2, 2, 4, 4, 6, 6))); }
 	__forceinline GSVector4i yywwlh() const { return GSVector4i(vreinterpretq_s32_s16(__builtin_shufflevector(vreinterpretq_s16_s32(v4s), vreinterpretq_s16_s32(v4s), 1, 1, 3, 3, 5, 5, 7, 7))); }
@@ -2005,6 +2045,7 @@ public:
 	__forceinline GSVector4i zwzwl() const { return GSVector4i(vreinterpretq_s32_s16(__builtin_shufflevector(vreinterpretq_s16_s32(v4s), vreinterpretq_s16_s32(v4s), 2, 3, 2, 3, 4, 5, 6, 7))); }
 
 	__forceinline GSVector4i zzzzh() const { return GSVector4i(vreinterpretq_s32_s16(__builtin_shufflevector(vreinterpretq_s16_s32(v4s), vreinterpretq_s16_s32(v4s), 0, 1, 2, 3, 6, 6, 6, 6))); }
+#endif
 
 	// clang-format on
 
