@@ -377,7 +377,20 @@ public:
 	template <int mask>
 	__forceinline GSVector4 blend32(const GSVector4& a) const
 	{
+#if defined(_MSC_VER) && !defined(__clang__)
+		float32x4_t ret = v4s;
+		if constexpr (mask & 1)
+			ret = vsetq_lane_f32(vgetq_lane_f32(a.v4s, 0), ret, 0);
+		if constexpr (mask & 2)
+			ret = vsetq_lane_f32(vgetq_lane_f32(a.v4s, 1), ret, 1);
+		if constexpr (mask & 4)
+			ret = vsetq_lane_f32(vgetq_lane_f32(a.v4s, 2), ret, 2);
+		if constexpr (mask & 8)
+			ret = vsetq_lane_f32(vgetq_lane_f32(a.v4s, 3), ret, 3);
+		return GSVector4(ret);
+#else
 		return GSVector4(__builtin_shufflevector(v4s, a.v4s, (mask & 1) ? 4 : 0, (mask & 2) ? 5 : 1, (mask & 4) ? 6 : 2, (mask & 8) ? 7 : 3));
+#endif
 	}
 
 	__forceinline GSVector4 blend32(const GSVector4& a, const GSVector4& mask) const
@@ -736,9 +749,32 @@ public:
 
 	// clang-format off
 
+#if defined(_MSC_VER) && !defined(__clang__)
+	#define VECTOR4_SHUFFLE_4(xs, xn, ys, yn, zs, zn, ws, wn) \
+		__forceinline GSVector4 xs##ys##zs##ws() const \
+		{ \
+			constexpr u8 idx[]{ \
+				xn * 4, xn * 4 + 1, xn * 4 + 2, xn * 4 + 3, \
+				yn * 4, yn * 4 + 1, yn * 4 + 2, yn * 4 + 3, \
+				zn * 4, zn * 4 + 1, zn * 4 + 2, zn * 4 + 3, \
+				wn * 4, wn * 4 + 1, wn * 4 + 2, wn * 4 + 3}; \
+			return GSVector4(vreinterpretq_f32_s8(vqtbl1q_s8(vreinterpretq_s8_f32(v4s), vld1q_u8(idx)))); \
+		} \
+		__forceinline GSVector4 xs##ys##zs##ws(const GSVector4& v) const \
+		{ \
+			constexpr u8 idx[]{ \
+				xn * 4,      xn * 4 + 1,      xn * 4 + 2,      xn * 4 + 3, \
+				yn * 4,      yn * 4 + 1,      yn * 4 + 2,      yn * 4 + 3, \
+				16 + zn * 4, 16 + zn * 4 + 1, 16 + zn * 4 + 2, 16 + zn * 4 + 3, \
+				16 + wn * 4, 16 + wn * 4 + 1, 16 + wn * 4 + 2, 16 + wn * 4 + 3}; \
+			int8x16x2_t tbl{vreinterpretq_s8_f32(v4s),vreinterpretq_s8_f32(v.v4s)}; \
+			return GSVector4(vreinterpretq_f32_s8(vqtbl2q_s8(tbl, vld1q_u8(idx)))); \
+		}
+#else
 	#define VECTOR4_SHUFFLE_4(xs, xn, ys, yn, zs, zn, ws, wn) \
 		__forceinline GSVector4 xs##ys##zs##ws() const { return GSVector4(__builtin_shufflevector(v4s, v4s, xn, yn, zn, wn)); } \
 		__forceinline GSVector4 xs##ys##zs##ws(const GSVector4& v) const { return GSVector4(__builtin_shufflevector(v4s, v.v4s, xn, yn, 4 + zn, 4 + wn)); }
+#endif
 
 	#define VECTOR4_SHUFFLE_3(xs, xn, ys, yn, zs, zn) \
 		VECTOR4_SHUFFLE_4(xs, xn, ys, yn, zs, zn, x, 0) \
