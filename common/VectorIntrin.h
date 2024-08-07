@@ -36,7 +36,15 @@
 #include <immintrin.h>
 
 #elif defined(_M_ARM64)
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#include <arm64intr.h>
+#include <arm64_neon.h>
+#else
 #include <arm_neon.h>
+#endif
+
 #endif
 
 #ifdef __APPLE__
