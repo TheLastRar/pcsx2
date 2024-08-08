@@ -30,9 +30,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="src\arm\cache.c">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="src\arm\uarch.c">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -82,9 +79,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\arm\api.h">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="src\arm\midr.h">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="src\arm\windows\windows-arm-init.h">
