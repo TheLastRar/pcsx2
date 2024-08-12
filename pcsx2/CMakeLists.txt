@@ -124,6 +124,7 @@ set(pcsx2Sources
 	Vif_Codes.cpp
 	Vif_Transfer.cpp
 	Vif_Unpack.cpp
+	newVif_UnpackC.cpp
 	VMManager.cpp
 	vtlb.cpp
 	VU0.cpp
@@ -195,6 +196,7 @@ set(pcsx2Headers
 	Vif_Dma.h
 	Vif.h
 	Vif_Unpack.h
+	newVif_UnpackC.h
 	VMManager.h
 	vtlb.h
 	VUflags.h
@@ -984,8 +986,8 @@ set(pcsx2x86Sources
 	x86/ix86-32/iR5900Shift.cpp
 	x86/ix86-32/iR5900Templates.cpp
 	x86/ix86-32/recVTLB.cpp
-	x86/newVif_Dynarec.cpp
-	x86/newVif_UnpackSSE.cpp
+	#x86/newVif_Dynarec.cpp
+	#x86/newVif_UnpackSSE.cpp
 	)
 
 # x86 headers
@@ -1025,15 +1027,15 @@ set(pcsx2x86Headers
 	x86/microVU_Tables.inl
 	x86/microVU_Upper.inl
 	x86/newVif.h
-	x86/newVif_UnpackSSE.h
+	#x86/newVif_UnpackSSE.h
 	x86/R5900_Profiler.h
 	)
 
 # ARM64
 set(pcsx2arm64Sources
 	arm64/AsmHelpers.cpp
-	arm64/newVif_Dynarec.cpp
-	arm64/newVif_UnpackNEON.cpp
+	#arm64/newVif_Dynarec.cpp
+	#arm64/newVif_UnpackNEON.cpp
 	arm64/RecStubs.cpp
 	)
 
