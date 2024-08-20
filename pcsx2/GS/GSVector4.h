@@ -97,9 +97,11 @@ public:
 
 	__forceinline GSVector4(int x, int y, int z, int w)
 	{
-		GSVector4i v(x, y, z, w);
+		__m128i xz = _mm_unpacklo_epi32(_mm_cvtsi32_si128(x), _mm_cvtsi32_si128(z));
+		__m128i yw = _mm_unpacklo_epi32(_mm_cvtsi32_si128(y), _mm_cvtsi32_si128(w));
+		__m128i mi = _mm_unpacklo_epi32(xz, yw);
 
-		m = _mm_cvtepi32_ps(v.m);
+		m = _mm_cvtepi32_ps(mi);
 	}
 
 	__forceinline GSVector4(int x, int y)
