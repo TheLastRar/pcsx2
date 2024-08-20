@@ -104,7 +104,7 @@ class GSVector8i;
 #include "GSVector8.h"
 
 #elif defined(_M_ARM64)
-#include "GSVector4i_arm64.h"
+#include "GSVector4i.h"
 #include "GSVector4_arm64.h"
 #endif
 
@@ -113,10 +113,12 @@ class GSVector8i;
 __forceinline_odr GSVector4i::GSVector4i(const GSVector4& v, bool truncate)
 {
 #if defined(_M_X86)
-	m = truncate ? _mm_cvttps_epi32(v) : _mm_cvtps_epi32(v);
+	__m128i m = truncate ? _mm_cvttps_epi32(v) : _mm_cvtps_epi32(v);
+	_mm_stream_si128((__m128i*)U8, m);
 #elif defined(_M_ARM64)
 	// GS thread uses default (nearest) rounding.
-	v4s = truncate ? vcvtq_s32_f32(v.v4s) : vcvtnq_u32_f32(v.v4s);
+	int32x4_t v4s = truncate ? vcvtq_s32_f32(v.v4s) : vcvtnq_u32_f32(v.v4s);
+	vst1q_s64((int64_t*)U8, v4s);
 #endif
 }
 
@@ -125,7 +127,7 @@ __forceinline_odr GSVector4::GSVector4(const GSVector4i& v)
 #if defined(_M_X86)
 	m = _mm_cvtepi32_ps(v);
 #elif defined(_M_ARM64)
-	v4s = vcvtq_f32_s32(v.v4s);
+	v4s = vcvtq_f32_s32(v);
 #endif
 }
 
@@ -178,9 +180,9 @@ __forceinline_odr GSVector4i GSVector4i::cast(const GSVector4& v)
 __forceinline_odr GSVector4 GSVector4::cast(const GSVector4i& v)
 {
 #ifndef _M_ARM64
-	return GSVector4(_mm_castsi128_ps(v.m));
+	return GSVector4(_mm_castsi128_ps(v));
 #else
-	return GSVector4(vreinterpretq_f32_s32(v.v4s));
+	return GSVector4(vreinterpretq_f32_s32(v));
 #endif
 }
 
