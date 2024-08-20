@@ -112,21 +112,20 @@ class GSVector8i;
 
 __forceinline_odr GSVector4i::GSVector4i(const GSVector4& v, bool truncate)
 {
-#if defined(_M_X86)
-	m = truncate ? _mm_cvttps_epi32(v) : _mm_cvtps_epi32(v);
-#elif defined(_M_ARM64)
-	// GS thread uses default (nearest) rounding.
-	v4s = truncate ? vcvtq_s32_f32(v.v4s) : vcvtnq_u32_f32(v.v4s);
-#endif
+	// double to allow represnetation of INT32_MAX
+	// Note, result differs to SSE code when clamping values outside range
+	I32[0] = static_cast<s32>(std::clamp<double>(truncate ? std::trunc(v.F32[0]) : std::round(v.F32[0]), INT32_MIN, INT32_MAX));
+	I32[1] = static_cast<s32>(std::clamp<double>(truncate ? std::trunc(v.F32[1]) : std::round(v.F32[1]), INT32_MIN, INT32_MAX));
+	I32[2] = static_cast<s32>(std::clamp<double>(truncate ? std::trunc(v.F32[2]) : std::round(v.F32[2]), INT32_MIN, INT32_MAX));
+	I32[3] = static_cast<s32>(std::clamp<double>(truncate ? std::trunc(v.F32[3]) : std::round(v.F32[3]), INT32_MIN, INT32_MAX));
 }
 
 __forceinline_odr GSVector4::GSVector4(const GSVector4i& v)
 {
-#if defined(_M_X86)
-	m = _mm_cvtepi32_ps(v);
-#elif defined(_M_ARM64)
-	v4s = vcvtq_f32_s32(v.v4s);
-#endif
+	F32[0] = static_cast<float>(v.I32[0]);
+	F32[1] = static_cast<float>(v.I32[1]);
+	F32[2] = static_cast<float>(v.I32[2]);
+	F32[3] = static_cast<float>(v.I32[3]);
 }
 
 __forceinline_odr void GSVector4i::sw32_inv(GSVector4i& a, GSVector4i& b, GSVector4i& c, GSVector4i& d)
@@ -168,20 +167,16 @@ __forceinline_odr void GSVector8i::sw32_inv(GSVector8i& a, GSVector8i& b)
 
 __forceinline_odr GSVector4i GSVector4i::cast(const GSVector4& v)
 {
-#ifndef _M_ARM64
-	return GSVector4i(_mm_castps_si128(v.m));
-#else
-	return GSVector4i(vreinterpretq_s32_f32(v.v4s));
-#endif
+	return GSVector4i(v.I32[0], v.I32[1], v.I32[2], v.I32[3]);
 }
 
 __forceinline_odr GSVector4 GSVector4::cast(const GSVector4i& v)
 {
-#ifndef _M_ARM64
-	return GSVector4(_mm_castsi128_ps(v.m));
-#else
-	return GSVector4(vreinterpretq_f32_s32(v.v4s));
-#endif
+	return GSVector4(
+		std::bit_cast<float>(v.I32[0]),
+		std::bit_cast<float>(v.I32[1]),
+		std::bit_cast<float>(v.I32[2]),
+		std::bit_cast<float>(v.I32[3]));
 }
 
 #if _M_SSE >= 0x500
