@@ -945,8 +945,8 @@ public:
 	__forceinline GSVector4i f64toi32(bool truncate = true) const
 	{
 		// Emulate x86 overflow behaviour
-		s64 I64_0 = static_cast<s64>(std::clamp<double>(truncate ? std::trunc(F64[0]) : std::round(F64[0]), INT32_MIN, INT32_MAX + 1i64));
-		s64 I64_1 = static_cast<s64>(std::clamp<double>(truncate ? std::trunc(F64[1]) : std::round(F64[1]), INT32_MIN, INT32_MAX + 1i64));
+		s64 I64_0 = static_cast<s64>(std::clamp<double>(truncate ? std::trunc(F64[0]) : std::round(F64[0]), INT32_MIN, INT32_MAX + 1LL));
+		s64 I64_1 = static_cast<s64>(std::clamp<double>(truncate ? std::trunc(F64[1]) : std::round(F64[1]), INT32_MIN, INT32_MAX + 1LL));
 
 		return GSVector4i(
 			static_cast<s32>(static_cast<s32>(I64_0)),
