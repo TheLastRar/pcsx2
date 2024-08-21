@@ -113,10 +113,10 @@ class GSVector8i;
 __forceinline_odr GSVector4i::GSVector4i(const GSVector4& v, bool truncate)
 {
 	// Emulate x86 overflow behaviour
-	s64 I64_0 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[0]) : std::round(v.F32[0]), INT32_MIN, INT32_MAX + 1i64));
-	s64 I64_1 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[1]) : std::round(v.F32[1]), INT32_MIN, INT32_MAX + 1i64));
-	s64 I64_2 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[2]) : std::round(v.F32[2]), INT32_MIN, INT32_MAX + 1i64));
-	s64 I64_3 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[3]) : std::round(v.F32[3]), INT32_MIN, INT32_MAX + 1i64));
+	s64 I64_0 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[0]) : std::round(v.F32[0]), INT32_MIN, INT32_MAX + 1LL));
+	s64 I64_1 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[1]) : std::round(v.F32[1]), INT32_MIN, INT32_MAX + 1LL));
+	s64 I64_2 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[2]) : std::round(v.F32[2]), INT32_MIN, INT32_MAX + 1LL));
+	s64 I64_3 = static_cast<s64>(std::clamp<float>(truncate ? std::trunc(v.F32[3]) : std::round(v.F32[3]), INT32_MIN, INT32_MAX + 1LL));
 
 	I32[0] = static_cast<s32>(I64_0);
 	I32[1] = static_cast<s32>(I64_1);
