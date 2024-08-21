@@ -70,8 +70,12 @@ public:
 	}
 
 	__forceinline GSVector4i(int x, int y, int z, int w)
-		: I32{x, y, z, w}
+	//	: I32{x, y, z, w}
 	{
+		I32[0] = x;
+		I32[1] = y;
+		I32[2] = z;
+		I32[3] = w;
 	}
 
 	__forceinline GSVector4i(int x, int y)
@@ -80,8 +84,10 @@ public:
 	}
 
 	__forceinline GSVector4i(short s0, short s1, short s2, short s3, short s4, short s5, short s6, short s7)
-		: I16{s0, s1, s2, s3, s4, s5, s6, s7}
+	//	: I16{s0, s1, s2, s3, s4, s5, s6, s7}
 	{
+		short tmp[]{s0, s1, s2, s3, s4, s5, s6, s7};
+		std::memcpy(I16, tmp, sizeof(tmp));
 	}
 
 	constexpr GSVector4i(char b0, char b1, char b2, char b3, char b4, char b5, char b6, char b7, char b8, char b9, char b10, char b11, char b12, char b13, char b14, char b15)
@@ -512,7 +518,9 @@ public:
 		for (int i = 0; i < 16; i++)
 		{
 			u8 maskB = mask.I8[i] >> 7;
-			ret[i] = U8[i] ^ ((U8[i] ^ a.U8[i]) & maskB);
+			ret[i] = (I8[i] & ~maskB) | (maskB & a.I8[i]);
+			//ret[i] = U8[i] ^ ((U8[i] ^ a.U8[i]) & maskB);
+
 		}
 		return GSVector4i(ret[0], ret[1], ret[2], ret[3], ret[4], ret[5], ret[6], ret[7], ret[8], ret[9], ret[10], ret[11], ret[12], ret[13], ret[14], ret[15]);
 	}
@@ -533,7 +541,7 @@ public:
 
 		for (int i = 0; i < 8; i++)
 		{
-			ret[i] = U16[i] ^ ((U16[i] ^ a.U16[i]) & _mask[i]);
+			ret[i] = (I16[i] & ~_mask[i]) | (_mask[i] & a.I16[i]);
 		}
 		return GSVector4i(ret[0], ret[1], ret[2], ret[3], ret[4], ret[5], ret[6], ret[7]);
 	}

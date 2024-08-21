@@ -492,7 +492,7 @@ public:
 		for (int i = 0; i < 4; i++)
 		{
 			u32 maskB = mask.I32[i] >> 31;
-			ret[i] = std::bit_cast<float>(U32[i] ^ ((U32[i] ^ a.U32[i]) & maskB));
+			ret[i] = std::bit_cast<float>((U32[i] & ~maskB) | (maskB & a.U32[i]));
 		}
 		return GSVector4(ret[0], ret[1], ret[2], ret[3]);
 	}
