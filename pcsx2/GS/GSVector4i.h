@@ -894,9 +894,18 @@ public:
 			U16[7] << i);
 	}
 
-#if _M_SSE >= 0x501
-	__forceinline GSVector4i sllv16(const GSVector4i& v) const { return GSVector4i(_mm_sllv_epi16(m, v.m)); }
-#endif
+	__forceinline GSVector4i sllv16(const GSVector4i& v) const
+	{
+		return GSVector4i(
+			U16[0] << v.U16[0],
+			U16[1] << v.U16[1],
+			U16[2] << v.U16[2],
+			U16[3] << v.U16[3],
+			U16[4] << v.U16[4],
+			U16[5] << v.U16[5],
+			U16[6] << v.U16[6],
+			U16[7] << v.U16[7]);
+	}
 
 	template <s32 i>
 	__forceinline GSVector4i srl16() const
@@ -925,12 +934,18 @@ public:
 			U16[7] >> i);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srlv16(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srlv_epi16(m, v.m));
+		return GSVector4i(
+			U16[0] >> v.U16[0],
+			U16[1] >> v.U16[1],
+			U16[2] >> v.U16[2],
+			U16[3] >> v.U16[3],
+			U16[4] >> v.U16[4],
+			U16[5] >> v.U16[5],
+			U16[6] >> v.U16[6],
+			U16[7] >> v.U16[7]);
 	}
-#endif
 
 	template <s32 i>
 	__forceinline GSVector4i sra16() const
@@ -959,12 +974,18 @@ public:
 			I16[7] >> i);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srav16(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srav_epi16(m, v.m));
+		return GSVector4i(
+			I16[0] >> v.U16[0],
+			I16[1] >> v.U16[1],
+			I16[2] >> v.U16[2],
+			I16[3] >> v.U16[3],
+			I16[4] >> v.U16[4],
+			I16[5] >> v.U16[5],
+			I16[6] >> v.U16[6],
+			I16[7] >> v.U16[7]);
 	}
-#endif
 
 	template <s32 i>
 	__forceinline GSVector4i sll32() const
@@ -985,12 +1006,14 @@ public:
 			U32[3] << i);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i sllv32(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_sllv_epi32(m, v.m));
+		return GSVector4i(
+			U32[0] << v.U32[0],
+			U32[1] << v.U32[1],
+			U32[2] << v.U32[2],
+			U32[3] << v.U32[3]);
 	}
-#endif
 
 	template <s32 i>
 	__forceinline GSVector4i srl32() const
@@ -1011,12 +1034,14 @@ public:
 			U32[3] >> i);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srlv32(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srlv_epi32(m, v.m));
+		return GSVector4i(
+			U32[0] >> v.U32[0],
+			U32[1] >> v.U32[1],
+			U32[2] >> v.U32[2],
+			U32[3] >> v.U32[3]);
 	}
-#endif
 
 	template <s32 i>
 	__forceinline GSVector4i sra32() const
@@ -1037,12 +1062,14 @@ public:
 			I32[3] >> i);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srav32(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srav_epi32(m, v.m));
+		return GSVector4i(
+			I32[0] >> v.U32[0],
+			I32[1] >> v.U32[1],
+			I32[2] >> v.U32[2],
+			I32[3] >> v.U32[3]);
 	}
-#endif
 
 	template <s64 i>
 	__forceinline GSVector4i sll64() const
@@ -1057,12 +1084,11 @@ public:
 		return GSVector4i(((u32*)ret)[0], ((u32*)ret)[1], ((u32*)ret)[2], ((u32*)ret)[3]);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i sllv64(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_sllv_epi64(m, v.m));
+		u64 ret[2]{U64[0] << v.U64[0], U64[1] << v.U64[0]};
+		return GSVector4i(((u32*)ret)[0], ((u32*)ret)[1], ((u32*)ret)[2], ((u32*)ret)[3]);
 	}
-#endif
 
 	template <s64 i>
 	__forceinline GSVector4i srl64() const
@@ -1077,12 +1103,11 @@ public:
 		return GSVector4i(((u32*)ret)[0], ((u32*)ret)[1], ((u32*)ret)[2], ((u32*)ret)[3]);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srlv64(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srlv_epi64(m, v.m));
+		u64 ret[2]{U64[0] >> v.U64[0], U64[1] >> v.U64[0]};
+		return GSVector4i(((u32*)ret)[0], ((u32*)ret)[1], ((u32*)ret)[2], ((u32*)ret)[3]);
 	}
-#endif
 
 	__forceinline GSVector4i sra64(s32 i) const
 	{
@@ -1090,12 +1115,11 @@ public:
 		return GSVector4i(((s32*)ret)[0], ((s32*)ret)[1], ((s32*)ret)[2], ((s32*)ret)[3]);
 	}
 
-#if _M_SSE >= 0x501
 	__forceinline GSVector4i srav64(const GSVector4i& v) const
 	{
-		return GSVector4i(_mm_srav_epi64(m, v.m));
+		s64 ret[2]{I64[0] >> v.U64[0], I64[1] >> v.U64[0]};
+		return GSVector4i(((s32*)ret)[0], ((s32*)ret)[1], ((s32*)ret)[2], ((s32*)ret)[3]);
 	}
-#endif
 
 	template <int i>
 	__forceinline GSVector4i srl64() const
