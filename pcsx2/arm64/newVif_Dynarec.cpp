@@ -469,6 +469,8 @@ static u16 dVifComputeLength(uint cl, uint wl, u8 num, bool isFill)
 	return std::min(length, 0xFFFFu);
 }
 
+s32 count = 0;
+
 _vifT __fi nVifBlock* dVifCompile(nVifBlock& block, bool isFill)
 {
 	nVifStruct& v = nVif[idx];
@@ -550,8 +552,52 @@ _vifT __fi void dVifUnpack(const u8* data, bool isFill)
 		if ((startmem + b->length) <= endmem) [[likely]]
 		{
 #if 1
-			// No wrapping, you can run the fast dynarec
-			((nVifrecCall)b->startPtr)((uptr)startmem, (uptr)data);
+			if (count < 80295)
+			{
+				Console.WriteLn("VIF Unpack %u: nVif%x Start = %x End = %x num = %x, wl = %x, cl = %x, upk = %u",
+					count, v.idx, vif.tag.addr, vif.tag.addr + b->length, block.num, block.wl, block.cl, block.upkType);
+
+				const int wl = block.wl ? block.wl : 256; //0 is taken as 256 (KH2)
+				const int upkNum = block.upkType & 0xf;
+				const u8& vift = nVifT[upkNum];
+				const int cycleSize = isFill ? block.cl : wl;
+				const uint vNum = block.num ? block.num : 256;
+
+				const int inLength = cycleSize * vift * block.num;
+
+				Console.WriteLn("VIF Unpack In");
+				int byteIndex = 0;
+				int blockIndex = 0;
+				while (byteIndex < inLength)
+				{
+					char logline[40] = "";
+					char* loglineptr = logline;
+					for (int bi = 0; bi < vift; bi++)
+					{
+						loglineptr += snprintf(loglineptr, sizeof(logline) - (loglineptr - logline), "%02X", *(data + byteIndex));
+						byteIndex++;
+					}
+					snprintf(loglineptr, sizeof(logline) - (loglineptr - logline), " @ %u", blockIndex);
+					blockIndex++;
+					Console.WriteLn(logline);
+				}
+
+				// No wrapping, you can run the fast dynarec
+				((nVifrecCall)b->startPtr)((uptr)startmem, (uptr)data);
+
+				Console.WriteLn("VIF Unpack Ret");
+				const u32 outQWords = b->length / 8;
+				for (u32 i = 0; i < outQWords; i++)
+				{
+					Console.WriteLn("%016X @ %u", *((u64*)startmem + i), i);
+				}
+				count++;
+			}
+			else
+			{
+				// No wrapping, you can run the fast dynarec
+				((nVifrecCall)b->startPtr)((uptr)startmem, (uptr)data);
+			}
 #else
 			// comparison mode
 			static u8 tmpbuf[512 * 1024];
@@ -577,6 +623,7 @@ _vifT __fi void dVifUnpack(const u8* data, bool isFill)
 			VIF_LOG("Running Interpreter Block: nVif%x - VU Mem Ptr Overflow; falling back to interpreter. Start = %x End = %x num = %x, wl = %x, cl = %x",
 				v.idx, vif.tag.addr, vif.tag.addr + (block.num * 16), block.num, block.wl, block.cl);
 			_nVifUnpack(idx, data, vifRegs.mode, isFill);
+			pxAssert(false);
 		}
 	}
 }
