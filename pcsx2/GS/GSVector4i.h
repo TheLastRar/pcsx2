@@ -25,11 +25,7 @@ class alignas(16) GSVector4i
 	}
 
 	constexpr GSVector4i(cxpr_init_tag, char b0, char b1, char b2, char b3, char b4, char b5, char b6, char b7, char b8, char b9, char b10, char b11, char b12, char b13, char b14, char b15)
-#if !defined(__APPLE__) && !defined(_MSC_VER)
-		: U8{b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
-#else
 		: I8{b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
-#endif
 	{
 	}
 
@@ -89,11 +85,7 @@ public:
 	}
 
 	constexpr GSVector4i(char b0, char b1, char b2, char b3, char b4, char b5, char b6, char b7, char b8, char b9, char b10, char b11, char b12, char b13, char b14, char b15)
-#if !defined(__APPLE__) && !defined(_MSC_VER)
-		: U8{b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
-#else
 		: I8{b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
-#endif
 	{
 	}
 
