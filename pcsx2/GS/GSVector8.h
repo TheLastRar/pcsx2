@@ -793,7 +793,7 @@ public:
 
 	__forceinline static GSVector8 f32to64(const GSVector4& v)
 	{
-		return GSVector8(_mm256_cvtps_pd(v.m));
+		return GSVector8(_mm256_cvtps_pd(v));
 	}
 
 	__forceinline static GSVector8 f32to64(const void* p)
@@ -913,7 +913,7 @@ public:
 
 	__forceinline static GSVector8 broadcast32(const GSVector4& v)
 	{
-		return GSVector8(_mm256_broadcastss_ps(v.m));
+		return GSVector8(_mm256_broadcastss_ps(v));
 	}
 
 	__forceinline static GSVector8 broadcast32(const void* f)

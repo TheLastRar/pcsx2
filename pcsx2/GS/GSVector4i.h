@@ -124,6 +124,18 @@ public:
 
 	__forceinline static GSVector4i cast(const GSVector4& v);
 
+#if _M_SSE >= 0x500
+
+	__forceinline static GSVector4i cast(const GSVector8& v);
+
+#endif
+
+#if _M_SSE >= 0x501
+
+	__forceinline static GSVector4i cast(const GSVector8i& v);
+
+#endif
+
 	__forceinline void operator=(int i)
 	{
 		I32[0] = i;

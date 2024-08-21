@@ -433,62 +433,62 @@ public:
 
 	static __forceinline GSVector8i i8to16(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi8_epi16(v.m));
+		return GSVector8i(_mm256_cvtepi8_epi16(v));
 	}
 
 	static __forceinline GSVector8i u8to16(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu8_epi16(v.m));
+		return GSVector8i(_mm256_cvtepu8_epi16(v));
 	}
 
 	static __forceinline GSVector8i i8to32(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi8_epi32(v.m));
+		return GSVector8i(_mm256_cvtepi8_epi32(v));
 	}
 
 	static __forceinline GSVector8i u8to32(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu8_epi32(v.m));
+		return GSVector8i(_mm256_cvtepu8_epi32(v));
 	}
 
 	static __forceinline GSVector8i i8to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi8_epi64(v.m));
+		return GSVector8i(_mm256_cvtepi8_epi64(v));
 	}
 
 	static __forceinline GSVector8i u8to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu16_epi64(v.m));
+		return GSVector8i(_mm256_cvtepu16_epi64(v));
 	}
 
 	static __forceinline GSVector8i i16to32(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi16_epi32(v.m));
+		return GSVector8i(_mm256_cvtepi16_epi32(v));
 	}
 
 	static __forceinline GSVector8i u16to32(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu16_epi32(v.m));
+		return GSVector8i(_mm256_cvtepu16_epi32(v));
 	}
 
 	static __forceinline GSVector8i i16to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi16_epi64(v.m));
+		return GSVector8i(_mm256_cvtepi16_epi64(v));
 	}
 
 	static __forceinline GSVector8i u16to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu16_epi64(v.m));
+		return GSVector8i(_mm256_cvtepu16_epi64(v));
 	}
 
 	static __forceinline GSVector8i i32to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepi32_epi64(v.m));
+		return GSVector8i(_mm256_cvtepi32_epi64(v));
 	}
 
 	static __forceinline GSVector8i u32to64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_cvtepu32_epi64(v.m));
+		return GSVector8i(_mm256_cvtepu32_epi64(v));
 	}
 
 	//
@@ -1545,22 +1545,22 @@ public:
 
 	__forceinline static GSVector8i broadcast8(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_broadcastb_epi8(v.m));
+		return GSVector8i(_mm256_broadcastb_epi8(v));
 	}
 
 	__forceinline static GSVector8i broadcast16(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_broadcastw_epi16(v.m));
+		return GSVector8i(_mm256_broadcastw_epi16(v));
 	}
 
 	__forceinline static GSVector8i broadcast32(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_broadcastd_epi32(v.m));
+		return GSVector8i(_mm256_broadcastd_epi32(v));
 	}
 
 	__forceinline static GSVector8i broadcast64(const GSVector4i& v)
 	{
-		return GSVector8i(_mm256_broadcastq_epi64(v.m));
+		return GSVector8i(_mm256_broadcastq_epi64(v));
 	}
 
 	__forceinline static GSVector8i broadcast128(const GSVector4i& v)

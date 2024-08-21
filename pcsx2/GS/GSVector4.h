@@ -155,6 +155,18 @@ public:
 
 	__forceinline static GSVector4 cast(const GSVector4i& v);
 
+#if _M_SSE >= 0x500
+
+	__forceinline static GSVector4 cast(const GSVector8& v);
+
+#endif
+
+#if _M_SSE >= 0x501
+
+	__forceinline static GSVector4 cast(const GSVector8i& v);
+
+#endif
+
 	__forceinline static GSVector4 f64(double x, double y)
 	{	
 		return GSVector4(reinterpret_cast<float*>(&x)[0], reinterpret_cast<float*>(&x)[1], reinterpret_cast<float*>(&y)[0], reinterpret_cast<float*>(&y)[1]);

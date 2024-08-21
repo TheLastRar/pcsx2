@@ -197,12 +197,12 @@ __forceinline_odr GSVector4 GSVector4::cast(const GSVector8& v)
 
 __forceinline_odr GSVector8 GSVector8::cast(const GSVector4i& v)
 {
-	return GSVector8(_mm256_castps128_ps256(_mm_castsi128_ps(v.m)));
+	return GSVector8(_mm256_castps128_ps256(_mm_castsi128_ps(v)));
 }
 
 __forceinline_odr GSVector8 GSVector8::cast(const GSVector4& v)
 {
-	return GSVector8(_mm256_castps128_ps256(v.m));
+	return GSVector8(_mm256_castps128_ps256(v));
 }
 
 #endif
@@ -221,22 +221,22 @@ __forceinline_odr GSVector4 GSVector4::cast(const GSVector8i& v)
 
 __forceinline_odr GSVector8i GSVector8i::cast(const GSVector4i& v)
 {
-	return GSVector8i(_mm256_castsi128_si256(v.m));
+	return GSVector8i(_mm256_castsi128_si256(v));
 }
 
 __forceinline_odr GSVector8i GSVector8i::cast(const GSVector4& v)
 {
-	return GSVector8i(_mm256_castsi128_si256(_mm_castps_si128(v.m)));
+	return GSVector8i(_mm256_castsi128_si256(_mm_castps_si128(v)));
 }
 
 __forceinline_odr GSVector8i GSVector8i::cast(const GSVector8& v)
 {
-	return GSVector8i(_mm256_castps_si256(v.m));
+	return GSVector8i(_mm256_castps_si256(v));
 }
 
 __forceinline_odr GSVector8 GSVector8::cast(const GSVector8i& v)
 {
-	return GSVector8(_mm256_castsi256_ps(v.m));
+	return GSVector8(_mm256_castsi256_ps(v));
 }
 
 #endif
