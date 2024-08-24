@@ -228,7 +228,7 @@ bool VMManager::PerformEarlyHardwareChecks(const char** error)
 		return false;
 	}
 #endif
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 	// Check page size. If it doesn't match, it is a fatal error.
 	const size_t runtime_host_page_size = HostSys::GetRuntimePageSize();
 	if (__pagesize != runtime_host_page_size)
@@ -2519,7 +2519,7 @@ void VMManager::LogCPUCapabilities()
 	Console.WriteLn();
 #endif
 
-#ifdef _M_ARM64
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 	const size_t runtime_cache_line_size = HostSys::GetRuntimeCacheLineSize();
 	if (__cachelinesize != runtime_cache_line_size)
 	{

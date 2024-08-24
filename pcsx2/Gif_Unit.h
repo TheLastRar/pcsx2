@@ -118,7 +118,7 @@ struct Gif_Tag
 
 		// write out unpacked registers
 		_mm_storeu_si128(reinterpret_cast<__m128i*>(regs), vregs);
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 		// zero out bits for registers which shouldn't be tested
 		u64 REGS64;
 		std::memcpy(&REGS64, tag.REGS, sizeof(u64));
