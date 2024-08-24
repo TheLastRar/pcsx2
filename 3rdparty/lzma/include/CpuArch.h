@@ -20,8 +20,8 @@ MY_CPU_64BIT means that processor can work with 64-bit registers.
   MY_CPU_64BIT doesn't mean that (sizeof(void *) == 8)
 */
 
-#if  defined(_M_X64) \
-  || defined(_M_AMD64) \
+#if (defined(_M_X64) && !defined(_M_ARM64EC)) \
+  || (defined(_M_AMD64) && !defined(_M_ARM64EC)) \
   || defined(__x86_64__) \
   || defined(__AMD64__) \
   || defined(__amd64__)
@@ -47,6 +47,7 @@ MY_CPU_64BIT means that processor can work with 64-bit registers.
 
 
 #if  defined(_M_ARM64) \
+  || defined(_M_ARM64EC) \
   || defined(__AARCH64EL__) \
   || defined(__AARCH64EB__) \
   || defined(__aarch64__)
