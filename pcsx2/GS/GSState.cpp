@@ -3575,7 +3575,7 @@ __forceinline void GSState::VertexKick(u32 skip)
 				break;
 		}
 
-#ifndef _M_ARM64
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 		// We only care about the xy passing the skip test. zw is the offset coordinates for native culling.
 		skip |= test.mask() & 0xff;
 #else

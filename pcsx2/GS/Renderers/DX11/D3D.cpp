@@ -471,7 +471,7 @@ GSRendererType D3D::GetPreferredRenderer()
 		default:
 		{
 			// Default is D3D11, but prefer DX12 on ARM (better drivers).
-#ifdef _M_ARM64
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 			return GSRendererType::DX12;
 #else
 			return GSRendererType::DX11;

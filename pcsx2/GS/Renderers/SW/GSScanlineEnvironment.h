@@ -157,7 +157,7 @@ struct alignas(32) GSScanlineGlobalData // per batch variables, this is like a p
 
 #endif
 
-#ifdef _M_ARM64
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 	// Mini version of constant data for ARM64, we don't need all of it
 	alignas(16) u32 const_test_128b[8][4] = {
 		{0x00000000, 0x00000000, 0x00000000, 0x00000000},

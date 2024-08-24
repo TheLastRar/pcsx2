@@ -95,7 +95,9 @@ void GSDrawScanlineCodeGenerator::Generate()
 	if (m_sel.breakpoint)
 		armAsm->Brk(1);
 
+	#if !defined(_M_ARM64EC)
 	if (GSDrawScanline::ShouldUseCDrawScanline(m_sel.key))
+	#endif
 	{
 		armAsm->Mov(vixl::aarch64::x15, reinterpret_cast<uintptr_t>(
 											static_cast<void (*)(int, int, int, const GSVertexSW&, GSScanlineLocalData&)>(

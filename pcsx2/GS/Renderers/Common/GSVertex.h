@@ -26,7 +26,7 @@ struct alignas(32) GSVertex
 		__m256i mx;
 #endif
 		__m128i m[2];
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 		int32x4_t m[2];
 #endif
 	};
