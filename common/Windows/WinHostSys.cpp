@@ -322,7 +322,7 @@ LONG PageFaultHandler::ExceptionHandler(PEXCEPTION_POINTERS exi)
 	if (exi->ExceptionRecord->ExceptionCode != EXCEPTION_ACCESS_VIOLATION)
 		return EXCEPTION_CONTINUE_SEARCH;
 
-#if defined(ARCH_X86)
+#if defined(ARCH_X86) || defined(_M_ARM64EC) // ARM64EC uses x64 reg name here I guess
 	void* const exception_pc = reinterpret_cast<void*>(exi->ContextRecord->Rip);
 #elif defined(ARCH_ARM64)
 	void* const exception_pc = reinterpret_cast<void*>(exi->ContextRecord->Pc);

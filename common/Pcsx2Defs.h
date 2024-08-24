@@ -23,7 +23,7 @@ static constexpr bool IsDebugBuild = true;
 static constexpr bool IsDebugBuild = false;
 #endif
 
-#if defined(_M_ARM64) || defined(__aarch64__)
+#if defined(_M_ARM64) || defined(_M_ARM64EC) || defined(__aarch64__)
 	#define ARCH_ARM64
 #elif defined(_M_X86) || defined(__x86_64__) || defined(__i386__)
 	#define ARCH_X86
