@@ -11,7 +11,9 @@
 #include <fstream>
 
 // Comment to disable all dynamic code generation.
+#if !defined(_M_ARM64EC)
 #define ENABLE_JIT_RASTERIZER
+#endif
 
 #if MULTI_ISA_COMPILE_ONCE
 // Lack of a better home
