@@ -3,6 +3,7 @@
   <PropertyGroup>
     <DepsRootDir Condition="'$(Platform)'=='x64'">$(SolutionDir)deps\</DepsRootDir>
     <DepsRootDir Condition="'$(Platform)'=='ARM64'">$(SolutionDir)deps-arm64\</DepsRootDir>
+    <DepsRootDir Condition="'$(Platform)'=='ARM64EC'">$(SolutionDir)deps-arm64ec\</DepsRootDir>
     <DepsBinDir>$(DepsRootDir)bin\</DepsBinDir>
     <DepsLibDir>$(DepsRootDir)lib\</DepsLibDir>
     <DepsIncludeDir>$(DepsRootDir)include\</DepsIncludeDir>
