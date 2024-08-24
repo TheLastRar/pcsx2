@@ -1389,7 +1389,7 @@ __fi static bool mpeg2_slice()
 					s += 32;
 					d += 32;
 				}
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 				uint8x16_t zeroreg = vmovq_n_u8(0);
 
 				for (uint i = 0; i < (256 + 64 + 64) / 32; ++i)

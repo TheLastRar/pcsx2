@@ -136,7 +136,7 @@ __ri void yuv2rgb_sse2()
 	}
 }
 
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #include <arm64_neon.h>
