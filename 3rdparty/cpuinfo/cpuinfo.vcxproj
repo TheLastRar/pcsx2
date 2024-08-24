@@ -31,10 +31,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\arm\windows\init-by-logical-sys-info.c">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\arm\windows\init.c">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="deps\clog\src\clog.c" />
     <ClCompile Include="src\api.c" />
@@ -76,7 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\arm\windows\windows-arm-init.h">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="deps\clog\include\clog.h" />
     <ClInclude Include="include\cpuinfo.h" />
