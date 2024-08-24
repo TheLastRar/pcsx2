@@ -102,12 +102,17 @@ using r128 = __m128i;
 	_mm_store_ps((float*)&dest, _mm_setzero_ps());
 }
 
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 
 using r128 = uint32x4_t;
 
+#ifdef _M_ARM64EC
+#define RETURNS_R128 r128
+#define TAKES_R128
+#else
 #define RETURNS_R128 r128 __vectorcall
 #define TAKES_R128 __vectorcall
+#endif
 
 [[maybe_unused]] __fi static void CopyQWC(void* dest, const void* src)
 {

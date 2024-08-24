@@ -28,7 +28,7 @@ static constexpr bool IsDebugBuild = false;
 	static constexpr unsigned int __pagesize = OVERRIDE_HOST_PAGE_SIZE;
 	static constexpr unsigned int __pagemask = __pagesize - 1;
 	static constexpr unsigned int __pageshift = std::bit_width(__pagemask);
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 	// Apple Silicon uses 16KB pages and 128 byte cache lines.
 	static constexpr unsigned int __pagesize = 0x4000;
 	static constexpr unsigned int __pageshift = 14;
@@ -41,7 +41,7 @@ static constexpr bool IsDebugBuild = false;
 #endif
 #if defined(OVERRIDE_HOST_CACHE_LINE_SIZE)
 	static constexpr unsigned int __cachelinesize = OVERRIDE_HOST_CACHE_LINE_SIZE;
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 	static constexpr unsigned int __cachelinesize = 128;
 #else
 	static constexpr unsigned int __cachelinesize = 64;

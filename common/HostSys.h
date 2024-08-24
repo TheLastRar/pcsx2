@@ -106,7 +106,7 @@ namespace HostSys
 	extern void UnmapSharedMemory(void* baseaddr, size_t size);
 
 	/// JIT write protect for Apple Silicon. Needs to be called prior to writing to any RWX pages.
-#if !defined(__APPLE__) || !defined(_M_ARM64)
+#if !defined(__APPLE__) || !(defined(_M_ARM64) || defined(_M_ARM64EC))
 	// clang-format -off
 	[[maybe_unused]] __fi static void BeginCodeWrite() {}
 	[[maybe_unused]] __fi static void EndCodeWrite() {}

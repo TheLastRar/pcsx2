@@ -107,7 +107,7 @@ Threading::ThreadHandle& Threading::ThreadHandle::operator=(const ThreadHandle& 
 
 u64 Threading::ThreadHandle::GetCPUTime() const
 {
-#ifndef _M_ARM64
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	u64 ret = 0;
 	if (m_native_handle)
 		QueryThreadCycleTime((HANDLE)m_native_handle, &ret);
@@ -208,7 +208,7 @@ Threading::ThreadHandle& Threading::Thread::operator=(Thread&& thread)
 
 u64 Threading::GetThreadCpuTime()
 {
-#ifndef _M_ARM64
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	u64 ret = 0;
 	QueryThreadCycleTime(GetCurrentThread(), &ret);
 	return ret;
@@ -225,7 +225,7 @@ u64 Threading::GetThreadCpuTime()
 
 u64 Threading::GetThreadTicksPerSecond()
 {
-#ifndef _M_ARM64
+#if !defined(_M_ARM64) && !defined(_M_ARM64EC)
 	// On x86, despite what the MS documentation says, this basically appears to be rdtsc.
 	// So, the frequency is our base clock speed (and stable regardless of power management).
 	static u64 frequency = 0;

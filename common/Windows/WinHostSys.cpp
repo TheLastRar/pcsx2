@@ -129,7 +129,7 @@ size_t HostSys::GetRuntimeCacheLineSize()
 	return max_line_size;
 }
 
-#ifdef _M_ARM64
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
 
 void HostSys::FlushInstructionCache(void* address, u32 size)
 {
@@ -339,7 +339,7 @@ LONG PageFaultHandler::ExceptionHandler(PEXCEPTION_POINTERS exi)
 	if (exi->ExceptionRecord->ExceptionCode != EXCEPTION_ACCESS_VIOLATION)
 		return EXCEPTION_CONTINUE_SEARCH;
 
-#if defined(_M_X86)
+#if defined(_M_X86) || defined(_M_ARM64EC) // ARM64EC uses x64 reg name here I guess
 	void* const exception_pc = reinterpret_cast<void*>(exi->ContextRecord->Rip);
 #elif defined(_M_ARM64)
 	void* const exception_pc = reinterpret_cast<void*>(exi->ContextRecord->Pc);

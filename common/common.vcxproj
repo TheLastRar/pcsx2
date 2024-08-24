@@ -50,7 +50,7 @@
     <ClCompile Include="DynamicLibrary.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="FastJmp.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64' OR !$(Configuration.Contains(Clang))">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="($(Platform.StartsWith('ARM64')) == false) OR !$(Configuration.Contains(Clang))">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="Image.cpp" />
@@ -82,33 +82,43 @@
     <ClCompile Include="Semaphore.cpp" />
     <ClCompile Include="emitter\avx.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\bmi.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\fpu.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\groups.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\jmp.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\legacy.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\legacy_sse.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\movs.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\simd.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="emitter\x86emitter.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'=='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,7 +126,7 @@
       <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
     </MASM>
     <MARMASM Include="FastJmp_arm64.asm">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64' OR $(Configuration.Contains(Clang))">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="($(Platform.StartsWith('ARM64')) == false) OR $(Configuration.Contains(Clang))">true</ExcludedFromBuild>
     </MARMASM>
   </ItemGroup>
   <ItemGroup>

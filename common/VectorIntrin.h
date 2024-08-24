@@ -35,7 +35,7 @@
 #include <smmintrin.h>
 #include <immintrin.h>
 
-#elif defined(_M_ARM64)
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
 
 #if defined(_MSC_VER) && !defined(__clang__)
 #include <intrin.h>

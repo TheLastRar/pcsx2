@@ -18,7 +18,7 @@ static void MultiPause()
 	_mm_pause();
 	_mm_pause();
 	_mm_pause();
-#elif defined(_M_ARM64) && defined(_MSC_VER)
+#elif (defined(_M_ARM64) || defined(_M_ARM64EC)) && defined(_MSC_VER)
 	__isb(_ARM64_BARRIER_SY);
 	__isb(_ARM64_BARRIER_SY);
 	__isb(_ARM64_BARRIER_SY);
@@ -27,7 +27,7 @@ static void MultiPause()
 	__isb(_ARM64_BARRIER_SY);
 	__isb(_ARM64_BARRIER_SY);
 	__isb(_ARM64_BARRIER_SY);
-#elif defined(_M_ARM64)
+#elif (defined(_M_ARM64) || defined(_M_ARM64EC))
 	__asm__ __volatile__("isb");
 	__asm__ __volatile__("isb");
 	__asm__ __volatile__("isb");
