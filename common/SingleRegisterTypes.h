@@ -106,8 +106,13 @@ using r128 = __m128i;
 
 using r128 = uint32x4_t;
 
+#ifdef _M_ARM64EC
+#define RETURNS_R128 r128
+#define TAKES_R128
+#else
 #define RETURNS_R128 r128 __vectorcall
 #define TAKES_R128 __vectorcall
+#endif
 
 [[maybe_unused]] __fi static void CopyQWC(void* dest, const void* src)
 {
