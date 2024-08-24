@@ -17,6 +17,7 @@
     <IntDir>$(SolutionDir)build\obj-$(ProjectName)-$(PlatformName)-$(Configuration)\</IntDir>
     <DepsRootDir Condition="'$(Platform)'=='x64'">$(SolutionDir)deps\</DepsRootDir>
     <DepsRootDir Condition="'$(Platform)'=='ARM64'">$(SolutionDir)deps-arm64\</DepsRootDir>
+    <DepsRootDir Condition="'$(Platform)'=='ARM64EC'">$(SolutionDir)deps-arm64ec\</DepsRootDir>
     <DepsBinDir>$(DepsRootDir)bin\</DepsBinDir>
     <DepsLibDir>$(DepsRootDir)lib\</DepsLibDir>
     <DepsIncludeDir>$(DepsRootDir)include\</DepsIncludeDir>
@@ -30,6 +31,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);%(AdditionalIncludeDirectories);$(DepsIncludeDir)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__WIN32__;WIN32;_WINDOWS;WIN32_LEAN_AND_MEAN;NOMINMAX;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_HAS_EXCEPTIONS=0;WINVER=0x0A00;_WIN32_WINNT=0x0A00;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64'">OVERRIDE_HOST_PAGE_SIZE=0x1000;OVERRIDE_HOST_CACHE_LINE_SIZE=64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64EC'">OVERRIDE_HOST_PAGE_SIZE=0x1000;OVERRIDE_HOST_CACHE_LINE_SIZE=64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration.Contains(Debug))">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration.Contains(Devel))">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration.Contains(Release))">NDEBUG;_SECURE_SCL_=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -55,6 +57,7 @@
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64' And (!$(Configuration.Contains(AVX2)) Or $(Configuration.Contains(Clang)))">NotSet</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='x64' And ($(Configuration.Contains(AVX2)) And !$(Configuration.Contains(Clang)))">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='ARM64' And !$(Configuration.Contains(Clang))">CPUExtensionRequirementsARMv84</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Platform)'=='ARM64EC' And !$(Configuration.Contains(Clang))">CPUExtensionRequirementsARMv84</EnableEnhancedInstructionSet>
       <AdditionalOptions Condition="'$(Platform)'=='x64' And $(Configuration.Contains(Clang)) And !$(Configuration.Contains(AVX2))"> -march=nehalem %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'=='x64' And $(Configuration.Contains(Clang)) And $(Configuration.Contains(AVX2))"> -march=haswell %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'=='ARM64' And $(Configuration.Contains(Clang))"> -march=armv8.4-a %(AdditionalOptions)</AdditionalOptions>

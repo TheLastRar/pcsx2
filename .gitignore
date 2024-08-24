@@ -96,6 +96,7 @@ oprofile_data/
 
 # Resources and docs copied from /bin
 /bin-arm64
+/bin-arm64ec
 
 # Manually added by user.
 /bin/resources/patches.zip

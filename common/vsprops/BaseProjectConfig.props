@@ -73,6 +73,18 @@
       <Configuration>Release Clang</Configuration>
       <Platform>ARM64</Platform>
     </ProjectConfiguration>
+	    <ProjectConfiguration Include="Debug|ARM64EC">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64EC</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Devel|ARM64EC">
+      <Configuration>Devel</Configuration>
+      <Platform>ARM64EC</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64EC">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64EC</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
 
   <!-- This better belongs in BaseProperies.props, but it needs to be set before the default props file is imported. -->

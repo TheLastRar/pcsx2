@@ -24,6 +24,7 @@
     <Import Project="$(SolutionDir)common\vsprops\QtCompile.props" />
     <Import Project="$(SolutionDir)common\vsprops\LinkPCSX2Deps.props" />
     <Import Condition="'$(Platform)'=='ARM64'" Project="$(SolutionDir)common\vsprops\CopyResources.props" />
+    <Import Condition="'$(Platform)'=='ARM64EC'" Project="$(SolutionDir)common\vsprops\CopyResources.props" />
     <Import Condition="$(Configuration.Contains(Debug))" Project="$(SolutionDir)common\vsprops\CodeGen_Debug.props" />
     <Import Condition="$(Configuration.Contains(Devel))" Project="$(SolutionDir)common\vsprops\CodeGen_Devel.props" />
     <Import Condition="$(Configuration.Contains(Release))" Project="$(SolutionDir)common\vsprops\CodeGen_Release.props" />
@@ -51,7 +52,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <ForcedIncludeFiles>PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <PreprocessorDefinitions Condition="'$(Platform)'!='ARM64'">ENABLE_RAINTEGRATION;ENABLE_OPENGL;ENABLE_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Platform.StartsWith('ARM64')) == false">ENABLE_RAINTEGRATION;ENABLE_OPENGL;ENABLE_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>LZMA_API_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>QT_NO_EXCEPTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <!-- Current Qt debug builds assert on RTTI. Remove this once we next build Qt. -->
