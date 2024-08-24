@@ -119,7 +119,7 @@
   </ItemGroup>
   <ItemGroup>
     <MARMASM Include="FastJmp_arm64.asm">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64'))==false">true</ExcludedFromBuild>
       <PreprocessWithCl>false</PreprocessWithCl>
     </MARMASM>
   </ItemGroup>
