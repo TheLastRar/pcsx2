@@ -1,0 +1,73 @@
+--- a/arm/arm_init.c
++++ b/arm/arm_init.c
+@@ -34,7 +34,7 @@
+ #include <signal.h> /* for sig_atomic_t */
+ 
+ #ifndef PNG_ARM_NEON_FILE
+-#  if defined(__aarch64__) || defined(_M_ARM64)
++#  if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
+      /* ARM Neon is expected to be unconditionally available on ARM64. */
+ #    error "PNG_ARM_NEON_CHECK_SUPPORTED must not be defined on ARM64"
+ #  elif defined(__ARM_NEON__) || defined(__ARM_NEON)
+--- a/arm/filter_neon_intrinsics.c
++++ b/arm/filter_neon_intrinsics.c
+@@ -18,7 +18,7 @@
+ /* This code requires -mfpu=neon on the command line: */
+ #if PNG_ARM_NEON_IMPLEMENTATION == 1 /* intrinsics code from pngpriv.h */
+ 
+-#if defined(_MSC_VER) && !defined(__clang__) && defined(_M_ARM64)
++#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+ #  include <arm64_neon.h>
+ #else
+ #  include <arm_neon.h>
+--- a/arm/palette_neon_intrinsics.c
++++ b/arm/palette_neon_intrinsics.c
+@@ -14,7 +14,7 @@
+ 
+ #if PNG_ARM_NEON_IMPLEMENTATION == 1
+ 
+-#if defined(_MSC_VER) && !defined(__clang__) && defined(_M_ARM64)
++#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+ #  include <arm64_neon.h>
+ #else
+ #  include <arm_neon.h>
+--- a/pngpriv.h
++++ b/pngpriv.h
+@@ -174,7 +174,7 @@
+ #     else /* !defined __ARM_NEON__ */
+          /* The 'intrinsics' code simply won't compile without this -mfpu=neon:
+           */
+-#        if !defined(__aarch64__) && !defined(_M_ARM64)
++#        if !defined(__aarch64__) && !defined(_M_ARM64) && !defined(_M_ARM64EC)
+             /* The assembler code currently does not work on ARM64 */
+ #          define PNG_ARM_NEON_IMPLEMENTATION 2
+ #        endif /* __aarch64__ */
+@@ -234,7 +234,7 @@
+        * be off by default.  See contrib/intel for more details.
+        */
+ #      if defined(__SSE4_1__) || defined(__AVX__) || defined(__SSSE3__) || \
+-       defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64) || \
++       defined(__SSE2__) || defined(_M_X64) || (defined(_M_AMD64) && !defined(_M_ARM64EC)) || \
+        (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+ #         define PNG_INTEL_SSE_OPT 1
+ #      else
+@@ -254,7 +254,7 @@
+ #         define PNG_INTEL_SSE_IMPLEMENTATION 3
+ #      elif defined(__SSSE3__)
+ #         define PNG_INTEL_SSE_IMPLEMENTATION 2
+-#      elif defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64) || \
++#      elif defined(__SSE2__) || (defined(_M_X64) && !defined(_M_ARM64EC)) || (defined(_M_AMD64) && !defined(_M_ARM64EC)) || \
+        (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+ #         define PNG_INTEL_SSE_IMPLEMENTATION 1
+ #      else
+--- a/pngrtran.c
++++ b/pngrtran.c
+@@ -21,7 +21,7 @@
+ #ifdef PNG_ARM_NEON_IMPLEMENTATION
+ #  if PNG_ARM_NEON_IMPLEMENTATION == 1
+ #    define PNG_ARM_NEON_INTRINSICS_AVAILABLE
+-#    if defined(_MSC_VER) && !defined(__clang__) && defined(_M_ARM64)
++#    if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+ #      include <arm64_neon.h>
+ #    else
+ #      include <arm_neon.h>
