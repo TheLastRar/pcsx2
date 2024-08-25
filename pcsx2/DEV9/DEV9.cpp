@@ -517,6 +517,7 @@ void DEV9write8(u32 addr, u8 value)
 #ifdef ENABLE_ATA
 		ata_write<1>(addr, value);
 #endif
+		Console.Error("DEV9: ATA does not support 8bit writes %lx", addr);
 		return;
 	}
 	if (addr >= SMAP_REGBASE && addr < FLASH_REGBASE)
