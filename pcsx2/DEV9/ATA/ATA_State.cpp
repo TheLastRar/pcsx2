@@ -324,7 +324,7 @@ void ATA::ResetEnd(bool hard)
 
 void ATA::ATA_HardReset()
 {
-	//DevCon.WriteLn("DEV9: *ATA_HARD RESET");
+	Console.WriteLn("DEV9: *ATA_HARD RESET");
 	ResetBegin();
 	ResetEnd(true);
 }
@@ -376,12 +376,12 @@ u16 ATA::Read16(u32 addr)
 			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 16bit read at address % x, value % x, Active %s", addr, regSelect, (GetSelectedDevice() == 0) ? " True " : " False ");
 			return regSelect;
 		case ATA_R_STATUS:
-			//DevCon.WriteLn("DEV9: *ATA_R_STATUS (Fallthough to ATA_R_ALT_STATUS)");
+			Console.WriteLn("DEV9: *ATA_R_STATUS (Fallthough to ATA_R_ALT_STATUS)");
 			//Clear irqcause
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
 			[[fallthrough]];
 		case ATA_R_ALT_STATUS:
-			//DevCon.WriteLn("DEV9: *ATA_R_ALT_STATUS 16bit read at address % x, value % x, Active %s", addr, regStatus, (GetSelectedDevice() == 0) ? " True " : " False ");
+			Console.WriteLn("DEV9: *ATA_R_ALT_STATUS 16bit read at address % x, value % x, Active %s", addr, regStatus, (GetSelectedDevice() == 0) ? " True " : " False ");
 
 			if (!EmuConfig.DEV9.HddEnable)
 				return 0xff7f; // PS2 confirmed response when no HDD is actually connected. The Expansion bay always says HDD support is connected.
@@ -436,13 +436,13 @@ void ATA::Write16(u32 addr, u16 value)
 			regHcyl = static_cast<u8>(value);
 			break;
 		case ATA_R_SELECT:
-			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 16bit write at address %x, value %x", addr, value);
+			Console.WriteLn("DEV9: *ATA_R_SELECT 16bit write at address %x, value %x", addr, value);
 			regSelect = static_cast<u8>(value);
 			//bus->ifs[0].select = (val & ~0x10) | 0xa0;
 			//bus->ifs[1].select = (val | 0x10) | 0xa0;
 			break;
 		case ATA_R_CONTROL:
-			//DevCon.WriteLn("DEV9: *ATA_R_CONTROL 16bit write at address %x, value %x", addr, value);
+			Console.WriteLn("DEV9: *ATA_R_CONTROL 16bit write at address %x, value %x", addr, value);
 			//dev9Ru16(ATA_R_CONTROL) = value;
 			if ((value & 0x2) != 0)
 			{
@@ -455,7 +455,7 @@ void ATA::Write16(u32 addr, u16 value)
 
 			if ((value & 0x4) != 0)
 			{
-				DevCon.WriteLn("DEV9: *ATA_R_CONTROL RESET");
+				Console.WriteLn("DEV9: *ATA_R_CONTROL RESET");
 				ResetBegin();
 				ResetEnd(false);
 			}
@@ -464,7 +464,7 @@ void ATA::Write16(u32 addr, u16 value)
 
 			break;
 		case ATA_R_CMD:
-			//DevCon.WriteLn("DEV9: *ATA_R_CMD 16bit write at address %x, value %x", addr, value);
+			Console.WriteLn("DEV9: *ATA_R_CMD 16bit write at address %x, value %x", addr, value);
 			regCommand = value;
 			regControlHOBRead = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
