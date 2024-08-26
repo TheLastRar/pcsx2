@@ -7,18 +7,23 @@
 void ATA::HDD_Smart()
 {
 	DevCon.WriteLn("DEV9: HDD_Smart");
-
+	Console.WriteLn("DEV9: ATA: regSector is %s", regSector);
 	if ((regStatus & ATA_STAT_READY) == 0)
+	{
+		Console.WriteLn("DEV9: ATA: Failed ATA_STAT_READY check");
 		return;
+	}
 
 	if (regHcyl != 0xC2 || regLcyl != 0x4F)
 	{
+		Console.WriteLn("DEV9: ATA: Failed regHcyl/regLcyl check");
 		CmdNoDataAbort();
 		return;
 	}
 
 	if (!fetSmartEnabled && regFeature != 0xD8)
 	{
+		Console.WriteLn("DEV9: ATA: Failed SMART enabled check");
 		CmdNoDataAbort();
 		return;
 	}
@@ -26,17 +31,23 @@ void ATA::HDD_Smart()
 	switch (regFeature)
 	{
 		case 0xD9: //SMART_DISABLE
+			Console.WriteLn("DEV9: ATA: SMART_DISABLE");
 			SMART_EnableOps(false);
 			return;
 		case 0xD8: //SMART_ENABLE
+			Console.WriteLn("DEV9: ATA: SMART_ENABLE");
 			SMART_EnableOps(true);
 			return;
 		case 0xD2: //SMART_ATTR_AUTOSAVE
+			Console.WriteLn("DEV9: ATA: SMART_ATTR_AUTOSAVE");
 			SMART_SetAutoSaveAttribute();
 			return;
 		case 0xD3: //SMART_ATTR_SAVE
+			Console.Error("DEV9: ATA: SMART_ATTR_SAVE Not Implemented");
+			CmdNoDataAbort();
 			return;
 		case 0xDA: //SMART_STATUS (is fault in disk?)
+			Console.WriteLn("DEV9: ATA: SMART_STATUS");
 			SMART_ReturnStatus();
 			return;
 		case 0xD1: //SMART_READ_THRESH
@@ -52,6 +63,7 @@ void ATA::HDD_Smart()
 			CmdNoDataAbort();
 			return;
 		case 0xD4: //SMART_EXECUTE_OFFLINE
+			Console.Error("DEV9: ATA: SMART_EXECUTE_OFFLINE");
 			SMART_ExecuteOfflineImmediate();
 			return;
 		default:
