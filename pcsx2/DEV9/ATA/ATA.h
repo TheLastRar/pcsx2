@@ -262,6 +262,7 @@ private:
 
 	void HDD_Smart();
 	void SMART_SetAutoSaveAttribute();
+	void SMART_SaveAttribute();
 	void SMART_ExecuteOfflineImmediate();
 	void SMART_EnableOps(bool enable);
 	void SMART_ReturnStatus();
