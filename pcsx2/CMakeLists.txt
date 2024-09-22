@@ -1131,6 +1131,7 @@ endif()
 
 target_link_libraries(PCSX2_FLAGS INTERFACE
 	common
+	des
 	imgui
 	fmt::fmt
 	rapidyaml::rapidyaml
@@ -1192,6 +1193,7 @@ target_include_directories(PCSX2_FLAGS INTERFACE
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_BINARY_DIR}/pcsx2"
 	"${CMAKE_BINARY_DIR}/common/include"
+	"${CMAKE_SOURCE_DIR}/3rdparty/des/"
 	"${FFMPEG_INCLUDE_DIRS}"
 )
 
