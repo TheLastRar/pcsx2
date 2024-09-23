@@ -740,7 +740,18 @@ void MemoryCardProtocol::AuthReset()
 	PS1_FAIL();
 
 	key = dex_key;
-	The2bTerminator(5);
+	if (!mcd->IsPresent())
+	{
+		g_Sio2FifoOut.push_back(0xff);
+		g_Sio2FifoOut.push_back(0xff);
+		g_Sio2FifoOut.push_back(0xff);
+		g_Sio2FifoOut.push_back(0xff);
+	}
+	else
+	{
+		mcd->term = Terminator::READY;
+		The2bTerminator(5);
+	}
 }
 
 void MemoryCardProtocol::AuthKeySelect()
