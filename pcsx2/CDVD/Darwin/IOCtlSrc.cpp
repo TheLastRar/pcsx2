@@ -98,17 +98,23 @@ const std::vector<toc_entry>& IOCtlSrc::ReadTOC() const
 bool IOCtlSrc::ReadSectors2048(u32 sector, u32 count, u8* buffer) const
 {
 	const ssize_t bytes_to_read = 2048 * count;
-	ssize_t bytes_read = pread(m_device, buffer, bytes_to_read, sector * 2048ULL);
-	if (bytes_read == bytes_to_read)
-		return true;
+	ssize_t bytes_read = 0;
 
-	if (bytes_read == -1)
-		DevCon.Warning("CDVD: read sectors %u-%u failed: %s",
-			sector, sector + count - 1, strerror(errno));
-	else
-		DevCon.Warning("CDVD: read sectors %u-%u: %zd bytes read, %zd bytes expected",
-			sector, sector + count - 1, bytes_read, bytes_to_read);
-	return false;
+	while (bytes_read != bytes_to_read)
+	{
+		const int ret = pread(m_device, &buffer[bytes_read], bytes_to_read - bytes_read, sector * 2048ULL + bytes_read);
+
+		if (ret == -1)
+		{
+			DevCon.Warning(" * CDVD read sectors %u-%u failed after %zd bytes: %s\n",
+				sector, sector + count - 1, bytes_read, strerror(errno));
+			return false;
+		}
+		else
+			bytes_read += ret;
+	}
+
+	return true;
 }
 
 bool IOCtlSrc::ReadSectors2352(u32 sector, u32 count, u8* buffer) const
