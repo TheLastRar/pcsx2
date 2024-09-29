@@ -543,7 +543,8 @@ void DEV9write8(u32 addr, u8 value)
 			dev9.irqcause = value;
 			return;
 		case SPD_R_INTR_MASK:
-			Console.Error("DEV9: SPD_R_INTR_MASK8, WTFH ?");
+			DevCon.WriteLn("DEV9: SPD_R_INTR_MASK 8bit write %x", value);
+			dev9.irqmask = value;
 			break;
 
 		case SPD_R_PIO_DIR:
