@@ -534,10 +534,10 @@ void DEV9write8(u32 addr, u8 value)
 
 	switch (addr)
 	{
-		case 0x10000020:
-			Console.Error("DEV9: SPD_R_INTR_CAUSE, WTFH ?");
-			dev9.irqcause = 0xff;
-			break;
+		// case 0x10000020:
+		// Some software writes 1 to this reg
+		// Writes to this reg do not affect SPD_R_INTR_STAT
+		// Reads from this reg seem to always return 1
 		case SPD_R_INTR_STAT:
 			Console.Error("DEV9: SPD_R_INTR_STAT,  WTFH ?");
 			dev9.irqcause = value;
