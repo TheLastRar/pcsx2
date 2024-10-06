@@ -221,7 +221,7 @@ void tx_process()
 
 	// if we actualy send something set TXEND
 	if (cnt != 0)
-		_DEV9irq(SMAP_INTR_TXEND | SMAP_INTR_TXDNV, 100); //now ? or when the fifo is empty ? i guess now atm
+		_DEV9irq(SMAP_INTR_TXEND, 100); //now ? or when the fifo is empty ? i guess now atm
 	else
 		_DEV9irq(SMAP_INTR_TXDNV, 0);
 }
