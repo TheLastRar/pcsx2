@@ -153,6 +153,28 @@ void tx_process()
 			{
 				Console.Error("DEV9: SMAP: ERROR: odd , !pbd->pointer>0x1000 | 0x%X %u", pbd->pointer, pbd->length);
 			}
+
+			if (pbd->length == 0x5EA && pbd->pointer == 0x1000)
+			{
+				// A new reset hack
+				u32* ptr = (u32*)&dev9.txfifo[base];
+
+				bool test = true;
+				for (int i = 0; i < 0x5EA; i += 4)
+				{
+					if (ptr[i / 4] != i)
+					{
+						test = false;
+						break;
+					}
+				}
+				if (test)
+				{
+					Console.WriteLn("DEV9: Adapter Detection Hack - Set RXEND");
+					_DEV9irq(SMAP_INTR_RXEND, 100);
+				}
+			}
+
 			//increase fifo pointer(s)
 			//uh does that even exist on real h/w ?
 			/*
