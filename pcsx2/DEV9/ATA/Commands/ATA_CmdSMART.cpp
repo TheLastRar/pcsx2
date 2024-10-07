@@ -35,6 +35,7 @@ void ATA::HDD_Smart()
 			SMART_SetAutoSaveAttribute();
 			return;
 		case 0xD3: //SMART_ATTR_SAVE
+			SMART_SaveAttributes();
 			return;
 		case 0xDA: //SMART_STATUS (is fault in disk?)
 			SMART_ReturnStatus();
@@ -77,6 +78,15 @@ void ATA::SMART_SetAutoSaveAttribute()
 			CmdNoDataAbort();
 			return;
 	}
+	PostCmdNoData();
+}
+
+void ATA::SMART_SaveAttributes()
+{
+	PreCmd();
+	// SMART SAVE ATTRIBUTE VALUES is an optional command,
+	// however software expect this command to be implemented.
+	// We don't currently record attributes, so stub this cmd.
 	PostCmdNoData();
 }
 
