@@ -705,8 +705,7 @@ u8 DEV9read8(u32 addr)
 
 	if (addr >= ATA_DEV9_HDD_BASE && addr < ATA_DEV9_HDD_END)
 	{
-		Console.Error("DEV9: ATA does not support 8bit reads %lx", addr);
-		return 0;
+		return dev9.ata->Read8(addr);
 	}
 	// Note, ATA regs within range of addresses used by Speed
 	if (addr >= SPD_REGBASE && addr < SMAP_REGBASE)
@@ -812,10 +811,7 @@ void DEV9write8(u32 addr, u8 value)
 
 	if (addr >= ATA_DEV9_HDD_BASE && addr < ATA_DEV9_HDD_END)
 	{
-#ifdef ENABLE_ATA
-		ata_write<1>(addr, value);
-#endif
-		Console.Error("DEV9: ATA does not support 8bit writes %lx", addr);
+		dev9.ata->Write8(addr, value);
 		return;
 	}
 	// Note, ATA regs within range of addresses used by Speed

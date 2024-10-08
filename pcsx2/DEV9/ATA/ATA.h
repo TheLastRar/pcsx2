@@ -160,7 +160,9 @@ public:
 
 	void ATA_HardReset();
 
+	u8 Read8(u32 addr);
 	u16 Read16(u32 addr);
+	void Write8(u32 addr, u8 value);
 	void Write16(u32 addr, u16 value);
 
 	void Async(u32 cycles);

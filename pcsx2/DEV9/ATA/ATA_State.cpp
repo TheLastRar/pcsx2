@@ -329,6 +329,72 @@ void ATA::ATA_HardReset()
 	ResetEnd(true);
 }
 
+u8 ATA::Read8(u32 addr)
+{
+	switch (addr)
+	{
+		case ATA_R_ERROR:
+			//DevCon.WriteLn("DEV9: *ATA_R_ERROR 8bit read at address %x, value %x, Active %s", addr, regError, (GetSelectedDevice() == 0) ? "True" : "False");
+			if (GetSelectedDevice() != 0)
+				return 0;
+			return regError;
+		case ATA_R_NSECTOR:
+			//DevCon.WriteLn("DEV9: *ATA_R_NSECTOR 8bit read at address %x, value %x, Active %s", addr, nsector, (GetSelectedDevice() == 0) ? "True" : "False");
+			if (GetSelectedDevice() != 0)
+				return 0;
+			if (!regControlHOBRead)
+				return regNsector;
+			else
+				return regNsectorHOB;
+		case ATA_R_SECTOR:
+			//DevCon.WriteLn("DEV9: *ATA_R_NSECTOR 8bit read at address %x, value %x, Active %s", addr, regSector, (GetSelectedDevice() == 0) ? "True" : "False");
+			if (GetSelectedDevice() != 0)
+				return 0;
+			if (!regControlHOBRead)
+				return regSector;
+			else
+				return regSectorHOB;
+		case ATA_R_LCYL:
+			//DevCon.WriteLn("DEV9: *ATA_R_LCYL 8bit read at address %x, value %x, Active %s", addr, regLcyl, (GetSelectedDevice() == 0) ? "True" : "False");
+			if (GetSelectedDevice() != 0)
+				return 0;
+			if (!regControlHOBRead)
+				return regLcyl;
+			else
+				return regLcylHOB;
+		case ATA_R_HCYL:
+			//DevCon.WriteLn("DEV9: *ATA_R_HCYL 8bit read at address % x, value % x, Active %s", addr, regHcyl, (GetSelectedDevice() == 0) ? " True " : " False ");
+			if (GetSelectedDevice() != 0)
+				return 0;
+			if (!regControlHOBRead)
+				return regHcyl;
+			else
+				return regHcylHOB;
+		case ATA_R_SELECT:
+			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 8bit read at address % x, value % x, Active %s", addr, regSelect, (GetSelectedDevice() == 0) ? " True " : " False ");
+			return regSelect;
+		case ATA_R_STATUS:
+			//DevCon.WriteLn("DEV9: *ATA_R_STATUS (Fallthough to ATA_R_ALT_STATUS)");
+			//Clear irqcause
+			dev9.irqcause &= ~ATA_INTR_INTRQ;
+			[[fallthrough]];
+		case ATA_R_ALT_STATUS:
+			DevCon.WriteLn("DEV9: *ATA_R_ALT_STATUS 8bit read at address % x, value % x, Active %s", addr, regStatus, (GetSelectedDevice() == 0) ? " True " : " False ");
+
+			// TODO, check this with 8bit reads
+			if (!EmuConfig.DEV9.HddEnable)
+				return 0xff7f; // PS2 confirmed response when no HDD is actually connected. The Expansion bay always says HDD support is connected.
+
+			//raise IRQ?
+			if (GetSelectedDevice() != 0)
+				return 0;
+			return regStatus;
+		default:
+			Console.Error("DEV9: ATA: Unknown 16bit read at address %x", addr);
+			return 0xff;
+	}
+}
+
 u16 ATA::Read16(u32 addr)
 {
 	switch (addr)
@@ -393,6 +459,86 @@ u16 ATA::Read16(u32 addr)
 		default:
 			Console.Error("DEV9: ATA: Unknown 16bit read at address %x", addr);
 			return 0xff;
+	}
+}
+
+void ATA::Write8(u32 addr, u8 value)
+{
+	if (addr != ATA_R_CMD && (regStatus & (ATA_STAT_BUSY | ATA_STAT_DRQ)) != 0)
+	{
+		Console.Error("DEV9: ATA: DEVICE BUSY, DROPPING WRITE");
+		return;
+	}
+	switch (addr)
+	{
+		case ATA_R_FEATURE:
+			//DevCon.WriteLn("DEV9: *ATA_R_FEATURE 8bit write at address %x, value %x", addr, value);
+			ClearHOB();
+			regFeatureHOB = regFeature;
+			regFeature = value;
+			break;
+		case ATA_R_NSECTOR:
+			//DevCon.WriteLn("DEV9: *ATA_R_NSECTOR 8bit write at address %x, value %x", addr, value);
+			ClearHOB();
+			regNsectorHOB = regNsector;
+			regNsector = value;
+			break;
+		case ATA_R_SECTOR:
+			//DevCon.WriteLn("DEV9: *ATA_R_SECTOR 8bit write at address %x, value %x", addr, value);
+			ClearHOB();
+			regSectorHOB = regSector;
+			regSector = value;
+			break;
+		case ATA_R_LCYL:
+			//DevCon.WriteLn("DEV9: *ATA_R_LCYL 18bit write at address %x, value %x", addr, value);
+			ClearHOB();
+			regLcylHOB = regLcyl;
+			regLcyl = value;
+			break;
+		case ATA_R_HCYL:
+			//DevCon.WriteLn("DEV9: *ATA_R_HCYL 8bit write at address %x, value %x", addr, value);
+			ClearHOB();
+			regHcylHOB = regHcyl;
+			regHcyl = value;
+			break;
+		case ATA_R_SELECT:
+			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 8bit write at address %x, value %x", addr, value);
+			regSelect = value;
+			//bus->ifs[0].select = (val & ~0x10) | 0xa0;
+			//bus->ifs[1].select = (val | 0x10) | 0xa0;
+			break;
+		case ATA_R_CONTROL:
+			//DevCon.WriteLn("DEV9: *ATA_R_CONTROL 8bit write at address %x, value %x", addr, value);
+			//dev9Ru16(ATA_R_CONTROL) = value;
+			if ((value & 0x2) != 0)
+			{
+				//Supress all IRQ
+				dev9.irqcause &= ~ATA_INTR_INTRQ;
+				regControlEnableIRQ = false;
+			}
+			else
+				regControlEnableIRQ = true;
+
+			if ((value & 0x4) != 0)
+			{
+				DevCon.WriteLn("DEV9: *ATA_R_CONTROL RESET");
+				ResetBegin();
+				ResetEnd(false);
+			}
+			if ((value & 0x80) != 0)
+				regControlHOBRead = true;
+
+			break;
+		case ATA_R_CMD:
+			//DevCon.WriteLn("DEV9: *ATA_R_CMD 8bit write at address %x, value %x", addr, value);
+			regCommand = value;
+			regControlHOBRead = false;
+			dev9.irqcause &= ~ATA_INTR_INTRQ;
+			IDE_ExecCmd(value);
+			break;
+		default:
+			Console.Error("DEV9: ATA: UNKNOWN 8bit write at address %x, value %x", addr, value);
+			break;
 	}
 }
 
