@@ -82,7 +82,7 @@ void ATA::ATAreadDMA8Mem(u8* pMem, int size)
 	{
 		if (size == 0 || nsector == -1)
 			return;
-		DevCon.WriteLn("DEV9: DMA read, size %i, transferred %i, total size %i", size, rdTransferred, nsector * 512);
+		Console.WriteLn("DEV9: DMA read, size %i, transferred %i, total size %i", size, rdTransferred, nsector * 512);
 
 		//read
 		size = std::min(size, nsector * 512 - rdTransferred);
@@ -133,13 +133,13 @@ void ATA::HDD_ReadDMA(bool isLBA48)
 {
 	if (!PreCmd())
 		return;
-	DevCon.WriteLn(isLBA48 ? "DEV9: HDD_ReadDMA48" : "DEV9: HDD_ReadDMA");
+	Console.WriteLn(isLBA48 ? "DEV9: HDD_ReadDMA48" : "DEV9: HDD_ReadDMA");
 
 	IDE_CmdLBA48Transform(isLBA48);
 
 	if (!HDD_CanSeek())
 	{
-		Console.Error("DEV9: ATA: Transfer from invalid LBA %lu", HDD_GetLBA());
+		Console.Error("DEV9: ATA: Started transfer from invalid LBA %" PRId64, HDD_GetLBA());
 		nsector = -1;
 		regStatus |= ATA_STAT_ERR;
 		regError |= ATA_ERR_ID;
@@ -161,7 +161,7 @@ void ATA::HDD_WriteDMA(bool isLBA48)
 
 	if (!HDD_CanSeek())
 	{
-		Console.Error("DEV9: ATA: Transfer from invalid LBA %lu", HDD_GetLBA());
+		Console.Error("DEV9: ATA: Started transfer from invalid LBA %" PRId64, HDD_GetLBA());
 		nsector = -1;
 		regStatus |= ATA_STAT_ERR;
 		regError |= ATA_ERR_ID;

@@ -734,27 +734,35 @@ bool ATA::HDD_CanSeek()
 
 bool ATA::HDD_CanAccess(int* sectors)
 {
+	Console.WriteLn("HDD_CanAccess(%d)", *sectors);
 	s64 maxLBA = hddImageSize / 512 - 1;
+	Console.WriteLn("DEV9: hddImageSize %" PRIu64 "bytes, maxLBA = %" PRId64, hddImageSize, maxLBA);
 	if ((regSelect & 0x40) == 0) //CHS mode
+	{
 		maxLBA = std::min<s64>(maxLBA, curCylinders * curHeads * curSectors);
+		Console.WriteLn("DEV9: maxLBA limited by CHS mode to %" PRId64, maxLBA);
+	}
 
 	const s64 posStart = HDD_GetLBA();
 	if (posStart == -1)
 		return false;
 
-	//DevCon.WriteLn("DEV9: LBA :%i", lba);
+	Console.WriteLn("DEV9: LBA Start %" PRId64, posStart);
 	if (posStart > maxLBA)
 	{
+		Console.WriteLn("DEV9: LBA Start > maxLBA, set *sectors to -1");
 		*sectors = -1;
 		return false;
 	}
 
 	const s64 posEnd = posStart + *sectors;
+	Console.WriteLn("DEV9: LBA End %" PRId64, posEnd);
 	if (posEnd > maxLBA)
 	{
 		const s64 overshoot = posEnd - maxLBA;
 		s64 space = *sectors - overshoot;
 		*sectors = static_cast<int>(space);
+		Console.WriteLn("DEV9: LBA End > maxLBA, set *sectors to %d", *sectors);
 		return false;
 	}
 

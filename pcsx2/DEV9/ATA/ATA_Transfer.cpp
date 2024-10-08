@@ -494,10 +494,11 @@ void ATA::HDD_SetErrorAtTransferEnd()
 	currSect += nsector;
 	if ((regStatus & ATA_STAT_ERR) != 0)
 	{
+		Console.Error("DEV9: Partial Transfer");
 		//Error condition
 		//Write errored sector to LBA
 		currSect++;
 		HDD_SetLBA(currSect);
-		Console.Error("DEV9: ATA: Transfer from invalid LBA %lu", currSect);
+		Console.Error("DEV9: ATA: Transfer from invalid LBA %" PRIu64, currSect);
 	}
 }
