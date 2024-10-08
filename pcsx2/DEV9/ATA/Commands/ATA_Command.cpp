@@ -6,7 +6,7 @@
 
 void ATA::IDE_ExecCmd(u16 value)
 {
-	Console.WriteLn("DEV9: Starting Command %x, is LBA enabled %s", value, lba48Supported ? "true" : "false");
+	Console.WriteLn("DEV9: Starting Command %x, is LBA48 enabled %s", value, lba48Supported ? "true" : "false");
 	switch (value)
 	{
 		case 0x00:
