@@ -56,6 +56,39 @@ void ATA::HDD_ReadVerifySectors(bool isLBA48)
 	PostCmdNoData();
 }
 
+void ATA::HDD_Recalibrate()
+{
+	if (!PreCmd())
+		return;
+	DevCon.WriteLn("DEV9: HDD_Recalibrate");
+
+	// Recalibrate specifies we also clear the head, however,
+	// this command was made obsolete before LBA48 appeared.
+	// It's possible the intention is to report an address of zero,
+	// if so, clearing the head when in LBA48 would not be required.
+	HDD_SetLBA(0);
+
+	// If this fails, something has gone really wrong.
+	if (!HDD_CanSeek())
+	{
+		regStatus |= ATA_STAT_ERR;
+		regError |= ATA_ERR_TRACK0;
+	}
+
+	// Set regSector to 1 if CHS, else 0.
+	if (!lba48)
+	{
+		regSector = (regSelect & 0x40) ? 0 : 1;
+	}
+	else
+	{
+		regSectorHOB = 0;
+		regSector = 0;
+	}
+
+	PostCmdNoData();
+}
+
 void ATA::HDD_SeekCmd()
 {
 	if (!PreCmd())
