@@ -108,7 +108,7 @@ SocketAdapter::SocketAdapter()
 {
 	sendThreadId = std::this_thread::get_id();
 
-	bool lanMode = true;
+	bool lanMode = false;
 	bool foundAdapter;
 
 	AdapterUtils::Adapter adapter;
