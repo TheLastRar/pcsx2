@@ -506,6 +506,7 @@ void ATA::Write8(u32 addr, u8 value)
 			regHcyl = value;
 			break;
 		case ATA_R_SELECT:
+		{
 			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 8bit write at address %x, value %x", addr, value);
 
 			const int oldDev = GetSelectedDevice();
@@ -523,6 +524,7 @@ void ATA::Write8(u32 addr, u8 value)
 
 			regSelect = value;
 			break;
+		}
 		case ATA_R_CONTROL:
 			//DevCon.WriteLn("DEV9: *ATA_R_CONTROL 8bit write at address %x, value %x", addr, value);
 			//dev9Ru16(ATA_R_CONTROL) = value;
@@ -604,6 +606,7 @@ void ATA::Write16(u32 addr, u16 value)
 			regHcyl = static_cast<u8>(value);
 			break;
 		case ATA_R_SELECT:
+		{
 			Console.WriteLn("DEV9: *ATA_R_SELECT 16bit write at address %x, value %x", addr, value);
 
 			const int oldDev = GetSelectedDevice();
@@ -621,6 +624,7 @@ void ATA::Write16(u32 addr, u16 value)
 
 			regSelect = static_cast<u8>(value);
 			break;
+		}
 		case ATA_R_CONTROL:
 			Console.WriteLn("DEV9: *ATA_R_CONTROL 16bit write at address %x, value %x", addr, value);
 			//dev9Ru16(ATA_R_CONTROL) = value;
