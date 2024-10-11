@@ -319,8 +319,7 @@ void ATA::ResetEnd(bool hard)
 			mdmaMode = 2;
 	}
 
-	regControlEnableIRQ = false;
-	HDD_ExecuteDeviceDiag();
+	HDD_ExecuteDeviceDiag(false);
 	regControlEnableIRQ = true;
 }
 
@@ -378,6 +377,7 @@ u8 ATA::Read8(u32 addr)
 		case ATA_R_STATUS:
 			//DevCon.WriteLn("DEV9: *ATA_R_STATUS (Fallthough to ATA_R_ALT_STATUS)");
 			//Clear irqcause
+			pendingInterrupt = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
 			[[fallthrough]];
 		case ATA_R_ALT_STATUS:
@@ -446,6 +446,7 @@ u16 ATA::Read16(u32 addr)
 		case ATA_R_STATUS:
 			Console.WriteLn("DEV9: *ATA_R_STATUS (Fallthough to ATA_R_ALT_STATUS)");
 			//Clear irqcause
+			pendingInterrupt = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
 			[[fallthrough]];
 		case ATA_R_ALT_STATUS:
@@ -505,9 +506,21 @@ void ATA::Write8(u32 addr, u8 value)
 			break;
 		case ATA_R_SELECT:
 			//DevCon.WriteLn("DEV9: *ATA_R_SELECT 8bit write at address %x, value %x", addr, value);
+
+			const int oldDev = GetSelectedDevice();
+			const int newDev = (value >> 4) & 1;
+			// Surpress INTRQ when not selected device
+			if (oldDev == 0 && newDev == 1)
+			{
+				dev9.irqcause &= ~ATA_INTR_INTRQ;
+			}
+			else if (oldDev == 1 && newDev == 0)
+			{
+				if (regControlEnableIRQ == true && pendingInterrupt)
+					_DEV9irq(ATA_INTR_INTRQ, 1);
+			}
+
 			regSelect = value;
-			//bus->ifs[0].select = (val & ~0x10) | 0xa0;
-			//bus->ifs[1].select = (val | 0x10) | 0xa0;
 			break;
 		case ATA_R_CONTROL:
 			//DevCon.WriteLn("DEV9: *ATA_R_CONTROL 8bit write at address %x, value %x", addr, value);
@@ -519,7 +532,11 @@ void ATA::Write8(u32 addr, u8 value)
 				regControlEnableIRQ = false;
 			}
 			else
+			{
+				if (regControlEnableIRQ == false && pendingInterrupt)
+					_DEV9irq(ATA_INTR_INTRQ, 1);
 				regControlEnableIRQ = true;
+			}
 
 			if ((value & 0x4) != 0)
 			{
@@ -535,6 +552,7 @@ void ATA::Write8(u32 addr, u8 value)
 			//DevCon.WriteLn("DEV9: *ATA_R_CMD 8bit write at address %x, value %x", addr, value);
 			regCommand = value;
 			regControlHOBRead = false;
+			pendingInterrupt = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
 			IDE_ExecCmd(value);
 			break;
@@ -585,9 +603,21 @@ void ATA::Write16(u32 addr, u16 value)
 			break;
 		case ATA_R_SELECT:
 			Console.WriteLn("DEV9: *ATA_R_SELECT 16bit write at address %x, value %x", addr, value);
+
+			const int oldDev = GetSelectedDevice();
+			const int newDev = (value >> 4) & 1;
+			// Surpress INTRQ when not selected device
+			if (oldDev == 0 && newDev == 1)
+			{
+				dev9.irqcause &= ~ATA_INTR_INTRQ;
+			}
+			else if (oldDev == 1 && newDev == 0)
+			{
+				if (regControlEnableIRQ == true && pendingInterrupt)
+					_DEV9irq(ATA_INTR_INTRQ, 1);
+			}
+
 			regSelect = static_cast<u8>(value);
-			//bus->ifs[0].select = (val & ~0x10) | 0xa0;
-			//bus->ifs[1].select = (val | 0x10) | 0xa0;
 			break;
 		case ATA_R_CONTROL:
 			Console.WriteLn("DEV9: *ATA_R_CONTROL 16bit write at address %x, value %x", addr, value);
@@ -599,7 +629,11 @@ void ATA::Write16(u32 addr, u16 value)
 				regControlEnableIRQ = false;
 			}
 			else
+			{
+				if (pendingInterrupt)
+					_DEV9irq(ATA_INTR_INTRQ, 1);
 				regControlEnableIRQ = true;
+			}
 
 			if ((value & 0x4) != 0)
 			{
@@ -615,6 +649,7 @@ void ATA::Write16(u32 addr, u16 value)
 			Console.WriteLn("DEV9: *ATA_R_CMD 16bit write at address %x, value %x", addr, value);
 			regCommand = value;
 			regControlHOBRead = false;
+			pendingInterrupt = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
 			IDE_ExecCmd(value);
 			break;

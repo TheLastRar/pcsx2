@@ -96,6 +96,8 @@ private:
 
 	u8 regStatus; //ReadOnly. When read via AlternateStatus pending interrupts are not cleared
 
+	bool pendingInterrupt = false;
+
 	//Transfer
 	//Write Buffer(s)
 	bool awaitFlush = false;
@@ -236,8 +238,8 @@ private:
 	void HDD_WriteDMA(bool isLBA48);
 
 	void PreCmdExecuteDeviceDiag();
-	void PostCmdExecuteDeviceDiag();
-	void HDD_ExecuteDeviceDiag();
+	void PostCmdExecuteDeviceDiag(bool sendIRQ);
+	void HDD_ExecuteDeviceDiag(bool sendIRQ);
 
 	void PostCmdNoData();
 	void CmdNoDataAbort();
