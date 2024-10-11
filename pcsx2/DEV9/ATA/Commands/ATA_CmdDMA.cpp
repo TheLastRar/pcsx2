@@ -12,7 +12,7 @@ void ATA::DRQCmdDMADataToHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	regStatus |= ATA_STAT_DRQ;
 	dmaReady = true;
-	_DEV9irq(SPD_INTR_ATA_FIFO_DATA, 1);
+	//PutHDDFIFO
 	//PCSX2 will Start DMA
 }
 void ATA::PostCmdDMADataToHost()
@@ -24,11 +24,9 @@ void ATA::PostCmdDMADataToHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	dmaReady = false;
 
-	dev9.irqcause &= ~SPD_INTR_ATA_FIFO_DATA;
 	pendingInterrupt = true;
 	if (regControlEnableIRQ)
 		_DEV9irq(ATA_INTR_INTRQ, 1);
-	//PCSX2 Will Start DMA
 }
 
 void ATA::DRQCmdDMADataFromHost()
@@ -46,7 +44,7 @@ void ATA::DRQCmdDMADataFromHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	regStatus |= ATA_STAT_DRQ;
 	dmaReady = true;
-	_DEV9irq(SPD_INTR_ATA_FIFO_DATA, 1);
+	//PUT ONTO FIFO
 	//PCSX2 will Start DMA
 }
 void ATA::PostCmdDMADataFromHost()
@@ -63,8 +61,6 @@ void ATA::PostCmdDMADataFromHost()
 
 	regStatus &= ~ATA_STAT_DRQ;
 	dmaReady = false;
-
-	dev9.irqcause &= ~SPD_INTR_ATA_FIFO_DATA;
 
 	if (fetWriteCacheEnabled)
 	{
@@ -129,6 +125,64 @@ void ATA::ATAwriteDMA8Mem(u8* pMem, int size)
 			PostCmdDMADataFromHost();
 		}
 	}
+}
+
+int ATA::ReadDMAToFIFO(u8* buffer, int space)
+{
+	if ((udmaMode >= 0 || mdmaMode >= 0) &&
+		(dev9.if_ctrl & SPD_IF_ATA_DMAEN) != 0)
+	{
+		if (space == 0 || nsector == -1)
+			return 0;
+		Console.WriteLn("DEV9: DMA read, size %i, transferred %i, total size %i", space, rdTransferred, nsector * 512);
+
+		// Read to FIFO
+		const int size = std::min(space, nsector * 512 - rdTransferred);
+		memcpy(buffer, &readBuffer[rdTransferred], size);
+
+		rdTransferred += size;
+
+		if (rdTransferred >= nsector * 512)
+		{
+			HDD_SetErrorAtTransferEnd();
+
+			nsector = 0;
+			rdTransferred = 0;
+			PostCmdDMADataToHost();
+		}
+
+		return size;
+	}
+	return 0;
+}
+
+int ATA::WriteDMAFromFIFO(u8* buffer, int available)
+{
+	if ((udmaMode >= 0 || mdmaMode >= 0) &&
+		(dev9.if_ctrl & SPD_IF_ATA_DMAEN) != 0)
+	{
+		if (available == 0 || nsector == -1)
+			return 0;
+		DevCon.WriteLn("DEV9: DMA write, size %i, transferred %i, total size %i", available, wrTransferred, nsector * 512);
+
+		// Write to FIFO
+		const int size = std::min(available, nsector * 512 - wrTransferred);
+		memcpy(&currentWrite[wrTransferred], buffer, size);
+
+		wrTransferred += size;
+
+		if (wrTransferred >= nsector * 512)
+		{
+			HDD_SetErrorAtTransferEnd();
+
+			nsector = 0;
+			wrTransferred = 0;
+			PostCmdDMADataFromHost();
+		}
+
+		return size;
+	}
+	return 0;
 }
 
 //GENRAL FEATURE SET

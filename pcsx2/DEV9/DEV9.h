@@ -69,9 +69,11 @@ typedef struct
 	u16 mdma_mode;
 	u16 udma_mode;
 
-	//Non-Regs
-	int fifo_bytes_read;
-	int fifo_bytes_write;
+	// FIFO
+	// HW would increment in 2 bytes, or 4 bytes with Wide DMA
+	int fifo_bytes_read; // Max 0x3FFC
+	int fifo_bytes_write; // Max 0x3FFC
+	u8 fifo[16 * 512];
 } dev9Struct;
 
 //EEPROM states
