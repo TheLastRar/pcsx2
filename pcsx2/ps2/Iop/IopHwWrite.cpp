@@ -191,6 +191,14 @@ static __fi void _HwWrite_16or32_Page1( u32 addr, T val )
 
 	u32 masked_addr = addr & 0x0fff;
 
+	if (masked_addr == 0x450)
+	{
+		if (val & (1 << 1))
+		{
+			hwIntcIrq(INTC_SBUS);
+		}
+	}
+
 	// ------------------------------------------------------------------------
 	// Counters, 16-bit varieties!
 	//
