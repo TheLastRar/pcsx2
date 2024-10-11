@@ -467,7 +467,8 @@ u16 ATA::Read16(u32 addr)
 
 void ATA::Write8(u32 addr, u8 value)
 {
-	if (addr != ATA_R_CMD && (regStatus & (ATA_STAT_BUSY | ATA_STAT_DRQ)) != 0)
+	if ((addr != ATA_R_CMD && addr != ATA_R_CONTROL) &&
+		(regStatus & (ATA_STAT_BUSY | ATA_STAT_DRQ)) != 0)
 	{
 		Console.Error("DEV9: ATA: DEVICE BUSY, DROPPING WRITE");
 		return;
@@ -564,7 +565,8 @@ void ATA::Write8(u32 addr, u8 value)
 
 void ATA::Write16(u32 addr, u16 value)
 {
-	if (addr != ATA_R_CMD && (regStatus & (ATA_STAT_BUSY | ATA_STAT_DRQ)) != 0)
+	if ((addr != ATA_R_CMD && addr != ATA_R_CONTROL) &&
+		(regStatus & (ATA_STAT_BUSY | ATA_STAT_DRQ)) != 0)
 	{
 		Console.Error("DEV9: ATA: DEVICE BUSY, DROPPING WRITE");
 		return;
