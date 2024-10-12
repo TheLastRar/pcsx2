@@ -320,7 +320,7 @@ void ATA::ResetEnd(bool hard)
 	}
 
 	HDD_ExecuteDeviceDiag(false);
-	regControlEnableIRQ = true;
+	regControlEnableIRQ = false;
 }
 
 void ATA::ATA_HardReset()
@@ -536,11 +536,13 @@ void ATA::Write8(u32 addr, u8 value)
 			if ((value & 0x2) != 0)
 			{
 				//Supress all IRQ
+				Console.WriteLn("Disable IRQ");
 				dev9.irqcause &= ~ATA_INTR_INTRQ;
 				regControlEnableIRQ = false;
 			}
 			else
 			{
+				Console.WriteLn("Enable IRQ");
 				if (regControlEnableIRQ == false && pendingInterrupt)
 					_DEV9irq(ATA_INTR_INTRQ, 1);
 				regControlEnableIRQ = true;
