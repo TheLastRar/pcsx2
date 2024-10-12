@@ -17,6 +17,7 @@ void ATA::PostCmdExecuteDeviceDiag(bool sendIRQ)
 {
 	regStatus &= ~ATA_STAT_BUSY;
 	regStatus |= ATA_STAT_READY;
+	regStatus |= ATA_STAT_SEEK;
 
 	SetSelectedDevice(0);
 

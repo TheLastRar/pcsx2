@@ -52,6 +52,15 @@ void ATA::HDD_ReadVerifySectors(bool isLBA48)
 
 	IDE_CmdLBA48Transform(isLBA48);
 
+	regStatus &= ~ATA_STAT_SEEK;
+	if (!HDD_CanSeek())
+	{
+		regStatus |= ATA_STAT_ERR;
+		regError |= ATA_ERR_TRACK0;
+	}
+	else
+		regStatus |= ATA_STAT_SEEK;
+
 	HDD_CanAssessOrSetError();
 
 	PostCmdNoData();
@@ -70,11 +79,14 @@ void ATA::HDD_Recalibrate()
 	HDD_SetLBA(0);
 
 	// If this fails, something has gone really wrong.
+	regStatus &= ~ATA_STAT_SEEK;
 	if (!HDD_CanSeek())
 	{
 		regStatus |= ATA_STAT_ERR;
 		regError |= ATA_ERR_TRACK0;
 	}
+	else
+		regStatus |= ATA_STAT_SEEK;
 
 	// Set regSector to 1 if CHS, else 0.
 	if (!lba48)
@@ -97,7 +109,6 @@ void ATA::HDD_SeekCmd()
 	DevCon.WriteLn("DEV9: HDD_SeekCmd");
 
 	regStatus &= ~ATA_STAT_SEEK;
-
 	if (HDD_CanSeek())
 	{
 		regStatus |= ATA_STAT_ERR;

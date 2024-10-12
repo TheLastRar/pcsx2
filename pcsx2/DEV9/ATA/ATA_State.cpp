@@ -379,6 +379,11 @@ u8 ATA::Read8(u32 addr)
 			//Clear irqcause
 			pendingInterrupt = false;
 			dev9.irqcause &= ~ATA_INTR_INTRQ;
+			// When an error occurs, ATA_STAT_SEEK shall not be changed until the Status Register is read by the host
+			// at which time the bit again indicates the current Seek Complete status.
+			// We currently only clear ATA_STAT_SEEK when we encounter an error seeking
+			if (regStatus & ATA_STAT_READY)
+				regStatus |= ATA_STAT_SEEK;
 			[[fallthrough]];
 		case ATA_R_ALT_STATUS:
 			DevCon.WriteLn("DEV9: *ATA_R_ALT_STATUS 8bit read at address % x, value % x, Active %s", addr, regStatus, (GetSelectedDevice() == 0) ? " True " : " False ");
