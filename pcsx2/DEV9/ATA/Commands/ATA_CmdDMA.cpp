@@ -10,7 +10,7 @@ void ATA::DRQCmdDMADataToHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	regStatus |= ATA_STAT_DRQ;
 	dmaReady = true;
-	_DEV9irq(SPD_INTR_ATA_FIFO_DATA, 1);
+	DEV9runFIFO();
 	//PCSX2 will Start DMA
 }
 void ATA::PostCmdDMADataToHost()
@@ -22,11 +22,9 @@ void ATA::PostCmdDMADataToHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	dmaReady = false;
 
-	dev9.irqcause &= ~SPD_INTR_ATA_FIFO_DATA;
 	pendingInterrupt = true;
 	if (regControlEnableIRQ)
 		_DEV9irq(ATA_INTR_INTRQ, 1);
-	//PCSX2 Will Start DMA
 }
 
 void ATA::DRQCmdDMADataFromHost()
@@ -44,7 +42,7 @@ void ATA::DRQCmdDMADataFromHost()
 	regStatus &= ~ATA_STAT_BUSY;
 	regStatus |= ATA_STAT_DRQ;
 	dmaReady = true;
-	_DEV9irq(SPD_INTR_ATA_FIFO_DATA, 1);
+	DEV9runFIFO();
 	//PCSX2 will Start DMA
 }
 void ATA::PostCmdDMADataFromHost()
@@ -61,8 +59,6 @@ void ATA::PostCmdDMADataFromHost()
 
 	regStatus &= ~ATA_STAT_DRQ;
 	dmaReady = false;
-
-	dev9.irqcause &= ~SPD_INTR_ATA_FIFO_DATA;
 
 	if (fetWriteCacheEnabled)
 	{
