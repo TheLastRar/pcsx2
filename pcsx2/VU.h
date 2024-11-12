@@ -124,6 +124,7 @@ struct alignas(16) VURegs
 	REG_VI q;
 	REG_VI p;
 
+	VECTOR TMP;
 	uint idx; // VU index (0 or 1)
 
 	// flags/cycle are needed by VIF dma code, so they have to be here (for now)

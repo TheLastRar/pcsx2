@@ -4,10 +4,10 @@
 #pragma once
 #include "VU.h"
 
-extern u32  VU_MACx_UPDATE(VURegs * VU, float x);
-extern u32  VU_MACy_UPDATE(VURegs * VU, float y);
-extern u32  VU_MACz_UPDATE(VURegs * VU, float z);
-extern u32  VU_MACw_UPDATE(VURegs * VU, float w);
+extern u32  VU_MACx_UPDATE(VURegs * VU, uint32_t x);
+extern u32 VU_MACy_UPDATE(VURegs* VU, uint32_t y);
+extern u32 VU_MACz_UPDATE(VURegs* VU, uint32_t z);
+extern u32 VU_MACw_UPDATE(VURegs* VU, uint32_t w);
 extern void VU_MACx_CLEAR(VURegs * VU);
 extern void VU_MACy_CLEAR(VURegs * VU);
 extern void VU_MACz_CLEAR(VURegs * VU);

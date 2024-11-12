@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 
 #include "Common.h"
-
+#include "Ps2Float.h"
 #include <cmath>
 #include <float.h>
 
@@ -12,21 +12,22 @@
 /*          NEW FLAGS                    */ //By asadr. Thnkx F|RES :p
 /*****************************************/
 
-static __ri u32 VU_MAC_UPDATE( int shift, VURegs * VU, float f )
+static __ri u32 VU_MAC_UPDATE(int shift, VURegs* VU, uint32_t f)
 {
-	u32 v = *(u32*)&f;
-	int exp = (v >> 23) & 0xff;
-	u32 s = v & 0x80000000;
+	Ps2Float ps2f = Ps2Float(f);
+
+	uint exp = ps2f.Exponent;
+	u32 s = ps2f.AsUInt32() & Ps2Float::SIGNMASK;
 
 	if (s)
 		VU->macflag |= 0x0010<<shift;
 	else
 		VU->macflag &= ~(0x0010<<shift);
 
-	if( f == 0 )
+	if (ps2f.IsZero())
 	{
 		VU->macflag = (VU->macflag & ~(0x1100<<shift)) | (0x0001<<shift);
-		return v;
+		return f;
 	}
 
 	switch(exp)
@@ -35,33 +36,48 @@ static __ri u32 VU_MAC_UPDATE( int shift, VURegs * VU, float f )
 			VU->macflag = (VU->macflag&~(0x1000<<shift)) | (0x0101<<shift);
 			return s;
 		case 255:
-			VU->macflag = (VU->macflag&~(0x0101<<shift)) | (0x1000<<shift);
-			if (CHECK_VU_OVERFLOW((VU == &VU1) ? 1 : 0))
-				return s | 0x7f7fffff; /* max allowed */
+			if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+			{
+				if (f == Ps2Float::MAX_FLOATING_POINT_VALUE || f == Ps2Float::MIN_FLOATING_POINT_VALUE)
+				{
+					VU->macflag = (VU->macflag & ~(0x0101 << shift)) | (0x1000 << shift);
+					return f;
+				}
+				else
+					return f;
+			}
+			else if (CHECK_VU_OVERFLOW((VU == &VU1) ? 1 : 0))
+			{
+				VU->macflag = (VU->macflag & ~(0x0101 << shift)) | (0x1000 << shift);
+				return s | 0x7f7fffff; /* max IEEE754 allowed */
+			}
 			else
-				return v;
+			{
+				VU->macflag = (VU->macflag & ~(0x0101 << shift)) | (0x1000 << shift);
+				return f;
+			}
 		default:
 			VU->macflag = (VU->macflag & ~(0x1101<<shift));
-			return v;
+			return f;
 	}
 }
 
-__fi u32 VU_MACx_UPDATE(VURegs * VU, float x)
+__fi u32 VU_MACx_UPDATE(VURegs * VU, uint32_t x)
 {
 	return VU_MAC_UPDATE(3, VU, x);
 }
 
-__fi u32 VU_MACy_UPDATE(VURegs * VU, float y)
+__fi u32 VU_MACy_UPDATE(VURegs* VU, uint32_t y)
 {
 	return VU_MAC_UPDATE(2, VU, y);
 }
 
-__fi u32 VU_MACz_UPDATE(VURegs * VU, float z)
+__fi u32 VU_MACz_UPDATE(VURegs* VU, uint32_t z)
 {
 	return VU_MAC_UPDATE(1, VU, z);
 }
 
-__fi u32 VU_MACw_UPDATE(VURegs * VU, float w)
+__fi u32 VU_MACw_UPDATE(VURegs* VU, uint32_t w)
 {
 	return VU_MAC_UPDATE(0, VU, w);
 }
