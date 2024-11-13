@@ -181,25 +181,6 @@ bool checkDivideByZero(u32& xReg, u32 yDivisorReg, u32 zDividendReg, u32 cFlagsT
 	_ContVal_ &= ~( cFlags ) ;  \
 }
 
-#ifdef comparePrecision
-// This compare discards the least-significant bit(s) in order to solve some rounding issues.
-	#define C_cond_S(cond) {  \
-		FPRreg tempA, tempB;  \
-		tempA.UL = _FsValUl_ & comparePrecision;  \
-		tempB.UL = _FtValUl_ & comparePrecision;  \
-		_ContVal_ = ( ( tempA.f ) cond ( tempB.f ) ) ?  \
-					( _ContVal_ | FPUflagC ) :  \
-					( _ContVal_ & ~FPUflagC );  \
-	}
-#else
-// Used for Comparing; This compares if the floats are exactly the same.
-	#define C_cond_S(cond) {  \
-	   _ContVal_ = ( fpuDouble(_FsValUl_) cond fpuDouble(_FtValUl_) ) ?  \
-				   ( _ContVal_ | FPUflagC ) :  \
-				   ( _ContVal_ & ~FPUflagC );  \
-	}
-#endif
-
 // Conditional Branch
 #define BC1(cond)                               \
    if ( ( _ContVal_ & FPUflagC ) cond 0 ) {   \
@@ -279,6 +260,44 @@ static __fi s32 double_to_int(double value)
 	return value;
 }
 
+static __fi void C_cond_S(uint8_t mode)
+{
+	switch (mode)
+	{
+		case 0: // ==
+			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
+			{
+				_ContVal_ = (Ps2Float(_FsValUl_).CompareTo(Ps2Float(_FtValUl_)) == 0) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC); 
+			}
+			else
+			{
+				_ContVal_ = (fpuDouble(_FsValUl_) == fpuDouble(_FtValUl_)) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC); 
+			}
+			break;
+		case 1: // <=
+			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
+			{
+				int32_t cmpResult = Ps2Float(_FsValUl_).CompareTo(Ps2Float(_FtValUl_));
+				_ContVal_ = (cmpResult == 0 || cmpResult == -1) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
+			}
+			else
+			{
+				_ContVal_ = (fpuDouble(_FsValUl_) <= fpuDouble(_FtValUl_)) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
+			}
+			break;
+		case 2: // <
+			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
+			{
+				_ContVal_ = (Ps2Float(_FsValUl_).CompareTo(Ps2Float(_FtValUl_)) == -1) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
+			}
+			else
+			{
+				_ContVal_ = (fpuDouble(_FsValUl_) < fpuDouble(_FtValUl_)) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
+			}
+			break;
+	}
+}
+
 void ABS_S() {
 	_FdValUl_ = _FsValUl_ & 0x7fffffff;
 	clearFPUFlags( FPUflagO | FPUflagU );
@@ -313,7 +332,7 @@ void BC1TL() {
 }
 
 void C_EQ() {
-	C_cond_S(==);
+	C_cond_S(0);
 }
 
 void C_F() {
@@ -321,11 +340,11 @@ void C_F() {
 }
 
 void C_LE() {
-	C_cond_S(<=);
+	C_cond_S(1);
 }
 
 void C_LT() {
-	C_cond_S(<);
+	C_cond_S(2);
 }
 
 void CFC1() {
