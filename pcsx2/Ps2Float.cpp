@@ -399,7 +399,7 @@ Ps2Float Ps2Float::DoMul(Ps2Float other)
 
 	if (resExponent > 255)
 		return result.Sign ? Min() : Max();
-	else if (resExponent <= 0)
+	else if (resExponent < 0)
 		return Ps2Float(result.Sign, 0, 0);
 
 	uint32_t testImprecision = otherMantissa ^ ((otherMantissa >> 4) & 0x800); // For some reason, 0x808000 loses a bit and 0x800800 loses a bit, but 0x808800 does not
