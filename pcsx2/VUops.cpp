@@ -496,38 +496,6 @@ static __fi uint32_t vuAccurateMulDiv(VURegs* VU, u32 a, u32 b, bool isdiv)
 		return std::bit_cast<u32>(vuDouble(a) * vuDouble(b));
 }
 
-static __fi float vuADD_TriAceHack(u32 a, u32 b)
-{
-	// On VU0 TriAce Games use ADDi and expects these bit-perfect results:
-	//if (a == 0xb3e2a619 && b == 0x42546666) return vuDouble(0x42546666);
-	//if (a == 0x8b5b19e9 && b == 0xc7f079b3) return vuDouble(0xc7f079b3);
-	//if (a == 0x4b1ed4a8 && b == 0x43a02666) return vuDouble(0x4b1ed5e7);
-	//if (a == 0x7d1ca47b && b == 0x42f23333) return vuDouble(0x7d1ca47b);
-
-	// In the 3rd case, some other rounding error is giving us incorrect
-	// operands ('a' is wrong); and therefor an incorrect result.
-	// We're getting:        0x4b1ed4a8 + 0x43a02666 = 0x4b1ed5e8
-	// We should be getting: 0x4b1ed4a7 + 0x43a02666 = 0x4b1ed5e7
-	// microVU gets the correct operands and result. The interps likely
-	// don't get it due to rounding towards nearest in other calculations.
-
-	// microVU uses something like this to get TriAce games working,
-	// but VU interpreters don't seem to need it currently:
-
-	// Update Sept 2021, now the interpreters don't suck, they do - Refraction
-	// s32 aExp = (a >> 23) & 0xff;
-	// s32 bExp = (b >> 23) & 0xff;
-	// if (aExp - bExp >= 25) b &= 0x80000000;
-	// if (aExp - bExp <=-25) a &= 0x80000000;
-	// float ret = vuDouble(a) + vuDouble(b);
-	//DevCon.WriteLn("aExp = %d, bExp = %d", aExp, bExp);
-	//DevCon.WriteLn("0x%08x + 0x%08x = 0x%08x", a, b, (u32&)ret);
-	//DevCon.WriteLn("%f + %f = %f", vuDouble(a), vuDouble(b), ret);
-
-	// Update November 2024, now the interpreters has soft float support - GithubProUser67
-	return vuDouble(Ps2Float(a).Add(Ps2Float(b), 0).AsUInt32());
-}
-
 void _vuABS(VURegs* VU)
 {
 	if (_Ft_ == 0)
@@ -1894,57 +1862,120 @@ static __fi void _vuDIV(VURegs* VU)
 
 static __fi void _vuSQRT(VURegs* VU)
 {
-	float ft = vuDouble(VU->VF[_Ft_].UL[_Ftf_]);
+	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		Ps2Float ft = Ps2Float(VU->VF[_Ft_].UL[_Ftf_]);
 
-	VU->statusflag &= ~0x30;
+		VU->statusflag &= ~0x30;
 
-	if (ft < 0.0)
-		VU->statusflag |= 0x10;
-	VU->q.F = sqrt(fabs(ft));
-	VU->q.F = vuDouble(VU->q.UL);
+		if (ft.ToDouble() < 0.0)
+			VU->statusflag |= 0x10;
+		VU->q.UL = Ps2Float(ft.Abs()).Sqrt().AsUInt32();
+	}
+	else
+	{
+		float ft = vuDouble(VU->VF[_Ft_].UL[_Ftf_]);
+
+		VU->statusflag &= ~0x30;
+
+		if (ft < 0.0)
+			VU->statusflag |= 0x10;
+		VU->q.F = sqrt(fabs(ft));
+		VU->q.F = vuDouble(VU->q.UL);
+	}
 }
 
 static __fi void _vuRSQRT(VURegs* VU)
 {
-	float ft = vuDouble(VU->VF[_Ft_].UL[_Ftf_]);
-	float fs = vuDouble(VU->VF[_Fs_].UL[_Fsf_]);
-	float temp;
-
-	VU->statusflag &= ~0x30;
-
-	if (ft == 0.0)
+	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		VU->statusflag |= 0x20;
+		Ps2Float ft = Ps2Float(VU->VF[_Ft_].UL[_Ftf_]);
+		Ps2Float fs = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
-		if (fs != 0)
+		VU->statusflag &= ~0x30;
+
+		if (ft.IsZero())
 		{
-			if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
-				(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
-				VU->q.UL = 0xFF7FFFFF;
+			VU->statusflag |= 0x20;
+
+			if (!fs.IsZero())
+			{
+				if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
+					(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
+					VU->q.UL = Ps2Float::MIN_FLOATING_POINT_VALUE;
+				else
+					VU->q.UL = Ps2Float::MAX_FLOATING_POINT_VALUE;
+			}
 			else
-				VU->q.UL = 0x7F7FFFFF;
+			{
+				if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
+					(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
+					VU->q.UL = 0x80000000;
+				else
+					VU->q.UL = 0;
+
+				VU->statusflag |= 0x10;
+			}
 		}
 		else
 		{
-			if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
-				(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
-				VU->q.UL = 0x80000000;
-			else
-				VU->q.UL = 0;
+			if (ft.ToDouble() < 0.0)
+			{
+				VU->statusflag |= 0x10;
+			}
 
-			VU->statusflag |= 0x10;
+			if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
+				VU->q.UL = fs.Div(Ps2Float(ft.Abs()).Sqrt()).AsUInt32();
+			else
+			{
+				float temp = sqrt(fabs(vuDouble(ft.AsUInt32())));
+				VU->q.F = vuDouble(fs.AsUInt32()) / temp;
+				VU->q.F = vuDouble(VU->q.UL);
+			}
 		}
 	}
 	else
 	{
-		if (ft < 0.0)
-		{
-			VU->statusflag |= 0x10;
-		}
+		float ft = vuDouble(VU->VF[_Ft_].UL[_Ftf_]);
+		float fs = vuDouble(VU->VF[_Fs_].UL[_Fsf_]);
+		float temp;
 
-		temp = sqrt(fabs(ft));
-		VU->q.F = fs / temp;
-		VU->q.F = vuDouble(VU->q.UL);
+		VU->statusflag &= ~0x30;
+
+		if (ft == 0.0)
+		{
+			VU->statusflag |= 0x20;
+
+			if (fs != 0)
+			{
+				if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
+					(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
+					VU->q.UL = 0xFF7FFFFF;
+				else
+					VU->q.UL = 0x7F7FFFFF;
+			}
+			else
+			{
+				if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
+					(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
+					VU->q.UL = 0x80000000;
+				else
+					VU->q.UL = 0;
+
+				VU->statusflag |= 0x10;
+			}
+		}
+		else
+		{
+			if (ft < 0.0)
+			{
+				VU->statusflag |= 0x10;
+			}
+
+			temp = sqrt(fabs(ft));
+			VU->q.F = fs / temp;
+			VU->q.F = vuDouble(VU->q.UL);
+		}
 	}
 }
 
