@@ -303,6 +303,19 @@ int32_t Ps2Float::CompareTo(Ps2Float other)
 		return 1;
 }
 
+int32_t Ps2Float::CompareOperand(Ps2Float other)
+{
+	int32_t selfTwoComplementVal = (int32_t)(Abs());
+	int32_t otherTwoComplementVal = (int32_t)(other.Abs());
+
+	if (selfTwoComplementVal < otherTwoComplementVal)
+		return -1;
+	else if (selfTwoComplementVal == otherTwoComplementVal)
+		return 0;
+	else
+		return 1;
+}
+
 double Ps2Float::ToDouble()
 {
 	return std::bit_cast<double>(((u64)Sign << 63) | ((((u64)Exponent - BIAS) + 1023ULL) << 52) | ((u64)Mantissa << 29));
@@ -791,10 +804,8 @@ bool Ps2Float::DetermineAdditionOperationSign(Ps2Float a, Ps2Float b)
 		else
 			Console.Error("Unhandled addition operation flags");
 	}
-	else if (a.IsZero())
-		return b.Sign;
-
-	return a.Sign;
+	
+	return a.CompareOperand(b) >= 0 ? a.Sign : b.Sign;
 }
 
 bool Ps2Float::DetermineSubtractionOperationSign(Ps2Float a, Ps2Float b)
@@ -808,12 +819,8 @@ bool Ps2Float::DetermineSubtractionOperationSign(Ps2Float a, Ps2Float b)
 		else
 			Console.Error("Unhandled subtraction operation flags");
 	}
-	else if (a.IsZero())
-		return !b.Sign;
-	else if (b.IsZero())
-		return a.Sign;
 
-	return a.CompareTo(b) >= 0 ? a.Sign : !b.Sign;
+	return a.CompareOperand(b) >= 0 ? a.Sign : !b.Sign;
 }
 
 int32_t Ps2Float::clz(int x)

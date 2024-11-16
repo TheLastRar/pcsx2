@@ -66,6 +66,8 @@ public:
 
     int32_t CompareTo(Ps2Float other);
 
+    int32_t CompareOperand(Ps2Float other);
+
     double ToDouble();
 
     std::string ToString();
