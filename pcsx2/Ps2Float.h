@@ -42,9 +42,9 @@ public:
 
     uint32_t AsUInt32() const;
 
-    Ps2Float Add(Ps2Float addend, bool COP1);
+    Ps2Float Add(Ps2Float addend);
 
-    Ps2Float Sub(Ps2Float subtrahend, bool COP1);
+    Ps2Float Sub(Ps2Float subtrahend);
 
     Ps2Float Mul(Ps2Float mulend);
 
@@ -82,7 +82,7 @@ private:
 
     Ps2Float DoDiv(Ps2Float other);
 
-    static Ps2Float SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add, bool COP1);
+    static Ps2Float SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add);
 
     static Ps2Float SolveAbnormalMultiplicationOrDivisionOperation(Ps2Float a, Ps2Float b, bool mul);
 

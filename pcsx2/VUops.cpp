@@ -468,9 +468,9 @@ static __fi uint32_t vuAccurateAddSub(VURegs* VU, u32 a, u32 b, bool issub)
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0))
 	{
 		if (issub)
-			return Ps2Float(a).Sub(Ps2Float(b), 0).AsUInt32();
+			return Ps2Float(a).Sub(Ps2Float(b)).AsUInt32();
 		else
-			return Ps2Float(a).Add(Ps2Float(b), 0).AsUInt32();
+			return Ps2Float(a).Add(Ps2Float(b)).AsUInt32();
 	}
 	
 	if (issub)

@@ -64,13 +64,13 @@ uint32_t Ps2Float::AsUInt32() const
 	return result;
 }
 
-Ps2Float Ps2Float::Add(Ps2Float addend, bool COP1)
+Ps2Float Ps2Float::Add(Ps2Float addend)
 {
 	if (IsDenormalized() || addend.IsDenormalized())
 		return SolveAddSubDenormalizedOperation(*this, addend, true);
 
 	if (IsAbnormal() && addend.IsAbnormal())
-		return SolveAbnormalAdditionOrSubtractionOperation(*this, addend, true, COP1);
+		return SolveAbnormalAdditionOrSubtractionOperation(*this, addend, true);
 
 	uint32_t a = AsUInt32();
 	uint32_t b = addend.AsUInt32();
@@ -111,13 +111,13 @@ Ps2Float Ps2Float::Add(Ps2Float addend, bool COP1)
 	return Ps2Float(a).DoAdd(Ps2Float(b));
 }
 
-Ps2Float Ps2Float::Sub(Ps2Float subtrahend, bool COP1)
+Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 {
 	if (IsDenormalized() || subtrahend.IsDenormalized())
 		return SolveAddSubDenormalizedOperation(*this, subtrahend, false);
 
 	if (IsAbnormal() && subtrahend.IsAbnormal())
-		return SolveAbnormalAdditionOrSubtractionOperation(*this, subtrahend, false, COP1);
+		return SolveAbnormalAdditionOrSubtractionOperation(*this, subtrahend, false);
 
 	uint32_t a = AsUInt32();
 	uint32_t b = subtrahend.AsUInt32();
@@ -581,7 +581,7 @@ Ps2Float Ps2Float::DoDiv(Ps2Float other)
 	return result.RoundTowardsZero();
 }
 
-Ps2Float Ps2Float::SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add, bool COP1)
+Ps2Float Ps2Float::SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add)
 {
 	uint32_t aval = a.AsUInt32();
 	uint32_t bval = b.AsUInt32();
@@ -593,19 +593,19 @@ Ps2Float Ps2Float::SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Fl
 		return add ? Min() : Ps2Float(0);
 
 	if (aval == MIN_FLOATING_POINT_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-		return COP1 ? Min() : (add ? Ps2Float(0) : Min());
+		return add ? Ps2Float(0) : Min();
 
 	if (aval == MAX_FLOATING_POINT_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-		return COP1 ? Max() : (add ? Ps2Float(0) : Max());
+		return add ? Ps2Float(0) : Max();
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == POSITIVE_INFINITY_VALUE)
 		return add ? Max() : Ps2Float(0);
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == POSITIVE_INFINITY_VALUE)
-		return COP1 ? Min() : (add ? Ps2Float(0) : Min());
+		return add ? Ps2Float(0) : Min();
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-		return COP1 ? Max() : (add ? Ps2Float(0) : Max());
+		return add ? Ps2Float(0) : Max();
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == NEGATIVE_INFINITY_VALUE)
 		return add ? Min() : Ps2Float(0);

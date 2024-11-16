@@ -224,9 +224,9 @@ static __fi uint32_t fpuAccurateAddSub(u32 a, u32 b, bool issub)
 	if (CHECK_FPU_SOFT_ADDSUB)
 	{
 		if (issub)
-			return Ps2Float(a).Sub(Ps2Float(b), 1).AsUInt32();
+			return Ps2Float(a).Sub(Ps2Float(b)).AsUInt32();
 		else
-			return Ps2Float(a).Add(Ps2Float(b), 1).AsUInt32();
+			return Ps2Float(a).Add(Ps2Float(b)).AsUInt32();
 	}
 	
 	if (issub)
