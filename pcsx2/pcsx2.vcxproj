@@ -126,6 +126,7 @@
     <ClCompile Include="arm64\RecStubs.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="BoothMultiplier.cpp" />
     <ClCompile Include="CDVD\BlockdumpFileReader.cpp" />
     <ClCompile Include="CDVD\CDVDdiscReader.cpp" />
     <ClCompile Include="CDVD\CDVDdiscThread.cpp" />
@@ -583,6 +584,7 @@
     <ClInclude Include="arm64\newVif_UnpackNEON.h">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="BoothMultiplier.h" />
     <ClInclude Include="CDVD\BlockdumpFileReader.h" />
     <ClInclude Include="CDVD\CDVDdiscReader.h" />
     <ClInclude Include="CDVD\CsoFileReader.h" />

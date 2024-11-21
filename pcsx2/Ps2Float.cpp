@@ -9,6 +9,7 @@
 #include <iostream>
 #include <bit>
 #include "Ps2Float.h"
+#include "BoothMultiplier.h"
 #include "Common.h"
 
 const uint8_t Ps2Float::BIAS = 127;
@@ -77,26 +78,26 @@ Ps2Float Ps2Float::Add(Ps2Float addend)
 	int32_t temp = 0;
 
 	//exponent difference
-	int exp_diff = ((a >> 23) & 0xff) - ((b >> 23) & 0xff);
+	int exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
 
 	//diff = 25 .. 255 , expt < expd
 	if (exp_diff >= 25)
 	{
-		b = b & Ps2Float::SIGNMASK;
+		b = b & SIGNMASK;
 	}
 
 	//diff = 1 .. 24, expt < expd
 	else if (exp_diff > 0)
 	{
 		exp_diff = exp_diff - 1;
-		temp = 0xffffffff << exp_diff;
+		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
 		b = temp & b;
 	}
 
 	//diff = -255 .. -25, expd < expt
 	else if (exp_diff <= -25)
 	{
-		a = a & Ps2Float::SIGNMASK;
+		a = a & SIGNMASK;
 	}
 
 	//diff = -24 .. -1 , expd < expt
@@ -104,7 +105,7 @@ Ps2Float Ps2Float::Add(Ps2Float addend)
 	{
 		exp_diff = -exp_diff;
 		exp_diff = exp_diff - 1;
-		temp = 0xffffffff << exp_diff;
+		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
 		a = a & temp;
 	}
 
@@ -124,26 +125,26 @@ Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 	int32_t temp = 0;
 
 	//exponent difference
-	int exp_diff = ((a >> 23) & 0xff) - ((b >> 23) & 0xff);
+	int exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
 
 	//diff = 25 .. 255 , expt < expd
 	if (exp_diff >= 25)
 	{
-		b = b & Ps2Float::SIGNMASK;
+		b = b & SIGNMASK;
 	}
 
 	//diff = 1 .. 24, expt < expd
 	else if (exp_diff > 0)
 	{
 		exp_diff = exp_diff - 1;
-		temp = 0xffffffff << exp_diff;
+		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
 		b = temp & b;
 	}
 
 	//diff = -255 .. -25, expd < expt
 	else if (exp_diff <= -25)
 	{
-		a = a & Ps2Float::SIGNMASK;
+		a = a & SIGNMASK;
 	}
 
 	//diff = -24 .. -1 , expd < expt
@@ -151,7 +152,7 @@ Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 	{
 		exp_diff = -exp_diff;
 		exp_diff = exp_diff - 1;
-		temp = 0xffffffff << exp_diff;
+		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
 		a = a & temp;
 	}
 
@@ -215,7 +216,7 @@ Ps2Float Ps2Float::Sqrt()
 	/* extract mantissa and unbias exponent */
 	int32_t m = (ix >> 23) - BIAS;
 
-	ix = (ix & 0x007fffff) | 0x00800000;
+	ix = (ix & 0x007FFFFF) | 0x00800000;
 	if ((m & 1) == 1)
 	{
 		/* odd m, double x to make it even */
@@ -247,7 +248,7 @@ Ps2Float Ps2Float::Sqrt()
 		q += q & 1;
 	}
 
-	ix = (q >> 1) + 0x3f000000;
+	ix = (q >> 1) + 0x3F000000;
 	ix += m << 23;
 
 	return Ps2Float((uint32_t)(ix));
@@ -397,114 +398,32 @@ Ps2Float Ps2Float::DoAdd(Ps2Float other)
 	else if (rawExp <= 0)
 		return Ps2Float(man < 0, 0, 0);
 
-	return Ps2Float((uint32_t)man & Ps2Float::SIGNMASK | (uint32_t)rawExp << 23 | ((uint32_t)absMan & 0x7FFFFF)).RoundTowardsZero();
+	return Ps2Float((uint32_t)man & SIGNMASK | (uint32_t)rawExp << 23 | ((uint32_t)absMan & 0x7FFFFF));
 }
 
 Ps2Float Ps2Float::DoMul(Ps2Float other)
 {
+	uint8_t selfExponent = Exponent;
+	uint8_t otherExponent = other.Exponent;
 	uint32_t selfMantissa = Mantissa | 0x800000;
 	uint32_t otherMantissa = other.Mantissa | 0x800000;
-	int32_t resExponent = Exponent + other.Exponent - BIAS;
+	uint32_t sign = (AsUInt32() ^ other.AsUInt32()) & SIGNMASK;
 
-	Ps2Float result = Ps2Float(0);
+	int32_t resExponent = selfExponent + otherExponent - 127;
+	uint32_t resMantissa = (uint32_t)(BoothMultiplier::MulMantissa(selfMantissa, otherMantissa) >> 23);
 
-	result.Sign = DetermineMultiplicationDivisionOperationSign(*this, other);
+	if (resMantissa > 0xFFFFFF)
+	{
+		resMantissa >>= 1;
+		resExponent++;
+	}
 
 	if (resExponent > 255)
-		return result.Sign ? Min() : Max();
-	else if (resExponent < 0)
-		return Ps2Float(result.Sign, 0, 0);
+		return Ps2Float(sign | MAX_FLOATING_POINT_VALUE);
+	else if (resExponent <= 0)
+		return Ps2Float(sign);
 
-	uint32_t testImprecision = otherMantissa ^ ((otherMantissa >> 4) & 0x800); // For some reason, 0x808000 loses a bit and 0x800800 loses a bit, but 0x808800 does not
-	int64_t res = 0;
-	uint64_t mask = 0xFFFFFFFFFFFFFFFF;
-
-	result.Exponent = (uint8_t)(resExponent);
-
-	otherMantissa <<= 1;
-
-	uint32_t part[13]; // Partial products
-	uint32_t bit[13]; // More partial products. 0 or 1.
-
-	for (int i = 0; i <= 12; i++, otherMantissa >>= 2)
-	{
-		uint32_t test = otherMantissa & 7;
-		if (test == 0 || test == 7)
-		{
-			part[i] = 0;
-			bit[i] = 0;
-		}
-		else if (test == 3)
-		{
-			part[i] = (selfMantissa << 1);
-			bit[i] = 0;
-		}
-		else if (test == 4)
-		{
-			part[i] = ~(selfMantissa << 1);
-			bit[i] = 1;
-		}
-		else if (test < 4)
-		{
-			part[i] = selfMantissa;
-			bit[i] = 0;
-		}
-		else
-		{
-			part[i] = ~selfMantissa;
-			bit[i] = 1;
-		}
-	}
-
-	for (int i = 0; i <= 12; i++)
-	{
-		res += (uint64_t)(int32_t)part[i] << (i * 2);
-		res &= mask;
-		res += bit[i] << (i * 2);
-	}
-
-	result.Mantissa = (uint32_t)(res >> 23);
-
-	if ((testImprecision & 0x000aaa) && !(res & 0x7FFFFF))
-		result.Mantissa -= 1;
-
-	if (result.Mantissa > 0)
-	{
-		int32_t leadingBitPosition = Ps2Float::GetMostSignificantBitPosition(result.Mantissa);
-
-		while (leadingBitPosition != IMPLICIT_LEADING_BIT_POS)
-		{
-			if (leadingBitPosition > IMPLICIT_LEADING_BIT_POS)
-			{
-				result.Mantissa >>= 1;
-
-				int32_t exp = ((int32_t)result.Exponent + 1);
-
-				if (exp > 255)
-					return result.Sign ? Min() : Max();
-
-				result.Exponent = (uint8_t)exp;
-
-				leadingBitPosition--;
-			}
-			else if (leadingBitPosition < IMPLICIT_LEADING_BIT_POS)
-			{
-				result.Mantissa <<= 1;
-
-				int32_t exp = ((int32_t)result.Exponent - 1);
-
-				if (exp <= 0)
-					return Ps2Float(result.Sign, 0, 0);
-
-				result.Exponent = (uint8_t)exp;
-
-				leadingBitPosition++;
-			}
-		}
-	}
-
-	result.Mantissa &= 0x7FFFFF;
-	return result.RoundTowardsZero();
+	return Ps2Float(sign | (uint32_t)(resExponent << 23) | (resMantissa & 0x7FFFFF));
 }
 
 Ps2Float Ps2Float::DoDiv(Ps2Float other)

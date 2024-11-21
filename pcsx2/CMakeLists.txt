@@ -93,6 +93,7 @@ set(pcsx2Sources
 	MTGS.cpp
 	MTVU.cpp
 	Patch.cpp
+	BoothMultiplier.cpp
 	Ps2Float.cpp
 	Pcsx2Config.cpp
 	PerformanceMetrics.cpp
@@ -174,6 +175,7 @@ set(pcsx2Headers
 	MTVU.h
 	Memory.h
 	MemoryTypes.h
+	BoothMultiplier.h
 	Ps2Float.h
 	Patch.h
 	PerformanceMetrics.h

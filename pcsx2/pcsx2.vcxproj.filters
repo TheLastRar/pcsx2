@@ -1449,6 +1449,9 @@
     <ClCompile Include="Ps2Float.cpp">
       <Filter>System\Ps2\EmotionEngine\Shared</Filter>
     </ClCompile>
+    <ClCompile Include="BoothMultiplier.cpp">
+      <Filter>System\Ps2\EmotionEngine\Shared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patch.h">
@@ -2406,6 +2409,9 @@
       <Filter>System\Ps2\Iop\SIO\PAD</Filter>
     </ClInclude>
     <ClInclude Include="Ps2Float.h">
+      <Filter>System\Ps2\EmotionEngine\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="BoothMultiplier.h">
       <Filter>System\Ps2\EmotionEngine\Shared</Filter>
     </ClInclude>
   </ItemGroup>
