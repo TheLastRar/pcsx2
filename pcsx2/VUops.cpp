@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 
 #include "Common.h"
-#include "Ps2Float.h"
+#include "PS2Float.h"
 #include "VUops.h"
 #include "GS.h"
 #include "Gif_Unit.h"
@@ -463,14 +463,14 @@ static __fi float vuDouble(u32 f)
 }
 #endif
 
-static __fi uint32_t vuAccurateAddSub(VURegs* VU, u32 a, u32 b, bool issub)
+static __fi u32 vuAccurateAddSub(VURegs* VU, u32 a, u32 b, bool issub)
 {
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0))
 	{
 		if (issub)
-			return Ps2Float(a).Sub(Ps2Float(b)).AsUInt32();
+			return PS2Float(a).Sub(PS2Float(b)).AsUInt32();
 		else
-			return Ps2Float(a).Add(Ps2Float(b)).AsUInt32();
+			return PS2Float(a).Add(PS2Float(b)).AsUInt32();
 	}
 	
 	if (issub)
@@ -480,14 +480,14 @@ static __fi uint32_t vuAccurateAddSub(VURegs* VU, u32 a, u32 b, bool issub)
 
 }
 
-static __fi uint32_t vuAccurateMulDiv(VURegs* VU, u32 a, u32 b, bool isdiv)
+static __fi u32 vuAccurateMulDiv(VURegs* VU, u32 a, u32 b, bool isdiv)
 {
 	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
 	{
 		if (isdiv)
-			return Ps2Float(a).Div(Ps2Float(b)).AsUInt32();
+			return PS2Float(a).Div(PS2Float(b)).AsUInt32();
 		else
-			return Ps2Float(a).Mul(Ps2Float(b)).AsUInt32();
+			return PS2Float(a).Mul(PS2Float(b)).AsUInt32();
 	}
 
 	if (isdiv)
@@ -505,19 +505,19 @@ void _vuABS(VURegs* VU)
 	{
 		if (_X)
 		{
-			VU->VF[_Ft_].i.x = Ps2Float(VU->VF[_Fs_].i.x).Abs();
+			VU->VF[_Ft_].i.x = PS2Float(VU->VF[_Fs_].i.x).Abs();
 		}
 		if (_Y)
 		{
-			VU->VF[_Ft_].i.y = Ps2Float(VU->VF[_Fs_].i.y).Abs();
+			VU->VF[_Ft_].i.y = PS2Float(VU->VF[_Fs_].i.y).Abs();
 		}
 		if (_Z)
 		{
-			VU->VF[_Ft_].i.z = Ps2Float(VU->VF[_Fs_].i.z).Abs();
+			VU->VF[_Ft_].i.z = PS2Float(VU->VF[_Fs_].i.z).Abs();
 		}
 		if (_W)
 		{
-			VU->VF[_Ft_].i.w = Ps2Float(VU->VF[_Fs_].i.w).Abs();
+			VU->VF[_Ft_].i.w = PS2Float(VU->VF[_Fs_].i.w).Abs();
 		}
 	}
 	else
@@ -750,11 +750,11 @@ static __fi void _vuSUBq(VURegs* VU)
 	else
 		dst = &VU->VF[_Fd_];
 
-		if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.x, VU->VI[REG_Q].UL, 1));} else VU_MACx_CLEAR(VU);
-		if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.y, VU->VI[REG_Q].UL, 1));} else VU_MACy_CLEAR(VU);
-		if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.z, VU->VI[REG_Q].UL, 1));} else VU_MACz_CLEAR(VU);
-		if (_W){ dst->i.w = VU_MACw_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.w, VU->VI[REG_Q].UL, 1));} else VU_MACw_CLEAR(VU);
-		VU_STAT_UPDATE(VU);
+	if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.x, VU->VI[REG_Q].UL, 1));} else VU_MACx_CLEAR(VU);
+	if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.y, VU->VI[REG_Q].UL, 1));} else VU_MACy_CLEAR(VU);
+	if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.z, VU->VI[REG_Q].UL, 1));} else VU_MACz_CLEAR(VU);
+	if (_W){ dst->i.w = VU_MACw_UPDATE(VU, vuAccurateAddSub(VU, VU->VF[_Fs_].i.w, VU->VI[REG_Q].UL, 1));} else VU_MACw_CLEAR(VU);
+	VU_STAT_UPDATE(VU);
 }
 
 static __fi void _vuSUBx(VURegs* VU)
@@ -931,7 +931,7 @@ static __fi void _vuMULx(VURegs* VU)
 	else
 		dst = &VU->VF[_Fd_];
 
-	uint32_t ftx = VU->VF[_Ft_].i.x;
+	u32 ftx = VU->VF[_Ft_].i.x;
 	if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftx, 0)); } else VU_MACx_CLEAR(VU);
 	if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftx, 0)); } else VU_MACy_CLEAR(VU);
 	if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftx, 0)); } else VU_MACz_CLEAR(VU);
@@ -948,7 +948,7 @@ static __fi void _vuMULy(VURegs* VU)
 	else
 		dst = &VU->VF[_Fd_];
 
-	uint32_t fty = VU->VF[_Ft_].i.y;
+	u32 fty = VU->VF[_Ft_].i.y;
 	if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, fty, 0)); } else VU_MACx_CLEAR(VU);
 	if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, fty, 0)); } else VU_MACy_CLEAR(VU);
 	if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, fty, 0)); } else VU_MACz_CLEAR(VU);
@@ -964,7 +964,7 @@ static __fi void _vuMULz(VURegs* VU)
 	else
 		dst = &VU->VF[_Fd_];
 
-	uint32_t ftz = VU->VF[_Ft_].i.z;
+	u32 ftz = VU->VF[_Ft_].i.z;
 	if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftz, 0)); } else VU_MACx_CLEAR(VU);
 	if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftz, 0)); } else VU_MACy_CLEAR(VU);
 	if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftz, 0)); } else VU_MACz_CLEAR(VU);
@@ -980,7 +980,7 @@ static __fi void _vuMULw(VURegs* VU)
 	else
 		dst = &VU->VF[_Fd_];
 
-	uint32_t ftw = VU->VF[_Ft_].i.w;
+	u32 ftw = VU->VF[_Ft_].i.w;
 	if (_X){ dst->i.x = VU_MACx_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftw, 0)); } else VU_MACx_CLEAR(VU);
 	if (_Y){ dst->i.y = VU_MACy_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftw, 0)); } else VU_MACy_CLEAR(VU);
 	if (_Z){ dst->i.z = VU_MACz_UPDATE(VU, vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftw, 0)); } else VU_MACz_CLEAR(VU);
@@ -1108,7 +1108,7 @@ static __fi void _vuMADDx(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftx = VU->VF[_Ft_].i.x;
+	u32 ftx = VU->VF[_Ft_].i.x;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftx, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 0));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftx, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 0));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftx, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 0));} else VU_MACz_CLEAR(VU);
@@ -1126,7 +1126,7 @@ static __fi void _vuMADDy(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t fty = VU->VF[_Ft_].i.y;
+	u32 fty = VU->VF[_Ft_].i.y;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, fty, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 0));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, fty, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 0));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, fty, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 0));} else VU_MACz_CLEAR(VU);
@@ -1144,7 +1144,7 @@ static __fi void _vuMADDz(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftz = VU->VF[_Ft_].i.z;
+	u32 ftz = VU->VF[_Ft_].i.z;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftz, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 0));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftz, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 0));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftz, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 0));} else VU_MACz_CLEAR(VU);
@@ -1162,7 +1162,7 @@ static __fi void _vuMADDw(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftw = VU->VF[_Ft_].i.w;
+	u32 ftw = VU->VF[_Ft_].i.w;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftw, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 0));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftw, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 0));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftw, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 0));} else VU_MACz_CLEAR(VU);
@@ -1309,7 +1309,7 @@ static __fi void _vuMSUBx(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftx = VU->VF[_Ft_].i.x;
+	u32 ftx = VU->VF[_Ft_].i.x;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftx, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftx, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftx, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1327,7 +1327,7 @@ static __fi void _vuMSUBy(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t fty = VU->VF[_Ft_].i.y;
+	u32 fty = VU->VF[_Ft_].i.y;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, fty, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, fty, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, fty, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1345,7 +1345,7 @@ static __fi void _vuMSUBz(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftz = VU->VF[_Ft_].i.z;
+	u32 ftz = VU->VF[_Ft_].i.z;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftz, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftz, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftz, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1363,7 +1363,7 @@ static __fi void _vuMSUBw(VURegs* VU)
 		dst = &VU->VF[_Fd_];
 
 	tmp = &VU->TMP;
-	uint32_t ftw = VU->VF[_Ft_].i.w;
+	u32 ftw = VU->VF[_Ft_].i.w;
     if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ftw, 0); dst->i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
     if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ftw, 0); dst->i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
     if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ftw, 0); dst->i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1409,7 +1409,7 @@ static __fi void _vuMSUBAx(VURegs*  VU)
 {
 	VECTOR* tmp;
 	tmp = &VU->TMP;
-	uint32_t tx = VU->VF[_Ft_].i.x;
+	u32 tx = VU->VF[_Ft_].i.x;
 	if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, tx, 0); VU->ACC.i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
 	if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, tx, 0); VU->ACC.i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
 	if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, tx, 0); VU->ACC.i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1421,7 +1421,7 @@ static __fi void _vuMSUBAy(VURegs*  VU)
 {
 	VECTOR* tmp;
 	tmp = &VU->TMP;
-	uint32_t ty = VU->VF[_Ft_].i.y;
+	u32 ty = VU->VF[_Ft_].i.y;
 	if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, ty, 0); VU->ACC.i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
 	if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, ty, 0); VU->ACC.i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
 	if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, ty, 0); VU->ACC.i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1433,7 +1433,7 @@ static __fi void _vuMSUBAz(VURegs*  VU)
 {
 	VECTOR* tmp;
 	tmp = &VU->TMP;
-	uint32_t tz = VU->VF[_Ft_].i.z;
+	u32 tz = VU->VF[_Ft_].i.z;
 	if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, tz, 0); VU->ACC.i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
 	if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, tz, 0); VU->ACC.i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
 	if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, tz, 0); VU->ACC.i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1445,7 +1445,7 @@ static __fi void _vuMSUBAw(VURegs*  VU)
 {
 	VECTOR* tmp;
 	tmp = &VU->TMP;
-	uint32_t tw = VU->VF[_Ft_].i.w;
+	u32 tw = VU->VF[_Ft_].i.w;
 	if (_X) {tmp->i.x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, tw, 0); VU->ACC.i.x = VU_MACx_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.x, tmp->i.x, 1));} else VU_MACx_CLEAR(VU);
 	if (_Y) {tmp->i.y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, tw, 0); VU->ACC.i.y = VU_MACy_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.y, tmp->i.y, 1));} else VU_MACy_CLEAR(VU);
 	if (_Z) {tmp->i.z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, tw, 0); VU->ACC.i.z = VU_MACz_UPDATE(VU, vuAccurateAddSub(VU, VU->ACC.i.z, tmp->i.z, 1));} else VU_MACz_CLEAR(VU);
@@ -1663,13 +1663,13 @@ static __fi void _vuFTOI0(VURegs*  VU) {
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
 		if (_X)
-			VU->VF[_Ft_].SL[0] = double_to_int(Ps2Float(VU->VF[_Fs_].i.x).ToDouble());
+			VU->VF[_Ft_].SL[0] = double_to_int(PS2Float(VU->VF[_Fs_].i.x).ToDouble());
 		if (_Y)
-			VU->VF[_Ft_].SL[1] = double_to_int(Ps2Float(VU->VF[_Fs_].i.y).ToDouble());
+			VU->VF[_Ft_].SL[1] = double_to_int(PS2Float(VU->VF[_Fs_].i.y).ToDouble());
 		if (_Z)
-			VU->VF[_Ft_].SL[2] = double_to_int(Ps2Float(VU->VF[_Fs_].i.z).ToDouble());
+			VU->VF[_Ft_].SL[2] = double_to_int(PS2Float(VU->VF[_Fs_].i.z).ToDouble());
 		if (_W)
-			VU->VF[_Ft_].SL[3] = double_to_int(Ps2Float(VU->VF[_Fs_].i.w).ToDouble());
+			VU->VF[_Ft_].SL[3] = double_to_int(PS2Float(VU->VF[_Fs_].i.w).ToDouble());
 	}
 	else
 	{
@@ -1763,20 +1763,20 @@ static __fi void _vuCLIP(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		double value = Ps2Float(Ps2Float(VU->VF[_Ft_].i.w).Abs()).ToDouble();
+		double value = PS2Float(PS2Float(VU->VF[_Ft_].i.w).Abs()).ToDouble();
 
 		VU->clipflag <<= 6;
-		if (Ps2Float(VU->VF[_Fs_].i.x).ToDouble() > +value)
+		if (PS2Float(VU->VF[_Fs_].i.x).ToDouble() > +value)
 			VU->clipflag |= 0x01;
-		if (Ps2Float(VU->VF[_Fs_].i.x).ToDouble() < -value)
+		if (PS2Float(VU->VF[_Fs_].i.x).ToDouble() < -value)
 			VU->clipflag |= 0x02;
-		if (Ps2Float(VU->VF[_Fs_].i.y).ToDouble() > +value)
+		if (PS2Float(VU->VF[_Fs_].i.y).ToDouble() > +value)
 			VU->clipflag |= 0x04;
-		if (Ps2Float(VU->VF[_Fs_].i.y).ToDouble() < -value)
+		if (PS2Float(VU->VF[_Fs_].i.y).ToDouble() < -value)
 			VU->clipflag |= 0x08;
-		if (Ps2Float(VU->VF[_Fs_].i.z).ToDouble() > +value)
+		if (PS2Float(VU->VF[_Fs_].i.z).ToDouble() > +value)
 			VU->clipflag |= 0x10;
-		if (Ps2Float(VU->VF[_Fs_].i.z).ToDouble() < -value)
+		if (PS2Float(VU->VF[_Fs_].i.z).ToDouble() < -value)
 			VU->clipflag |= 0x20;
 	}
 	else
@@ -1809,8 +1809,8 @@ static __fi void _vuDIV(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
 	{
-		Ps2Float ft = Ps2Float(VU->VF[_Ft_].UL[_Ftf_]);
-		Ps2Float fs = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
+		PS2Float ft = PS2Float(VU->VF[_Ft_].UL[_Ftf_]);
+		PS2Float fs = PS2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
 		VU->statusflag &= ~0x30;
 
@@ -1823,9 +1823,9 @@ static __fi void _vuDIV(VURegs* VU)
 
 			if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
 				(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
-				VU->q.UL = Ps2Float::MIN_FLOATING_POINT_VALUE;
+				VU->q.UL = PS2Float::MIN_FLOATING_POINT_VALUE;
 			else
-				VU->q.UL = Ps2Float::MAX_FLOATING_POINT_VALUE;
+				VU->q.UL = PS2Float::MAX_FLOATING_POINT_VALUE;
 		}
 		else
 		{
@@ -1864,13 +1864,13 @@ static __fi void _vuSQRT(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		Ps2Float ft = Ps2Float(VU->VF[_Ft_].UL[_Ftf_]);
+		PS2Float ft = PS2Float(VU->VF[_Ft_].UL[_Ftf_]);
 
 		VU->statusflag &= ~0x30;
 
 		if (ft.ToDouble() < 0.0)
 			VU->statusflag |= 0x10;
-		VU->q.UL = Ps2Float(ft.Abs()).Sqrt().AsUInt32();
+		VU->q.UL = PS2Float(ft.Abs()).Sqrt().AsUInt32();
 	}
 	else
 	{
@@ -1889,8 +1889,8 @@ static __fi void _vuRSQRT(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		Ps2Float ft = Ps2Float(VU->VF[_Ft_].UL[_Ftf_]);
-		Ps2Float fs = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
+		PS2Float ft = PS2Float(VU->VF[_Ft_].UL[_Ftf_]);
+		PS2Float fs = PS2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
 		VU->statusflag &= ~0x30;
 
@@ -1902,9 +1902,9 @@ static __fi void _vuRSQRT(VURegs* VU)
 			{
 				if ((VU->VF[_Ft_].UL[_Ftf_] & 0x80000000) ^
 					(VU->VF[_Fs_].UL[_Fsf_] & 0x80000000))
-					VU->q.UL = Ps2Float::MIN_FLOATING_POINT_VALUE;
+					VU->q.UL = PS2Float::MIN_FLOATING_POINT_VALUE;
 				else
-					VU->q.UL = Ps2Float::MAX_FLOATING_POINT_VALUE;
+					VU->q.UL = PS2Float::MAX_FLOATING_POINT_VALUE;
 			}
 			else
 			{
@@ -1925,7 +1925,7 @@ static __fi void _vuRSQRT(VURegs* VU)
 			}
 
 			if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
-				VU->q.UL = fs.Div(Ps2Float(ft.Abs()).Sqrt()).AsUInt32();
+				VU->q.UL = fs.Div(PS2Float(ft.Abs()).Sqrt()).AsUInt32();
 			else
 			{
 				float temp = sqrt(fabs(vuDouble(ft.AsUInt32())));
@@ -2619,25 +2619,25 @@ static __ri void _vuWAITP(VURegs* VU)
 
 static __ri void _vuESADD(VURegs* VU)
 {
-	uint32_t x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
-	uint32_t y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
-	uint32_t z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
+	u32 x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
+	u32 y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
+	u32 z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
 
 	VU->p.UL = vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0);
 }
 
 static __ri void _vuERSADD(VURegs* VU)
 {
-	uint32_t x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
-	uint32_t y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
-	uint32_t z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
+	u32 x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
+	u32 y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
+	u32 z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
 
-	Ps2Float p = Ps2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
+	PS2Float p = PS2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
 
 	if (!p.IsZero())
 	{
 		if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
-			p = Ps2Float::One().Div(p);
+			p = PS2Float::One().Div(p);
 		else
 		{
 			VU->p.F = 1.0f / vuDouble(p.AsUInt32());
@@ -2650,11 +2650,11 @@ static __ri void _vuERSADD(VURegs* VU)
 
 static __ri void _vuELENG(VURegs* VU)
 {
-	uint32_t x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
-	uint32_t y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
-	uint32_t z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
+	u32 x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
+	u32 y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
+	u32 z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
 
-	Ps2Float value = Ps2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
+	PS2Float value = PS2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
 
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
@@ -2678,11 +2678,11 @@ static __ri void _vuELENG(VURegs* VU)
 
 static __ri void _vuERLENG(VURegs* VU)
 {
-	uint32_t x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
-	uint32_t y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
-	uint32_t z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
+	u32 x = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.x, VU->VF[_Fs_].i.x, 0);
+	u32 y = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.y, 0);
+	u32 z = vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.z, 0);
 
-	Ps2Float value = Ps2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
+	PS2Float value = PS2Float(vuAccurateAddSub(VU, vuAccurateAddSub(VU, x, y, 0), z, 0));
 
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
@@ -2693,7 +2693,7 @@ static __ri void _vuERLENG(VURegs* VU)
 			{
 				if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
 				{
-					value = Ps2Float::One().Div(value);
+					value = PS2Float::One().Div(value);
 				}
 				else
 				{
@@ -2721,7 +2721,7 @@ static __ri void _vuERLENG(VURegs* VU)
 }
 
 
-static __ri float _vuCalculateEATAN(uint32_t inputvalue) {
+static __ri float _vuCalculateEATAN(u32 inputvalue) {
 
 	float fvalue = vuDouble(inputvalue);
 
@@ -2748,7 +2748,7 @@ static __ri void _vuEATAN(VURegs* VU)
 static __ri void _vuEATANxy(VURegs* VU)
 {
 	float p = 0;
-	if (!Ps2Float(VU->VF[_Fs_].i.x).IsZero())
+	if (!PS2Float(VU->VF[_Fs_].i.x).IsZero())
 	{
 		p = _vuCalculateEATAN(vuAccurateMulDiv(VU, VU->VF[_Fs_].i.y, VU->VF[_Fs_].i.x, 1));
 	}
@@ -2758,7 +2758,7 @@ static __ri void _vuEATANxy(VURegs* VU)
 static __ri void _vuEATANxz(VURegs* VU)
 {
 	float p = 0;
-	if (!Ps2Float(VU->VF[_Fs_].i.x).IsZero())
+	if (!PS2Float(VU->VF[_Fs_].i.x).IsZero())
 	{
 		p = _vuCalculateEATAN(vuAccurateMulDiv(VU, VU->VF[_Fs_].i.z, VU->VF[_Fs_].i.x, 1));
 	}
@@ -2772,13 +2772,13 @@ static __ri void _vuESUM(VURegs* VU)
 
 static __ri void _vuERCPR(VURegs* VU)
 {
-	Ps2Float p = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
+	PS2Float p = PS2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
 	if (!p.IsZero())
 	{
 		if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
 		{
-			p = Ps2Float::One().Div(p);
+			p = PS2Float::One().Div(p);
 		}
 		else
 		{
@@ -2794,7 +2794,7 @@ static __ri void _vuESQRT(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		Ps2Float value = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
+		PS2Float value = PS2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
 		if (value.ToDouble() >= 0)
 		{
@@ -2820,7 +2820,7 @@ static __ri void _vuERSQRT(VURegs* VU)
 {
 	if (CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		Ps2Float value = Ps2Float(VU->VF[_Fs_].UL[_Fsf_]);
+		PS2Float value = PS2Float(VU->VF[_Fs_].UL[_Fsf_]);
 
 		if (value.ToDouble() >= 0)
 		{
@@ -2834,7 +2834,7 @@ static __ri void _vuERSQRT(VURegs* VU)
 				}
 				else
 				{
-					value = Ps2Float::One().Div(value);
+					value = PS2Float::One().Div(value);
 				}
 			}
 		}

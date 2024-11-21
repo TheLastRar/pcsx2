@@ -1446,10 +1446,7 @@
     <ClCompile Include="SIO\Pad\PadNegcon.cpp">
       <Filter>System\Ps2\Iop\SIO\PAD</Filter>
     </ClCompile>
-    <ClCompile Include="Ps2Float.cpp">
-      <Filter>System\Ps2\EmotionEngine\Shared</Filter>
-    </ClCompile>
-    <ClCompile Include="BoothMultiplier.cpp">
+    <ClCompile Include="PS2Float.cpp">
       <Filter>System\Ps2\EmotionEngine\Shared</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2408,10 +2405,7 @@
     <ClInclude Include="SIO\Pad\PadNegcon.h">
       <Filter>System\Ps2\Iop\SIO\PAD</Filter>
     </ClInclude>
-    <ClInclude Include="Ps2Float.h">
-      <Filter>System\Ps2\EmotionEngine\Shared</Filter>
-    </ClInclude>
-    <ClInclude Include="BoothMultiplier.h">
+    <ClInclude Include="PS2Float.h">
       <Filter>System\Ps2\EmotionEngine\Shared</Filter>
     </ClInclude>
   </ItemGroup>

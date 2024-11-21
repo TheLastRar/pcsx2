@@ -126,7 +126,6 @@
     <ClCompile Include="arm64\RecStubs.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="BoothMultiplier.cpp" />
     <ClCompile Include="CDVD\BlockdumpFileReader.cpp" />
     <ClCompile Include="CDVD\CDVDdiscReader.cpp" />
     <ClCompile Include="CDVD\CDVDdiscThread.cpp" />
@@ -282,7 +281,7 @@
     <ClCompile Include="PINE.cpp" />
     <ClCompile Include="FW.cpp" />
     <ClCompile Include="PerformanceMetrics.cpp" />
-    <ClCompile Include="Ps2Float.cpp" />
+    <ClCompile Include="PS2Float.cpp" />
     <ClCompile Include="Recording\InputRecording.cpp" />
     <ClCompile Include="Recording\InputRecordingControls.cpp" />
     <ClCompile Include="Recording\InputRecordingFile.cpp" />
@@ -584,7 +583,6 @@
     <ClInclude Include="arm64\newVif_UnpackNEON.h">
       <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="BoothMultiplier.h" />
     <ClInclude Include="CDVD\BlockdumpFileReader.h" />
     <ClInclude Include="CDVD\CDVDdiscReader.h" />
     <ClInclude Include="CDVD\CsoFileReader.h" />
@@ -729,7 +727,7 @@
     <ClInclude Include="PINE.h" />
     <ClInclude Include="FW.h" />
     <ClInclude Include="PerformanceMetrics.h" />
-    <ClInclude Include="Ps2Float.h" />
+    <ClInclude Include="PS2Float.h" />
     <ClInclude Include="Recording\InputRecording.h" />
     <ClInclude Include="Recording\InputRecordingControls.h" />
     <ClInclude Include="Recording\InputRecordingFile.h" />

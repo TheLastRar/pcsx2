@@ -5,54 +5,72 @@
 
 #include <vector>
 
-class Ps2Float
+class PS2Float
 {
+	struct BoothRecode
+	{
+		u32 data;
+		u32 negate;
+	};
+
+	struct AddResult
+	{
+		u32 lo;
+		u32 hi;
+	};
+
+    static u64 MulMantissa(u32 a, u32 b);
+
+    static BoothRecode Booth(u32 a, u32 b, u32 bit);
+
+	static AddResult Add3(u32 a, u32 b, u32 c);
+
 public:
     bool Sign;
-    uint8_t Exponent;
-    uint32_t Mantissa;
+    u8 Exponent;
+    u32 Mantissa;
 
-    static const uint8_t BIAS;
-    static const uint32_t SIGNMASK;
-    static const uint32_t MAX_FLOATING_POINT_VALUE;
-    static const uint32_t MIN_FLOATING_POINT_VALUE;
-    static const uint32_t POSITIVE_INFINITY_VALUE;
-    static const uint32_t NEGATIVE_INFINITY_VALUE;
-    static const uint32_t ONE;
-    static const uint32_t MIN_ONE;
+    static const u8 BIAS;
+    static const u32 SIGNMASK;
+    static const u32 MAX_FLOATING_POINT_VALUE;
+    static const u32 MIN_FLOATING_POINT_VALUE;
+    static const u32 POSITIVE_INFINITY_VALUE;
+    static const u32 NEGATIVE_INFINITY_VALUE;
+    static const u32 ONE;
+    static const u32 MIN_ONE;
     static const int IMPLICIT_LEADING_BIT_POS;
 
-    static const int8_t msb[256];
-    static const int32_t debruijn32[64];
-    static const int32_t normalizeAmounts[];
+    static const s8 msb[256];
+    static const s32 debruijn32[64];
+    static const s32 normalizeAmounts[];
 
-    Ps2Float(uint32_t value);
+    PS2Float(u32 value);
 
-    Ps2Float(bool sign, uint8_t exponent, uint32_t mantissa);
+    PS2Float(bool sign, u8 exponent, u32 mantissa);
 
-    static Ps2Float Max();
+    static PS2Float Max();
 
-    static Ps2Float Min();
+    static PS2Float Min();
 
-    static Ps2Float One();
+    static PS2Float One();
 
-    static Ps2Float MinOne();
+    static PS2Float MinOne();
 
-	static Ps2Float Neg(Ps2Float self);
+	static PS2Float Neg(PS2Float self);
 
-    uint32_t AsUInt32() const;
+    u32 AsUInt32() const;
 
-    Ps2Float Add(Ps2Float addend);
+    PS2Float Add(PS2Float addend);
 
-    Ps2Float Sub(Ps2Float subtrahend);
+    PS2Float Sub(PS2Float subtrahend);
 
-    Ps2Float Mul(Ps2Float mulend);
+    PS2Float Mul(PS2Float mulend);
 
-    Ps2Float Div(Ps2Float divend);
+    PS2Float Div(PS2Float divend);
 
-    Ps2Float Sqrt();
+    PS2Float Sqrt();
 
-    Ps2Float Rsqrt(Ps2Float other);
+    PS2Float Rsqrt(PS2Float other);
 
     bool IsDenormalized();
 
@@ -60,13 +78,13 @@ public:
 
     bool IsZero();
 
-    uint32_t Abs();
+    u32 Abs();
 
-    Ps2Float RoundTowardsZero();
+    PS2Float RoundTowardsZero();
 
-    int32_t CompareTo(Ps2Float other);
+    s32 CompareTo(PS2Float other);
 
-    int32_t CompareOperand(Ps2Float other);
+    s32 CompareOperand(PS2Float other);
 
     double ToDouble();
 
@@ -76,31 +94,31 @@ protected:
 
 private:
 
-    Ps2Float DoAdd(Ps2Float other);
+    PS2Float DoAdd(PS2Float other);
 
-    Ps2Float DoMul(Ps2Float other);
+    PS2Float DoMul(PS2Float other);
 
-    Ps2Float DoDiv(Ps2Float other);
+    PS2Float DoDiv(PS2Float other);
 
-    static Ps2Float SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add);
+    static PS2Float SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add);
 
-    static Ps2Float SolveAbnormalMultiplicationOrDivisionOperation(Ps2Float a, Ps2Float b, bool mul);
+    static PS2Float SolveAbnormalMultiplicationOrDivisionOperation(PS2Float a, PS2Float b, bool mul);
 
-    static Ps2Float SolveAddSubDenormalizedOperation(Ps2Float a, Ps2Float b, bool add);
+    static PS2Float SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add);
 
-    static Ps2Float SolveMultiplicationDenormalizedOperation(Ps2Float a, Ps2Float b);
+    static PS2Float SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b);
 
-    static Ps2Float SolveDivisionDenormalizedOperation(Ps2Float a, Ps2Float b);
+    static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
 
-    static bool DetermineMultiplicationDivisionOperationSign(Ps2Float a, Ps2Float b);
+    static bool DetermineMultiplicationDivisionOperationSign(PS2Float a, PS2Float b);
 
-    static bool DetermineAdditionOperationSign(Ps2Float a, Ps2Float b);
+    static bool DetermineAdditionOperationSign(PS2Float a, PS2Float b);
 
-    static bool DetermineSubtractionOperationSign(Ps2Float a, Ps2Float b);
+    static bool DetermineSubtractionOperationSign(PS2Float a, PS2Float b);
 
-    static int32_t GetMostSignificantBitPosition(uint32_t value);
+    static s32 GetMostSignificantBitPosition(u32 value);
 
-    static int32_t BitScanReverse8(int32_t b);
+    static s32 BitScanReverse8(s32 b);
 
-    static int32_t clz(int32_t x);
+    static s32 clz(s32 x);
 };

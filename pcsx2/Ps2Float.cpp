@@ -8,64 +8,126 @@
 #include <iomanip>
 #include <iostream>
 #include <bit>
-#include "Ps2Float.h"
-#include "BoothMultiplier.h"
+#include "PS2Float.h"
 #include "Common.h"
 
-const uint8_t Ps2Float::BIAS = 127;
-const uint32_t Ps2Float::SIGNMASK = 0x80000000;
-const uint32_t Ps2Float::MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
-const uint32_t Ps2Float::MIN_FLOATING_POINT_VALUE = 0xFFFFFFFF;
-const uint32_t Ps2Float::POSITIVE_INFINITY_VALUE = 0x7F800000;
-const uint32_t Ps2Float::NEGATIVE_INFINITY_VALUE = 0xFF800000;
-const uint32_t Ps2Float::ONE = 0x3F800000;
-const uint32_t Ps2Float::MIN_ONE = 0xBF800000;
-const int32_t Ps2Float::IMPLICIT_LEADING_BIT_POS = 23;
+const u8 PS2Float::BIAS = 127;
+const u32 PS2Float::SIGNMASK = 0x80000000;
+const u32 PS2Float::MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
+const u32 PS2Float::MIN_FLOATING_POINT_VALUE = 0xFFFFFFFF;
+const u32 PS2Float::POSITIVE_INFINITY_VALUE = 0x7F800000;
+const u32 PS2Float::NEGATIVE_INFINITY_VALUE = 0xFF800000;
+const u32 PS2Float::ONE = 0x3F800000;
+const u32 PS2Float::MIN_ONE = 0xBF800000;
+const s32 PS2Float::IMPLICIT_LEADING_BIT_POS = 23;
 
-Ps2Float::Ps2Float(uint32_t value)
+//****************************************************************
+// Booth Multiplier
+//****************************************************************
+
+PS2Float::BoothRecode PS2Float::Booth(u32 a, u32 b, u32 bit)
+{
+	u32 test = (bit ? b >> (bit * 2 - 1) : b << 1) & 7;
+	a <<= (bit * 2);
+	a += (test == 3 || test == 4) ? a : 0;
+	u32 neg = (test >= 4 && test <= 6) ? ~0u : 0;
+	u32 pos = 1 << (bit * 2);
+	a ^= (neg & -pos);
+	a &= (test >= 1 && test <= 6) ? ~0u : 0;
+	return {a, neg & pos};
+}
+
+PS2Float::AddResult PS2Float::Add3(u32 a, u32 b, u32 c)
+{
+	u32 u = a ^ b;
+	return {u ^ c, ((u & c) | (a & b)) << 1};
+}
+
+u64 PS2Float::MulMantissa(u32 a, u32 b)
+{
+	u64 full = static_cast<u64>(a) * static_cast<u64>(b);
+	BoothRecode b0 = Booth(a, b, 0);
+	BoothRecode b1 = Booth(a, b, 1);
+	BoothRecode b2 = Booth(a, b, 2);
+	BoothRecode b3 = Booth(a, b, 3);
+	BoothRecode b4 = Booth(a, b, 4);
+	BoothRecode b5 = Booth(a, b, 5);
+	BoothRecode b6 = Booth(a, b, 6);
+	BoothRecode b7 = Booth(a, b, 7);
+
+	// First cycle
+	AddResult t0 = Add3(b1.data, b2.data, b3.data);
+	AddResult t1 = Add3(b4.data & ~0x7ffu, b5.data & ~0xfffu, b6.data);
+	// A few adds get skipped, squeeze them back in
+	t1.hi |= b6.negate | (b5.data & 0x800);
+	b7.data |= (b5.data & 0x400) + b5.negate;
+
+	// Second cycle
+	AddResult t2 = Add3(b0.data, t0.lo, t0.hi);
+	AddResult t3 = Add3(b7.data, t1.lo, t1.hi);
+
+	// Third cycle
+	AddResult t4 = Add3(t2.hi, t3.lo, t3.hi);
+
+	// Fourth cycle
+	AddResult t5 = Add3(t2.lo, t4.lo, t4.hi);
+
+	// Discard bits and sum
+	t5.hi += b7.negate;
+	t5.lo &= ~0x7fffu;
+	t5.hi &= ~0x7fffu;
+	u32 ps2lo = t5.lo + t5.hi;
+	return full - ((ps2lo ^ full) & 0x8000);
+}
+
+//****************************************************************
+// Float Processor
+//****************************************************************
+
+PS2Float::PS2Float(u32 value)
 	: Sign((value >> 31) & 1)
-	, Exponent((uint8_t)(((value >> 23) & 0xFF)))
+	, Exponent((u8)(((value >> 23) & 0xFF)))
 	, Mantissa(value & 0x7FFFFF)
 {
 }
 
-Ps2Float::Ps2Float(bool sign, uint8_t exponent, uint32_t mantissa)
+PS2Float::PS2Float(bool sign, u8 exponent, u32 mantissa)
 	: Sign(sign)
 	, Exponent(exponent)
 	, Mantissa(mantissa)
 {
 }
 
-Ps2Float Ps2Float::Max()
+PS2Float PS2Float::Max()
 {
-	return Ps2Float(MAX_FLOATING_POINT_VALUE);
+	return PS2Float(MAX_FLOATING_POINT_VALUE);
 }
 
-Ps2Float Ps2Float::Min()
+PS2Float PS2Float::Min()
 {
-	return Ps2Float(MIN_FLOATING_POINT_VALUE);
+	return PS2Float(MIN_FLOATING_POINT_VALUE);
 }
 
-Ps2Float Ps2Float::One()
+PS2Float PS2Float::One()
 {
-	return Ps2Float(ONE);
+	return PS2Float(ONE);
 }
 
-Ps2Float Ps2Float::MinOne()
+PS2Float PS2Float::MinOne()
 {
-	return Ps2Float(MIN_ONE);
+	return PS2Float(MIN_ONE);
 }
 
-uint32_t Ps2Float::AsUInt32() const
+u32 PS2Float::AsUInt32() const
 {
-	uint32_t result = 0;
+	u32 result = 0;
 	result |= (Sign ? 1u : 0u) << 31;
-	result |= (uint32_t)(Exponent << 23);
+	result |= (u32)(Exponent << 23);
 	result |= Mantissa;
 	return result;
 }
 
-Ps2Float Ps2Float::Add(Ps2Float addend)
+PS2Float PS2Float::Add(PS2Float addend)
 {
 	if (IsDenormalized() || addend.IsDenormalized())
 		return SolveAddSubDenormalizedOperation(*this, addend, true);
@@ -73,12 +135,11 @@ Ps2Float Ps2Float::Add(Ps2Float addend)
 	if (IsAbnormal() && addend.IsAbnormal())
 		return SolveAbnormalAdditionOrSubtractionOperation(*this, addend, true);
 
-	uint32_t a = AsUInt32();
-	uint32_t b = addend.AsUInt32();
-	int32_t temp = 0;
+	u32 a = AsUInt32();
+	u32 b = addend.AsUInt32();
 
 	//exponent difference
-	int exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
+	s32 exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
 
 	//diff = 25 .. 255 , expt < expd
 	if (exp_diff >= 25)
@@ -90,8 +151,7 @@ Ps2Float Ps2Float::Add(Ps2Float addend)
 	else if (exp_diff > 0)
 	{
 		exp_diff = exp_diff - 1;
-		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
-		b = temp & b;
+		b = (MIN_FLOATING_POINT_VALUE << exp_diff) & b;
 	}
 
 	//diff = -255 .. -25, expd < expt
@@ -105,14 +165,13 @@ Ps2Float Ps2Float::Add(Ps2Float addend)
 	{
 		exp_diff = -exp_diff;
 		exp_diff = exp_diff - 1;
-		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
-		a = a & temp;
+		a = a & (MIN_FLOATING_POINT_VALUE << exp_diff);
 	}
 
-	return Ps2Float(a).DoAdd(Ps2Float(b));
+	return PS2Float(a).DoAdd(PS2Float(b));
 }
 
-Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
+PS2Float PS2Float::Sub(PS2Float subtrahend)
 {
 	if (IsDenormalized() || subtrahend.IsDenormalized())
 		return SolveAddSubDenormalizedOperation(*this, subtrahend, false);
@@ -120,12 +179,11 @@ Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 	if (IsAbnormal() && subtrahend.IsAbnormal())
 		return SolveAbnormalAdditionOrSubtractionOperation(*this, subtrahend, false);
 
-	uint32_t a = AsUInt32();
-	uint32_t b = subtrahend.AsUInt32();
-	int32_t temp = 0;
+	u32 a = AsUInt32();
+	u32 b = subtrahend.AsUInt32();
 
 	//exponent difference
-	int exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
+	s32 exp_diff = ((a >> 23) & 0xFF) - ((b >> 23) & 0xFF);
 
 	//diff = 25 .. 255 , expt < expd
 	if (exp_diff >= 25)
@@ -137,8 +195,7 @@ Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 	else if (exp_diff > 0)
 	{
 		exp_diff = exp_diff - 1;
-		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
-		b = temp & b;
+		b = (MIN_FLOATING_POINT_VALUE << exp_diff) & b;
 	}
 
 	//diff = -255 .. -25, expd < expt
@@ -152,15 +209,14 @@ Ps2Float Ps2Float::Sub(Ps2Float subtrahend)
 	{
 		exp_diff = -exp_diff;
 		exp_diff = exp_diff - 1;
-		temp = MIN_FLOATING_POINT_VALUE << exp_diff;
-		a = a & temp;
+		a = a & (MIN_FLOATING_POINT_VALUE << exp_diff);
 	}
 
 
-	return Ps2Float(a).DoAdd(Neg(Ps2Float(b)));
+	return PS2Float(a).DoAdd(Neg(PS2Float(b)));
 }
 
-Ps2Float Ps2Float::Mul(Ps2Float mulend)
+PS2Float PS2Float::Mul(PS2Float mulend)
 {
 	if (IsDenormalized() || mulend.IsDenormalized())
 		return SolveMultiplicationDenormalizedOperation(*this, mulend);
@@ -170,7 +226,7 @@ Ps2Float Ps2Float::Mul(Ps2Float mulend)
 
 	if (IsZero() || mulend.IsZero())
 	{
-		Ps2Float result = Ps2Float(0);
+		PS2Float result = PS2Float(0);
 
 		result.Sign = DetermineMultiplicationDivisionOperationSign(*this, mulend);
 		return result;
@@ -179,7 +235,7 @@ Ps2Float Ps2Float::Mul(Ps2Float mulend)
 	return DoMul(mulend);
 }
 
-Ps2Float Ps2Float::Div(Ps2Float divend)
+PS2Float PS2Float::Div(PS2Float divend)
 {
 	if (IsDenormalized() || divend.IsDenormalized())
 		return SolveDivisionDenormalizedOperation(*this, divend);
@@ -189,7 +245,7 @@ Ps2Float Ps2Float::Div(Ps2Float divend)
 
 	if (IsZero())
 	{
-		Ps2Float result = Ps2Float(0);
+		PS2Float result = PS2Float(0);
 
 		result.Sign = DetermineMultiplicationDivisionOperationSign(*this, divend);
 		return result;
@@ -200,21 +256,22 @@ Ps2Float Ps2Float::Div(Ps2Float divend)
 	return DoDiv(divend);
 }
 
-Ps2Float Ps2Float::Sqrt()
+// Rounding can be slightly off: (PS2: rsqrt(0x7FFFFFF0) -> 0x5FB504ED | SoftFloat/IEEE754 rsqrt(0x7FFFFFF0) -> 0x5FB504EE).
+PS2Float PS2Float::Sqrt()
 {
-	int32_t t;
-	int32_t s = 0;
-	int32_t q = 0;
-	uint32_t r = 0x01000000; /* r = moving bit from right to left */
+	s32 t;
+	s32 s = 0;
+	s32 q = 0;
+	u32 r = 0x01000000; /* r = moving bit from right to left */
 
 	if (IsDenormalized())
-		return Ps2Float(0);
+		return PS2Float(0);
 
 	// PS2 only takes positive numbers for SQRT, and convert if necessary.
-	int32_t ix = (int32_t)(Ps2Float(false, Exponent, Mantissa).AsUInt32());
+	s32 ix = (s32)(PS2Float(false, Exponent, Mantissa).AsUInt32());
 
 	/* extract mantissa and unbias exponent */
-	int32_t m = (ix >> 23) - BIAS;
+	s32 m = (ix >> 23) - BIAS;
 
 	ix = (ix & 0x007FFFFF) | 0x00800000;
 	if ((m & 1) == 1)
@@ -230,12 +287,12 @@ Ps2Float Ps2Float::Sqrt()
 
 	while (r != 0)
 	{
-		t = s + (int32_t)(r);
+		t = s + (s32)(r);
 		if (t <= ix)
 		{
-			s = t + (int32_t)(r);
+			s = t + (s32)(r);
 			ix -= t;
-			q += (int32_t)(r);
+			q += (s32)(r);
 		}
 
 		ix += ix;
@@ -251,48 +308,48 @@ Ps2Float Ps2Float::Sqrt()
 	ix = (q >> 1) + 0x3F000000;
 	ix += m << 23;
 
-	return Ps2Float((uint32_t)(ix));
+	return PS2Float((u32)(ix));
 }
 
-Ps2Float Ps2Float::Rsqrt(Ps2Float other)
+PS2Float PS2Float::Rsqrt(PS2Float other)
 {
 	return Div(other.Sqrt());
 }
 
-bool Ps2Float::IsDenormalized()
+bool PS2Float::IsDenormalized()
 {
 	return Exponent == 0;
 }
 
-bool Ps2Float::IsAbnormal()
+bool PS2Float::IsAbnormal()
 {
-	uint32_t val = AsUInt32();
+	u32 val = AsUInt32();
 	return val == MAX_FLOATING_POINT_VALUE || val == MIN_FLOATING_POINT_VALUE ||
 		   val == POSITIVE_INFINITY_VALUE || val == NEGATIVE_INFINITY_VALUE;
 }
 
-bool Ps2Float::IsZero()
+bool PS2Float::IsZero()
 {
 	return (Abs()) == 0;
 }
 
-uint32_t Ps2Float::Abs()
+u32 PS2Float::Abs()
 {
 	return (AsUInt32() & MAX_FLOATING_POINT_VALUE);
 }
 
-Ps2Float Ps2Float::RoundTowardsZero()
+PS2Float PS2Float::RoundTowardsZero()
 {
-	return Ps2Float((uint32_t)(std::trunc((double)(AsUInt32()))));
+	return PS2Float((u32)(std::trunc((double)(AsUInt32()))));
 }
 
-int32_t Ps2Float::CompareTo(Ps2Float other)
+s32 PS2Float::CompareTo(PS2Float other)
 {
-	int32_t selfTwoComplementVal = (int32_t)(Abs());
+	s32 selfTwoComplementVal = (s32)(Abs());
 	if (Sign)
 		selfTwoComplementVal = -selfTwoComplementVal;
 
-	int32_t otherTwoComplementVal = (int32_t)(other.Abs());
+	s32 otherTwoComplementVal = (s32)(other.Abs());
 	if (other.Sign)
 		otherTwoComplementVal = -otherTwoComplementVal;
 
@@ -304,10 +361,10 @@ int32_t Ps2Float::CompareTo(Ps2Float other)
 		return 1;
 }
 
-int32_t Ps2Float::CompareOperand(Ps2Float other)
+s32 PS2Float::CompareOperand(PS2Float other)
 {
-	int32_t selfTwoComplementVal = (int32_t)(Abs());
-	int32_t otherTwoComplementVal = (int32_t)(other.Abs());
+	s32 selfTwoComplementVal = (s32)(Abs());
+	s32 otherTwoComplementVal = (s32)(other.Abs());
 
 	if (selfTwoComplementVal < otherTwoComplementVal)
 		return -1;
@@ -317,16 +374,16 @@ int32_t Ps2Float::CompareOperand(Ps2Float other)
 		return 1;
 }
 
-double Ps2Float::ToDouble()
+double PS2Float::ToDouble()
 {
 	return std::bit_cast<double>(((u64)Sign << 63) | ((((u64)Exponent - BIAS) + 1023ULL) << 52) | ((u64)Mantissa << 29));
 }
 
-std::string Ps2Float::ToString()
+std::string PS2Float::ToString()
 {
 	double res = ToDouble();
 
-	uint32_t value = AsUInt32();
+	u32 value = AsUInt32();
 	std::ostringstream oss;
 	oss << std::fixed << std::setprecision(6);
 
@@ -358,12 +415,12 @@ std::string Ps2Float::ToString()
 	return oss.str();
 }
 
-Ps2Float Ps2Float::DoAdd(Ps2Float other)
+PS2Float PS2Float::DoAdd(PS2Float other)
 {
-	const uint8_t roundingMultiplier = 6;
+	const u8 roundingMultiplier = 6;
 
-	uint8_t selfExponent = Exponent;
-	int32_t resExponent = selfExponent - other.Exponent;
+	u8 selfExponent = Exponent;
+	s32 resExponent = selfExponent - other.Exponent;
 
 	if (resExponent < 0)
 		return other.DoAdd(*this);
@@ -371,46 +428,46 @@ Ps2Float Ps2Float::DoAdd(Ps2Float other)
 		return *this;
 
 	// http://graphics.stanford.edu/~seander/bithacks.html#ConditionalNegate
-	uint32_t sign1 = (uint32_t)((int32_t)AsUInt32() >> 31);
-	int32_t selfMantissa = (int32_t)(((Mantissa | 0x800000) ^ sign1) - sign1);
-	uint32_t sign2 = (uint32_t)((int32_t)other.AsUInt32() >> 31);
-	int32_t otherMantissa = (int32_t)(((other.Mantissa | 0x800000) ^ sign2) - sign2);
+	u32 sign1 = (u32)((s32)AsUInt32() >> 31);
+	s32 selfMantissa = (s32)(((Mantissa | 0x800000) ^ sign1) - sign1);
+	u32 sign2 = (u32)((s32)other.AsUInt32() >> 31);
+	s32 otherMantissa = (s32)(((other.Mantissa | 0x800000) ^ sign2) - sign2);
 
 	// PS2 multiply by 2 before doing the Math here.
-	int32_t man = (selfMantissa << roundingMultiplier) + ((otherMantissa << roundingMultiplier) >> resExponent);
-	int32_t absMan = abs(man);
+	s32 man = (selfMantissa << roundingMultiplier) + ((otherMantissa << roundingMultiplier) >> resExponent);
+	s32 absMan = abs(man);
 	if (absMan == 0)
-		return Ps2Float(0);
+		return PS2Float(0);
 
 	// Remove from exponent the PS2 Multiplier value.
-	int32_t rawExp = selfExponent - roundingMultiplier;
+	s32 rawExp = selfExponent - roundingMultiplier;
 
-	int32_t amount = normalizeAmounts[clz(absMan)];
+	s32 amount = normalizeAmounts[clz(absMan)];
 	rawExp -= amount;
 	absMan <<= amount;
 
-	int32_t msbIndex = BitScanReverse8(absMan >> 23);
+	s32 msbIndex = BitScanReverse8(absMan >> 23);
 	rawExp += msbIndex;
 	absMan >>= msbIndex;
 
 	if (rawExp > 255)
 		return man < 0 ? Min() : Max();
 	else if (rawExp <= 0)
-		return Ps2Float(man < 0, 0, 0);
+		return PS2Float(man < 0, 0, 0);
 
-	return Ps2Float((uint32_t)man & SIGNMASK | (uint32_t)rawExp << 23 | ((uint32_t)absMan & 0x7FFFFF));
+	return PS2Float(((u32)man & SIGNMASK) | (u32)rawExp << 23 | ((u32)absMan & 0x7FFFFF));
 }
 
-Ps2Float Ps2Float::DoMul(Ps2Float other)
+PS2Float PS2Float::DoMul(PS2Float other)
 {
-	uint8_t selfExponent = Exponent;
-	uint8_t otherExponent = other.Exponent;
-	uint32_t selfMantissa = Mantissa | 0x800000;
-	uint32_t otherMantissa = other.Mantissa | 0x800000;
-	uint32_t sign = (AsUInt32() ^ other.AsUInt32()) & SIGNMASK;
+	u8 selfExponent = Exponent;
+	u8 otherExponent = other.Exponent;
+	u32 selfMantissa = Mantissa | 0x800000;
+	u32 otherMantissa = other.Mantissa | 0x800000;
+	u32 sign = (AsUInt32() ^ other.AsUInt32()) & SIGNMASK;
 
-	int32_t resExponent = selfExponent + otherExponent - 127;
-	uint32_t resMantissa = (uint32_t)(BoothMultiplier::MulMantissa(selfMantissa, otherMantissa) >> 23);
+	s32 resExponent = selfExponent + otherExponent - 127;
+	u32 resMantissa = (u32)(MulMantissa(selfMantissa, otherMantissa) >> 23);
 
 	if (resMantissa > 0xFFFFFF)
 	{
@@ -419,51 +476,52 @@ Ps2Float Ps2Float::DoMul(Ps2Float other)
 	}
 
 	if (resExponent > 255)
-		return Ps2Float(sign | MAX_FLOATING_POINT_VALUE);
+		return PS2Float(sign | MAX_FLOATING_POINT_VALUE);
 	else if (resExponent <= 0)
-		return Ps2Float(sign);
+		return PS2Float(sign);
 
-	return Ps2Float(sign | (uint32_t)(resExponent << 23) | (resMantissa & 0x7FFFFF));
+	return PS2Float(sign | (u32)(resExponent << 23) | (resMantissa & 0x7FFFFF));
 }
 
-Ps2Float Ps2Float::DoDiv(Ps2Float other)
+// Rounding can be slightly off: (PS2: 0x3F800000 / 0x3F800001 = 0x3F7FFFFF | SoftFloat/IEEE754: 0x3F800000 / 0x3F800001 = 0x3F7FFFFE).
+PS2Float PS2Float::DoDiv(PS2Float other)
 {
-	uint64_t selfMantissa64;
-	uint32_t selfMantissa = Mantissa | 0x800000;
-	uint32_t otherMantissa = other.Mantissa | 0x800000;
-	int resExponent = Exponent - other.Exponent + BIAS;
+	u64 selfMantissa64;
+	u32 selfMantissa = Mantissa | 0x800000;
+	u32 otherMantissa = other.Mantissa | 0x800000;
+	s32 resExponent = Exponent - other.Exponent + BIAS;
 
-	Ps2Float result = Ps2Float(0);
+	PS2Float result = PS2Float(0);
 
 	result.Sign = DetermineMultiplicationDivisionOperationSign(*this, other);
 
 	if (resExponent > 255)
 		return result.Sign ? Min() : Max();
 	else if (resExponent <= 0)
-		return Ps2Float(result.Sign, 0, 0);
+		return PS2Float(result.Sign, 0, 0);
 
 	if (selfMantissa < otherMantissa)
 	{
 		--resExponent;
 		if (resExponent == 0)
-			return Ps2Float(result.Sign, 0, 0);
-		selfMantissa64 = (uint64_t)(selfMantissa) << 31;
+			return PS2Float(result.Sign, 0, 0);
+		selfMantissa64 = (u64)(selfMantissa) << 31;
 	}
 	else
 	{
-		selfMantissa64 = (uint64_t)(selfMantissa) << 30;
+		selfMantissa64 = (u64)(selfMantissa) << 30;
 	}
 
-	uint32_t resMantissa = (uint32_t)(selfMantissa64 / otherMantissa);
+	u32 resMantissa = (u32)(selfMantissa64 / otherMantissa);
 	if ((resMantissa & 0x3F) == 0)
-		resMantissa |= ((uint64_t)(otherMantissa)*resMantissa != selfMantissa64) ? 1U : 0;
+		resMantissa |= ((u64)(otherMantissa)*resMantissa != selfMantissa64) ? 1U : 0;
 
-	result.Exponent = (uint8_t)(resExponent);
+	result.Exponent = (u8)(resExponent);
 	result.Mantissa = (resMantissa + 0x39U /* Non-standard value, 40U in IEEE754 (PS2: rsqrt(0x40400000, 0x40400000) = 0x3FDDB3D7 -> IEEE754: rsqrt(0x40400000, 0x40400000) = 0x3FDDB3D8 */) >> 7;
 
 	if (result.Mantissa > 0)
 	{
-		int32_t leadingBitPosition = Ps2Float::GetMostSignificantBitPosition(result.Mantissa);
+		s32 leadingBitPosition = PS2Float::GetMostSignificantBitPosition(result.Mantissa);
 
 		while (leadingBitPosition != IMPLICIT_LEADING_BIT_POS)
 		{
@@ -471,12 +529,12 @@ Ps2Float Ps2Float::DoDiv(Ps2Float other)
 			{
 				result.Mantissa >>= 1;
 
-				int32_t exp = ((int32_t)result.Exponent + 1);
+				s32 exp = ((s32)result.Exponent + 1);
 
 				if (exp > 255)
 					return result.Sign ? Min() : Max();
 
-				result.Exponent = (uint8_t)exp;
+				result.Exponent = (u8)exp;
 
 				leadingBitPosition--;
 			}
@@ -484,12 +542,12 @@ Ps2Float Ps2Float::DoDiv(Ps2Float other)
 			{
 				result.Mantissa <<= 1;
 
-				int32_t exp = ((int32_t)result.Exponent - 1);
+				s32 exp = ((s32)result.Exponent - 1);
 
 				if (exp <= 0)
-					return Ps2Float(result.Sign, 0, 0);
+					return PS2Float(result.Sign, 0, 0);
 
-				result.Exponent = (uint8_t)exp;
+				result.Exponent = (u8)exp;
 
 				leadingBitPosition++;
 			}
@@ -500,66 +558,68 @@ Ps2Float Ps2Float::DoDiv(Ps2Float other)
 	return result.RoundTowardsZero();
 }
 
-Ps2Float Ps2Float::SolveAbnormalAdditionOrSubtractionOperation(Ps2Float a, Ps2Float b, bool add)
+PS2Float PS2Float::SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add)
 {
-	uint32_t aval = a.AsUInt32();
-	uint32_t bval = b.AsUInt32();
+	u32 aval = a.AsUInt32();
+	u32 bval = b.AsUInt32();
 
 	if (aval == MAX_FLOATING_POINT_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-		return add ? Max() : Ps2Float(0);
+		return add ? Max() : PS2Float(0);
 
 	if (aval == MIN_FLOATING_POINT_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-		return add ? Min() : Ps2Float(0);
+		return add ? Min() : PS2Float(0);
 
 	if (aval == MIN_FLOATING_POINT_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-		return add ? Ps2Float(0) : Min();
+		return add ? PS2Float(0) : Min();
 
 	if (aval == MAX_FLOATING_POINT_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-		return add ? Ps2Float(0) : Max();
+		return add ? PS2Float(0) : Max();
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == POSITIVE_INFINITY_VALUE)
-		return add ? Max() : Ps2Float(0);
+		return add ? Max() : PS2Float(0);
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == POSITIVE_INFINITY_VALUE)
-		return add ? Ps2Float(0) : Min();
+		return add ? PS2Float(0) : Min();
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-		return add ? Ps2Float(0) : Max();
+		return add ? PS2Float(0) : Max();
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-		return add ? Min() : Ps2Float(0);
+		return add ? Min() : PS2Float(0);
 
 	if (aval == MAX_FLOATING_POINT_VALUE && bval == POSITIVE_INFINITY_VALUE)
-		return add ? Max() : Ps2Float(0x7F7FFFFE);
+		return add ? Max() : PS2Float(0x7F7FFFFE);
 
 	if (aval == MAX_FLOATING_POINT_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-		return add ? Ps2Float(0x7F7FFFFE) : Max();
+		return add ? PS2Float(0x7F7FFFFE) : Max();
 
 	if (aval == MIN_FLOATING_POINT_VALUE && bval == POSITIVE_INFINITY_VALUE)
-		return add ? Ps2Float(0xFF7FFFFE) : Min();
+		return add ? PS2Float(0xFF7FFFFE) : Min();
 
 	if (aval == MIN_FLOATING_POINT_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-		return add ? Min() : Ps2Float(0xFF7FFFFE);
+		return add ? Min() : PS2Float(0xFF7FFFFE);
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-		return add ? Max() : Ps2Float(0xFF7FFFFE);
+		return add ? Max() : PS2Float(0xFF7FFFFE);
 
 	if (aval == POSITIVE_INFINITY_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-		return add ? Ps2Float(0xFF7FFFFE) : Max();
+		return add ? PS2Float(0xFF7FFFFE) : Max();
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-		return add ? Ps2Float(0x7F7FFFFE) : Min();
+		return add ? PS2Float(0x7F7FFFFE) : Min();
 
 	if (aval == NEGATIVE_INFINITY_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-		return add ? Min() : Ps2Float(0x7F7FFFFE);
+		return add ? Min() : PS2Float(0x7F7FFFFE);
 
 	Console.Error("Unhandled abnormal add/sub floating point operation");
+	
+	return PS2Float(0);
 }
 
-Ps2Float Ps2Float::SolveAbnormalMultiplicationOrDivisionOperation(Ps2Float a, Ps2Float b, bool mul)
+PS2Float PS2Float::SolveAbnormalMultiplicationOrDivisionOperation(PS2Float a, PS2Float b, bool mul)
 {
-	uint32_t aval = a.AsUInt32();
-	uint32_t bval = b.AsUInt32();
+	u32 aval = a.AsUInt32();
+	u32 bval = b.AsUInt32();
 
 	if (mul)
 	{
@@ -630,36 +690,38 @@ Ps2Float Ps2Float::SolveAbnormalMultiplicationOrDivisionOperation(Ps2Float a, Ps
 			return One();
 
 		if (aval == MAX_FLOATING_POINT_VALUE && bval == POSITIVE_INFINITY_VALUE)
-			return Ps2Float(0x3FFFFFFF);
+			return PS2Float(0x3FFFFFFF);
 
 		if (aval == MAX_FLOATING_POINT_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-			return Ps2Float(0xBFFFFFFF);
+			return PS2Float(0xBFFFFFFF);
 
 		if (aval == MIN_FLOATING_POINT_VALUE && bval == POSITIVE_INFINITY_VALUE)
-			return Ps2Float(0xBFFFFFFF);
+			return PS2Float(0xBFFFFFFF);
 
 		if (aval == MIN_FLOATING_POINT_VALUE && bval == NEGATIVE_INFINITY_VALUE)
-			return Ps2Float(0x3FFFFFFF);
+			return PS2Float(0x3FFFFFFF);
 
 		if (aval == POSITIVE_INFINITY_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-			return Ps2Float(0x3F000001);
+			return PS2Float(0x3F000001);
 
 		if (aval == POSITIVE_INFINITY_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-			return Ps2Float(0xBF000001);
+			return PS2Float(0xBF000001);
 
 		if (aval == NEGATIVE_INFINITY_VALUE && bval == MAX_FLOATING_POINT_VALUE)
-			return Ps2Float(0xBF000001);
+			return PS2Float(0xBF000001);
 
 		if (aval == NEGATIVE_INFINITY_VALUE && bval == MIN_FLOATING_POINT_VALUE)
-			return Ps2Float(0x3F000001);
+			return PS2Float(0x3F000001);
 	}
 
 	Console.Error("Unhandled abnormal mul/div floating point operation");
+	
+	return PS2Float(0);
 }
 
-Ps2Float Ps2Float::SolveAddSubDenormalizedOperation(Ps2Float a, Ps2Float b, bool add)
+PS2Float PS2Float::SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add)
 {
-	Ps2Float result = Ps2Float(0);
+	PS2Float result = PS2Float(0);
 
 	if (a.IsDenormalized() && !b.IsDenormalized())
 		result = b;
@@ -675,18 +737,18 @@ Ps2Float Ps2Float::SolveAddSubDenormalizedOperation(Ps2Float a, Ps2Float b, bool
 	return result;
 }
 
-Ps2Float Ps2Float::SolveMultiplicationDenormalizedOperation(Ps2Float a, Ps2Float b)
+PS2Float PS2Float::SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b)
 {
-	Ps2Float result = Ps2Float(0);
+	PS2Float result = PS2Float(0);
 
 	result.Sign = DetermineMultiplicationDivisionOperationSign(a, b);
 	return result;
 }
 
-Ps2Float Ps2Float::SolveDivisionDenormalizedOperation(Ps2Float a, Ps2Float b)
+PS2Float PS2Float::SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b)
 {
 	bool sign = DetermineMultiplicationDivisionOperationSign(a, b);
-	Ps2Float result = Ps2Float(0);
+	PS2Float result = PS2Float(0);
 
 	if (a.IsDenormalized() && !b.IsDenormalized())
 	{
@@ -702,17 +764,17 @@ Ps2Float Ps2Float::SolveDivisionDenormalizedOperation(Ps2Float a, Ps2Float b)
 	return result;
 }
 
-Ps2Float Ps2Float::Neg(Ps2Float self)
+PS2Float PS2Float::Neg(PS2Float self)
 {
-	return Ps2Float(self.AsUInt32() ^ SIGNMASK);
+	return PS2Float(self.AsUInt32() ^ SIGNMASK);
 }
 
-bool Ps2Float::DetermineMultiplicationDivisionOperationSign(Ps2Float a, Ps2Float b)
+bool PS2Float::DetermineMultiplicationDivisionOperationSign(PS2Float a, PS2Float b)
 {
 	return a.Sign ^ b.Sign;
 }
 
-bool Ps2Float::DetermineAdditionOperationSign(Ps2Float a, Ps2Float b)
+bool PS2Float::DetermineAdditionOperationSign(PS2Float a, PS2Float b)
 {
 	if (a.IsZero() && b.IsZero())
 	{
@@ -727,7 +789,7 @@ bool Ps2Float::DetermineAdditionOperationSign(Ps2Float a, Ps2Float b)
 	return a.CompareOperand(b) >= 0 ? a.Sign : b.Sign;
 }
 
-bool Ps2Float::DetermineSubtractionOperationSign(Ps2Float a, Ps2Float b)
+bool PS2Float::DetermineSubtractionOperationSign(PS2Float a, PS2Float b)
 {
 	if (a.IsZero() && b.IsZero())
 	{
@@ -742,7 +804,7 @@ bool Ps2Float::DetermineSubtractionOperationSign(Ps2Float a, Ps2Float b)
 	return a.CompareOperand(b) >= 0 ? a.Sign : !b.Sign;
 }
 
-int32_t Ps2Float::clz(int x)
+s32 PS2Float::clz(s32 x)
 {
 	x |= x >> 1;
 	x |= x >> 2;
@@ -750,17 +812,17 @@ int32_t Ps2Float::clz(int x)
 	x |= x >> 8;
 	x |= x >> 16;
 
-	return debruijn32[(uint)x * 0x8c0b2891u >> 26];
+	return debruijn32[(u32)x * 0x8c0b2891u >> 26];
 }
 
-int32_t Ps2Float::BitScanReverse8(int b)
+s32 PS2Float::BitScanReverse8(s32 b)
 {
 	return msb[b];
 }
 
-int32_t Ps2Float::GetMostSignificantBitPosition(uint32_t value)
+s32 PS2Float::GetMostSignificantBitPosition(u32 value)
 {
-	for (int32_t i = 31; i >= 0; i--)
+	for (s32 i = 31; i >= 0; i--)
 	{
 		if (((value >> i) & 1) != 0)
 			return i;
@@ -768,7 +830,7 @@ int32_t Ps2Float::GetMostSignificantBitPosition(uint32_t value)
 	return -1;
 }
 
-const int8_t Ps2Float::msb[256] =
+const s8 PS2Float::msb[256] =
 	{
 		-1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -779,13 +841,13 @@ const int8_t Ps2Float::msb[256] =
 		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
 		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7};
 
-const int32_t Ps2Float::debruijn32[64] =
+const s32 PS2Float::debruijn32[64] =
 	{
 		32, 8, 17, -1, -1, 14, -1, -1, -1, 20, -1, -1, -1, 28, -1, 18,
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 26, 25, 24,
 		4, 11, 23, 31, 3, 7, 10, 16, 22, 30, -1, -1, 2, 6, 13, 9,
 		-1, 15, -1, 21, -1, 29, 19, -1, -1, -1, -1, -1, 1, 27, 5, 12};
 
-const int32_t Ps2Float::normalizeAmounts[] =
+const s32 PS2Float::normalizeAmounts[] =
 	{
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 24, 24, 24, 24, 24, 24, 24};
