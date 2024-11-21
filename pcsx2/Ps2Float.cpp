@@ -517,7 +517,7 @@ PS2Float PS2Float::DoDiv(PS2Float other)
 		resMantissa |= ((u64)(otherMantissa)*resMantissa != selfMantissa64) ? 1U : 0;
 
 	result.Exponent = (u8)(resExponent);
-	result.Mantissa = (resMantissa + 0x39U /* Non-standard value, 40U in IEEE754 (PS2: rsqrt(0x40400000, 0x40400000) = 0x3FDDB3D7 -> IEEE754: rsqrt(0x40400000, 0x40400000) = 0x3FDDB3D8 */) >> 7;
+	result.Mantissa = (resMantissa + 0x40U) >> 7;
 
 	if (result.Mantissa > 0)
 	{
