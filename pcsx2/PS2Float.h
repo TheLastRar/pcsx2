@@ -7,42 +7,60 @@
 
 class PS2Float
 {
-	struct BoothRecode
-	{
+    struct BoothRecode
+    {
 		u32 data;
 		u32 negate;
-	};
+    };
 
-	struct AddResult
-	{
+    struct AddResult
+    {
 		u32 lo;
 		u32 hi;
-	};
+    };
 
     static u64 MulMantissa(u32 a, u32 b);
 
     static BoothRecode Booth(u32 a, u32 b, u32 bit);
 
-	static AddResult Add3(u32 a, u32 b, u32 c);
+    static AddResult Add3(u32 a, u32 b, u32 c);
 
 public:
     bool Sign;
     u8 Exponent;
     u32 Mantissa;
 
-    static const u8 BIAS;
-    static const u32 SIGNMASK;
-    static const u32 MAX_FLOATING_POINT_VALUE;
-    static const u32 MIN_FLOATING_POINT_VALUE;
-    static const u32 POSITIVE_INFINITY_VALUE;
-    static const u32 NEGATIVE_INFINITY_VALUE;
-    static const u32 ONE;
-    static const u32 MIN_ONE;
-    static const int IMPLICIT_LEADING_BIT_POS;
+    static constexpr u8 BIAS = 127;
+    static constexpr u32 SIGNMASK = 0x80000000;
+    static constexpr u32 MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
+    static constexpr u32 MIN_FLOATING_POINT_VALUE = 0xFFFFFFFF;
+    static constexpr u32 POSITIVE_INFINITY_VALUE = 0x7F800000;
+    static constexpr u32 NEGATIVE_INFINITY_VALUE = 0xFF800000;
+    static constexpr u32 ONE = 0x3F800000;
+    static constexpr u32 MIN_ONE = 0xBF800000;
+    static constexpr int IMPLICIT_LEADING_BIT_POS = 23;
 
-    static const s8 msb[256];
-    static const s32 debruijn32[64];
-    static const s32 normalizeAmounts[];
+    static constexpr s8 msb[256] = {
+		-1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+    };
+
+    static constexpr s32 debruijn32[64] = {
+		32, 8, 17, -1, -1, 14, -1, -1, -1, 20, -1, -1, -1, 28, -1, 18,
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 26, 25, 24,
+		4, 11, 23, 31, 3, 7, 10, 16, 22, 30, -1, -1, 2, 6, 13, 9,
+		-1, 15, -1, 21, -1, 29, 19, -1, -1, -1, -1, -1, 1, 27, 5, 12
+    };
+
+    static constexpr s32 normalizeAmounts[] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 24, 24, 24, 24, 24, 24, 24
+    };
 
     PS2Float(u32 value);
 
@@ -56,7 +74,7 @@ public:
 
     static PS2Float MinOne();
 
-	static PS2Float Neg(PS2Float self);
+    static PS2Float Neg(PS2Float self);
 
     u32 AsUInt32() const;
 
