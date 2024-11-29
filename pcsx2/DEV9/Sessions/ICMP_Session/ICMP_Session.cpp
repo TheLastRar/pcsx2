@@ -789,7 +789,7 @@ namespace Sessions
 
 							Console.Error("DEV9: ICMP: Payload delayed %d bytes", off);
 
-							retPkt = std::make_unique<IP_Packet>(&icmpPayload->data[off], icmpPayload->GetLength(), true);
+							retPkt = std::make_unique<IP_Packet>(&icmpPayload->data[off], icmpPayload->GetLength() - off, true);
 						}
 
 						const IP_Address srvIP = retPkt->sourceIP;
