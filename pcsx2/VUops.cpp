@@ -465,28 +465,28 @@ static __fi float vuDouble(u32 f)
 
 static __fi u32 vuAccurateAdd(VURegs* VU, u32 a, u32 b)
 {
-	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0)) return PS2Float(a).Add(PS2Float(b)).AsUInt32();
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0)) return PS2Float(a).Add(PS2Float(b)).raw;
 
 	return std::bit_cast<u32>(vuDouble(a) + vuDouble(b));
 }
 
 static __fi u32 vuAccurateSub(VURegs* VU, u32 a, u32 b)
 {
-	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0)) return PS2Float(a).Sub(PS2Float(b)).AsUInt32();
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0)) return PS2Float(a).Sub(PS2Float(b)).raw;
 
 	return std::bit_cast<u32>(vuDouble(a) - vuDouble(b));
 }
 
 static __fi u32 vuAccurateMul(VURegs* VU, u32 a, u32 b)
 {
-	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0)) return PS2Float(a).Mul(PS2Float(b)).AsUInt32();
+	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0)) return PS2Float(a).Mul(PS2Float(b)).raw;
 
 	return std::bit_cast<u32>(vuDouble(a) * vuDouble(b));
 }
 
 static __fi u32 vuAccurateDiv(VURegs* VU, u32 a, u32 b)
 {
-	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0)) return PS2Float(a).Div(PS2Float(b)).AsUInt32();
+	if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0)) return PS2Float(a).Div(PS2Float(b)).raw;
 
 	return std::bit_cast<u32>(vuDouble(a) / vuDouble(b));
 }
@@ -1778,7 +1778,7 @@ static __fi void _vuDIV(VURegs* VU)
 		}
 		else
 		{
-			VU->q.UL = fs.Div(ft).AsUInt32();
+			VU->q.UL = fs.Div(ft).raw;
 		}
 	}
 	else
@@ -1819,7 +1819,7 @@ static __fi void _vuSQRT(VURegs* VU)
 
 		if (ft.ToDouble() < 0.0)
 			VU->statusflag |= 0x10;
-		VU->q.UL = PS2Float(ft.Abs()).Sqrt().AsUInt32();
+		VU->q.UL = PS2Float(ft.Abs()).Sqrt().raw;
 	}
 	else
 	{
@@ -1874,11 +1874,11 @@ static __fi void _vuRSQRT(VURegs* VU)
 			}
 
 			if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
-				VU->q.UL = fs.Div(PS2Float(ft.Abs()).Sqrt()).AsUInt32();
+				VU->q.UL = fs.Div(PS2Float(ft.Abs()).Sqrt()).raw;
 			else
 			{
-				float temp = sqrt(fabs(vuDouble(ft.AsUInt32())));
-				VU->q.F = vuDouble(fs.AsUInt32()) / temp;
+				float temp = sqrt(fabs(vuDouble(ft.raw)));
+				VU->q.F = vuDouble(fs.raw) / temp;
 				VU->q.F = vuDouble(VU->q.UL);
 			}
 		}
@@ -2589,12 +2589,12 @@ static __ri void _vuERSADD(VURegs* VU)
 			p = PS2Float::One().Div(p);
 		else
 		{
-			VU->p.F = 1.0f / vuDouble(p.AsUInt32());
+			VU->p.F = 1.0f / vuDouble(p.raw);
 			return;
 		}
 	}
 
-	VU->p.UL = p.AsUInt32();
+	VU->p.UL = p.raw;
 }
 
 static __ri void _vuELENG(VURegs* VU)
@@ -2611,11 +2611,11 @@ static __ri void _vuELENG(VURegs* VU)
 		{
 			value = value.Sqrt();
 		}
-		VU->p.UL = value.AsUInt32();
+		VU->p.UL = value.raw;
 	}
 	else
 	{
-		float p = vuDouble(value.AsUInt32());
+		float p = vuDouble(value.raw);
 
 		if (p >= 0)
 		{
@@ -2646,16 +2646,16 @@ static __ri void _vuERLENG(VURegs* VU)
 				}
 				else
 				{
-					VU->p.F = 1.0 / vuDouble(value.AsUInt32());
+					VU->p.F = 1.0 / vuDouble(value.raw);
 					return;
 				}
 			}
 		}
-		VU->p.UL = value.AsUInt32();
+		VU->p.UL = value.raw;
 	}
 	else
 	{
-		float p = vuDouble(value.AsUInt32());
+		float p = vuDouble(value.raw);
 
 		if (p >= 0)
 		{
@@ -2731,12 +2731,12 @@ static __ri void _vuERCPR(VURegs* VU)
 		}
 		else
 		{
-			VU->p.F = 1.0 / vuDouble(p.AsUInt32());
+			VU->p.F = 1.0 / vuDouble(p.raw);
 			return;
 		}
 	}
 
-	VU->p.UL = p.AsUInt32();
+	VU->p.UL = p.raw;
 }
 
 static __ri void _vuESQRT(VURegs* VU)
@@ -2750,7 +2750,7 @@ static __ri void _vuESQRT(VURegs* VU)
 			value = value.Sqrt();
 		}
 
-		VU->p.UL = value.AsUInt32();
+		VU->p.UL = value.raw;
 	}
 	else
 	{
@@ -2778,7 +2778,7 @@ static __ri void _vuERSQRT(VURegs* VU)
 			{
 				if (CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0))
 				{
-					VU->p.F = 1.0f / vuDouble(value.AsUInt32());
+					VU->p.F = 1.0f / vuDouble(value.raw);
 					return;
 				}
 				else
@@ -2788,7 +2788,7 @@ static __ri void _vuERSQRT(VURegs* VU)
 			}
 		}
 
-		VU->p.UL = value.AsUInt32();
+		VU->p.UL = value.raw;
 	}
 	else
 	{

@@ -16,8 +16,8 @@ static __ri u32 VU_MAC_UPDATE(int shift, VURegs* VU, u32 f)
 {
 	PS2Float ps2f = PS2Float(f);
 
-	u32 exp = ps2f.Exponent;
-	u32 s = ps2f.AsUInt32() & PS2Float::SIGNMASK;
+	u32 exp = ps2f.Exponent();
+	u32 s = ps2f.raw & PS2Float::SIGNMASK;
 
 	if (s)
 		VU->macflag |= 0x0010<<shift;

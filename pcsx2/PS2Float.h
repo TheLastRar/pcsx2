@@ -26,10 +26,7 @@ class PS2Float
     static AddResult Add3(u32 a, u32 b, u32 c);
 
 public:
-    bool Sign;
-    u8 Exponent;
-    u32 Mantissa;
-
+    
     static constexpr u8 BIAS = 127;
     static constexpr u32 SIGNMASK = 0x80000000;
     static constexpr u32 MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
@@ -62,6 +59,12 @@ public:
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 24, 24, 24, 24, 24, 24, 24
     };
 
+    u32 raw;
+
+    constexpr u32 Mantissa() const { return raw & 0x7FFFFF; }
+    constexpr u8 Exponent() const { return (raw >> 23) & 0xFF; }
+    constexpr bool Sign() const { return ((raw >> 31) & 1) != 0; }
+
     PS2Float(u32 value);
 
     PS2Float(bool sign, u8 exponent, u32 mantissa);
@@ -73,10 +76,6 @@ public:
     static PS2Float One();
 
     static PS2Float MinOne();
-
-    static PS2Float Neg(PS2Float self);
-
-    u32 AsUInt32() const;
 
     PS2Float Add(PS2Float addend);
 
@@ -97,6 +96,8 @@ public:
     bool IsZero();
 
     u32 Abs();
+
+    PS2Float Negate();
 
     PS2Float RoundTowardsZero();
 
