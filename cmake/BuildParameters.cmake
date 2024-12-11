@@ -149,13 +149,10 @@ if(MSVC)
 	# Disable RTTI
 	string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 
-	# Disable Exceptions
-	string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 else()
 	add_compile_options(-pipe -fvisibility=hidden -pthread)
 	add_compile_options(
 		"$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>"
-		"$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
 	)
 endif()
 
@@ -167,7 +164,6 @@ if(WIN32)
 		$<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=2>
 		$<$<CONFIG:Devel>:_ITERATOR_DEBUG_LEVEL=1>
 		$<${CONFIG_ANY_REL}:_ITERATOR_DEBUG_LEVEL=0>
-		_HAS_EXCEPTIONS=0
 	)
 	list(APPEND PCSX2_DEFS
 		_CRT_NONSTDC_NO_WARNINGS
