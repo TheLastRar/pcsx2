@@ -145,14 +145,8 @@ if(MSVC AND NOT USE_CLANG_CL)
 	)
 endif()
 
-if(MSVC)
-	# Disable Exceptions
-	string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-else()
+if(NOT MSVC)
 	add_compile_options(-pipe -fvisibility=hidden -pthread)
-	add_compile_options(
-		"$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
-	)
 endif()
 
 set(CONFIG_REL_NO_DEB $<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>)
@@ -163,7 +157,6 @@ if(WIN32)
 		$<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=2>
 		$<$<CONFIG:Devel>:_ITERATOR_DEBUG_LEVEL=1>
 		$<${CONFIG_ANY_REL}:_ITERATOR_DEBUG_LEVEL=0>
-		_HAS_EXCEPTIONS=0
 	)
 	list(APPEND PCSX2_DEFS
 		_CRT_NONSTDC_NO_WARNINGS
