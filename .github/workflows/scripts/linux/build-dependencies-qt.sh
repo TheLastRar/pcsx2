@@ -20,7 +20,7 @@ LIBPNG=1.6.44
 LIBWEBP=1.4.0
 LZ4=b8fd2d15309dd4e605070bd4486e26b6ef814e29
 SDL=SDL2-2.30.10
-QT=6.8.1
+QT=6.9.0-beta1
 ZSTD=1.5.6
 
 SHADERC=2024.1
@@ -39,12 +39,7 @@ fd6f417fe9e3a071cf1424a5152d926a34c4a3c5070745470be6cf12a404ed79  $LIBBACKTRACE.
 0728800155f3ed0a0c87e03addbd30ecbe374f7b080678bbca1506051d50dec3  $LZ4.tar.gz
 f59adf36a0fcf4c94198e7d3d776c1b3824211ab7aeebeb31fe19836661196aa  $SDL.tar.gz
 8c29e06cf42aacc1eafc4077ae2ec6c6fcb96a626157e0593d5e82a34fd403c1  zstd-$ZSTD.tar.gz
-40b14562ef3bd779bc0e0418ea2ae08fa28235f8ea6e8c0cb3bce1d6ad58dcaf  qtbase-everywhere-src-$QT.tar.xz
-138cc2909aa98f5ff7283e36eb3936eb5e625d3ca3b4febae2ca21d8903dd237  qtimageformats-everywhere-src-$QT.tar.xz
-3d0de73596e36b2daa7c48d77c4426bb091752856912fba720215f756c560dd0  qtsvg-everywhere-src-$QT.tar.xz
-9d43d409be08b8681a0155a9c65114b69c9a3fc11aef6487bb7fdc5b283c432d  qttools-everywhere-src-$QT.tar.xz
-635a6093e99152243b807de51077485ceadd4786d4acb135b9340b2303035a4a  qttranslations-everywhere-src-$QT.tar.xz
-2226fbde4e2ddd12f8bf4b239c8f38fd706a54e789e63467dfddc77129eca203  qtwayland-everywhere-src-$QT.tar.xz
+b5409dcbe12caf7e27768eac2b5fc8762796cc89b21dc4ab3154e50109f6533c  qt-everywhere-src-$QT.tar.xz
 eb3b5f0c16313d34f208d90c2fa1e588a23283eed63b101edd5422be6165d528  shaderc-$SHADERC.tar.gz
 aa27e4454ce631c5a17924ce0624eac736da19fc6f5a2ab15a6c58da7b36950f  shaderc-glslang-$SHADERC_GLSLANG.tar.gz
 5d866ce34a4b6908e262e5ebfffc0a5e11dd411640b5f24c85a80ad44c0d4697  shaderc-spirv-headers-$SHADERC_SPIRVHEADERS.tar.gz
@@ -59,12 +54,7 @@ curl -L \
 	-O "https://github.com/lz4/lz4/archive/$LZ4.tar.gz" \
 	-O "https://libsdl.org/release/$SDL.tar.gz" \
 	-O "https://github.com/facebook/zstd/releases/download/v$ZSTD/zstd-$ZSTD.tar.gz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtbase-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtimageformats-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtsvg-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttools-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtwayland-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/single/qt-everywhere-src-$QT.tar.xz" \
 	-o "shaderc-$SHADERC.tar.gz" "https://github.com/google/shaderc/archive/refs/tags/v$SHADERC.tar.gz" \
 	-o "shaderc-glslang-$SHADERC_GLSLANG.tar.gz" "https://github.com/KhronosGroup/glslang/archive/$SHADERC_GLSLANG.tar.gz" \
 	-o "shaderc-spirv-headers-$SHADERC_SPIRVHEADERS.tar.gz" "https://github.com/KhronosGroup/SPIRV-Headers/archive/$SHADERC_SPIRVHEADERS.tar.gz" \
@@ -144,10 +134,16 @@ cd ..
 # -qt-doubleconversion avoids a dependency on libdouble-conversion.
 # ICU avoids pulling in a bunch of large libraries, and hopefully we can get away without it.
 # OpenGL is needed to render window decorations in Wayland, apparently.
+
+rm -fr "qt-everywhere-src-$QT"
+tar xf "qt-everywhere-src-$QT.tar.xz"
+cd "qt-everywhere-src-$QT"
+
 echo "Building Qt Base..."
-rm -fr "qtbase-everywhere-src-$QT"
-tar xf "qtbase-everywhere-src-$QT.tar.xz"
-cd "qtbase-everywhere-src-$QT"
+#rm -fr "qtbase-everywhere-src-$QT"
+#tar xf "qtbase-everywhere-src-$QT.tar.xz"
+#cd "qtbase-everywhere-src-$QT"
+cd "qtbase"
 mkdir build
 cd build
 ../configure -prefix "$INSTALLDIR" -release -dbus-linked -gui -widgets -fontconfig -qt-doubleconversion -ssl -openssl-runtime -opengl desktop -qpa xcb,wayland -xkbcommon -xcb -gtk -- -DFEATURE_dbus=ON -DFEATURE_icu=OFF -DFEATURE_printsupport=OFF -DFEATURE_sql=OFF -DFEATURE_system_png=ON -DFEATURE_system_jpeg=ON -DFEATURE_system_zlib=ON -DFEATURE_system_freetype=ON -DFEATURE_system_harfbuzz=ON
@@ -156,9 +152,10 @@ ninja install
 cd ../../
 
 echo "Building Qt SVG..."
-rm -fr "qtsvg-everywhere-src-$QT"
-tar xf "qtsvg-everywhere-src-$QT.tar.xz"
-cd "qtsvg-everywhere-src-$QT"
+#rm -fr "qtsvg-everywhere-src-$QT"
+#tar xf "qtsvg-everywhere-src-$QT.tar.xz"
+#cd "qtsvg-everywhere-src-$QT"
+cd "qtsvg"
 mkdir build
 cd build
 "$INSTALLDIR/bin/qt-configure-module" .. -- -DCMAKE_PREFIX_PATH="$INSTALLDIR"
@@ -167,9 +164,10 @@ ninja install
 cd ../../
 
 echo "Building Qt Image Formats..."
-rm -fr "qtimageformats-everywhere-src-$QT"
-tar xf "qtimageformats-everywhere-src-$QT.tar.xz"
-cd "qtimageformats-everywhere-src-$QT"
+#rm -fr "qtimageformats-everywhere-src-$QT"
+#tar xf "qtimageformats-everywhere-src-$QT.tar.xz"
+#cd "qtimageformats-everywhere-src-$QT"
+cd "qtimageformats"
 mkdir build
 cd build
 "$INSTALLDIR/bin/qt-configure-module" .. -- -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DFEATURE_system_webp=ON
@@ -178,9 +176,10 @@ ninja install
 cd ../../
 
 echo "Building Qt Wayland..."
-rm -fr "qtwayland-everywhere-src-$QT"
-tar xf "qtwayland-everywhere-src-$QT.tar.xz"
-cd "qtwayland-everywhere-src-$QT"
+#rm -fr "qtwayland-everywhere-src-$QT"
+#tar xf "qtwayland-everywhere-src-$QT.tar.xz"
+#cd "qtwayland-everywhere-src-$QT"
+cd "qtwayland"
 mkdir build
 cd build
 "$INSTALLDIR/bin/qt-configure-module" .. -- -DCMAKE_PREFIX_PATH="$INSTALLDIR"
@@ -189,20 +188,20 @@ ninja install
 cd ../../
 
 echo "Installing Qt Tools..."
-rm -fr "qttools-everywhere-src-$QT"
-tar xf "qttools-everywhere-src-$QT.tar.xz"
-cd "qttools-everywhere-src-$QT"
+#rm -fr "qttools-everywhere-src-$QT"
+#tar xf "qttools-everywhere-src-$QT.tar.xz"
+#cd "qttools-everywhere-src-$QT"
+cd "qttools"
 # Force disable clang scanning, it gets very confused.
 patch -u configure.cmake <<EOF
 --- configure.cmake
 +++ configure.cmake
-@@ -14,12 +14,12 @@
- # Presumably because 6.0 ClangConfig.cmake files are not good enough?
- # In any case explicitly request a minimum version of 8.x for now, otherwise
- # building with CMake will fail at compilation time.
+@@ -1,11 +1,11 @@
+
+ #### Tests
+
 -qt_find_package(WrapLibClang 8 PROVIDED_TARGETS WrapLibClang::WrapLibClang)
 +#qt_find_package(WrapLibClang 8 PROVIDED_TARGETS WrapLibClang::WrapLibClang)
- # special case end
 
 -if(TARGET WrapLibClang::WrapLibClang)
 -    set(TEST_libclang "ON" CACHE BOOL "Required libclang version found." FORCE)
@@ -223,15 +222,18 @@ ninja install
 cd ../../
 
 echo "Installing Qt Translations..."
-rm -fr "qttranslations-everywhere-src-$QT"
-tar xf "qttranslations-everywhere-src-$QT.tar.xz"
-cd "qttranslations-everywhere-src-$QT"
+#rm -fr "qttranslations-everywhere-src-$QT"
+#tar xf "qttranslations-everywhere-src-$QT.tar.xz"
+#cd "qttranslations-everywhere-src-$QT"
+cd "qttranslations"
 mkdir build
 cd build
 "$INSTALLDIR/bin/qt-configure-module" .. -- -DCMAKE_PREFIX_PATH="$INSTALLDIR"
 cmake --build . --parallel
 ninja install
 cd ../../
+
+cd ../
 
 echo "Building shaderc..."
 rm -fr "shaderc-$SHADERC"
