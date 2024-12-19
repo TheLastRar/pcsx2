@@ -133,8 +133,7 @@ jobs:
           ADDITIONAL_CMAKE_ARGS: ${{ inputs.cmakeflags }}
         run: |
           cmake -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+            -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_PREFIX_PATH="$HOME/deps" \
             -DCMAKE_C_COMPILER=clang-21 \
             -DCMAKE_CXX_COMPILER=clang++-21 \
