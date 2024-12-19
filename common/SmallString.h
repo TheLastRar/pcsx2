@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdarg>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -177,7 +178,7 @@ public:
 	__fi const char* end_ptr() const { return m_buffer + m_length; }
 
 	// STL adapters
-	__fi void push_back(value_type&& val) { append(val); }
+	__fi void push_back(value_type val) { append(val); }
 
 	// returns a string view for this string
 	std::string_view view() const;
@@ -407,13 +408,13 @@ __fi void SmallStringBase::format(fmt::format_string<T...> fmt, T&&... args)
 	struct fmt::formatter<type> \
 	{ \
 		template <typename ParseContext> \
-		constexpr auto parse(ParseContext& ctx) \
+		constexpr auto parse(ParseContext& ctx) const \
 		{ \
 			return ctx.begin(); \
 		} \
 \
 		template <typename FormatContext> \
-		auto format(const type& str, FormatContext& ctx) \
+		auto format(const type& str, FormatContext& ctx) const \
 		{ \
 			return fmt::format_to(ctx.out(), "{}", str.view()); \
 		} \
