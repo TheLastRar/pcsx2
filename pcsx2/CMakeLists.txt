@@ -30,6 +30,7 @@ else()
 		-ffp-contract=fast
 		-fno-strict-aliasing
 		-Wstrict-aliasing # Allow to track strict aliasing issue.
+		-fsanitize=type
 		-Wno-parentheses
 		-Wno-missing-braces
 		-Wno-unknown-pragmas
