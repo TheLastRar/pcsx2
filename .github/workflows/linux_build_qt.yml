@@ -155,7 +155,7 @@ jobs:
           ccache -p
           ccache -z
           # Build
-          ninja
+          ninja -j 1
           # Save the Cache
           ccache -s
 
