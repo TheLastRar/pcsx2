@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <iostream>
 #include <bit>
+#include "common/Pcsx2Defs.h"
+#include "common/BitUtils.h"
 #include "PS2Float.h"
 #include "Common.h"
 
@@ -381,7 +383,7 @@ std::string PS2Float::ToString()
 	}
 	else
 	{
-		oss << "Ps2Float(" << res << ")";
+		oss << "PS2Float(" << res << ")";
 	}
 
 	return oss.str();
@@ -414,11 +416,11 @@ PS2Float PS2Float::DoAdd(PS2Float other)
 	// Remove from exponent the PS2 Multiplier value.
 	s32 rawExp = selfExponent - roundingMultiplier;
 
-	s32 amount = normalizeAmounts[clz(absMan)];
+	s32 amount = Common::normalizeAmounts[Common::clz(absMan)];
 	rawExp -= amount;
 	absMan <<= amount;
 
-	s32 msbIndex = BitScanReverse8(absMan >> 23);
+	s32 msbIndex = Common::BitScanReverse8(absMan >> 23);
 	rawExp += msbIndex;
 	absMan >>= msbIndex;
 
@@ -490,7 +492,7 @@ PS2Float PS2Float::DoDiv(PS2Float other)
 
 	if (resMantissa > 0)
 	{
-		s32 leadingBitPosition = PS2Float::GetMostSignificantBitPosition(resMantissa);
+		s32 leadingBitPosition = Common::GetMostSignificantBitPosition(resMantissa);
 
 		while (leadingBitPosition != IMPLICIT_LEADING_BIT_POS)
 		{
@@ -758,30 +760,4 @@ bool PS2Float::DetermineSubtractionOperationSign(PS2Float a, PS2Float b)
 	}
 
 	return a.CompareOperand(b) >= 0 ? a.Sign() : !b.Sign();
-}
-
-s32 PS2Float::clz(s32 x)
-{
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-	x |= x >> 8;
-	x |= x >> 16;
-
-	return debruijn32[(u32)x * 0x8c0b2891u >> 26];
-}
-
-s32 PS2Float::BitScanReverse8(s32 b)
-{
-	return msb[b];
-}
-
-s32 PS2Float::GetMostSignificantBitPosition(u32 value)
-{
-	for (s32 i = 31; i >= 0; i--)
-	{
-		if (((value >> i) & 1) != 0)
-			return i;
-	}
-	return -1;
 }
