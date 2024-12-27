@@ -119,16 +119,6 @@ namespace Common
 	{
 		return msb[b];
 	}
-
-	__fi static s32 GetMostSignificantBitPosition(u32 value)
-	{
-		for (s32 i = 31; i >= 0; i--)
-		{
-			if (((value >> i) & 1) != 0)
-				return i;
-		}
-		return -1;
-	}
 } // namespace Common
 
 template <typename T>

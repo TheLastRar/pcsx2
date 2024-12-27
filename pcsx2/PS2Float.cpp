@@ -76,14 +76,18 @@ u64 PS2Float::MulMantissa(u32 a, u32 b)
 // Float Processor
 //****************************************************************
 
+PS2Float::PS2Float(s32 value) { raw = (u32)value; }
+
 PS2Float::PS2Float(u32 value) { raw = value; }
+
+PS2Float::PS2Float(float value) { raw = std::bit_cast<u32>(value); }
 
 PS2Float::PS2Float(bool sign, u8 exponent, u32 mantissa)
 {
 	raw = 0;
 	raw |= (sign ? 1u : 0u) << 31;
 	raw |= (u32)(exponent << 23);
-	raw |= mantissa;
+	raw |= mantissa & 0x7FFFFF;
 }
 
 PS2Float PS2Float::Max()
@@ -285,6 +289,26 @@ PS2Float PS2Float::Rsqrt(PS2Float other)
 	return Div(other.Sqrt());
 }
 
+PS2Float PS2Float::Pow(s32 exponent)
+{
+	PS2Float result = PS2Float::One(); // Start with 1, since any number raised to the power of 0 is 1
+
+	if (exponent != 0)
+	{
+		s32 exp = abs(exponent);
+
+		for (s32 i = 0; i < exp; i++)
+		{
+			result = result.Mul(*this);
+		}
+	}
+
+	if (exponent < 0)
+		return PS2Float::One().Div(result);
+	else
+		return result;
+}
+
 bool PS2Float::IsDenormalized()
 {
 	return Exponent() == 0;
@@ -310,11 +334,6 @@ u32 PS2Float::Abs()
 PS2Float PS2Float::Negate()
 {
 	return PS2Float(raw ^ 0x80000000);
-}
-
-PS2Float PS2Float::RoundTowardsZero()
-{
-	return PS2Float((u32)std::trunc((double)raw));
 }
 
 s32 PS2Float::CompareTo(PS2Float other)
@@ -486,47 +505,24 @@ PS2Float PS2Float::DoDiv(PS2Float other)
 	u32 resMantissa = (u32)(selfMantissa64 / otherMantissa);
 
 	if ((resMantissa & 0x3F) == 0)
-		resMantissa |= ((u64)(otherMantissa)*resMantissa != selfMantissa64) ? 1U : 0;
+		resMantissa |= ((u64)otherMantissa * resMantissa != selfMantissa64) ? 1U : 0;
 
-	resMantissa = (resMantissa + 0x40U) >> 7;
+	FPRoundMode roundingMode = EmuConfig.Cpu.FPUDivFPCR.GetRoundMode();
 
-	if (resMantissa > 0)
-	{
-		s32 leadingBitPosition = Common::GetMostSignificantBitPosition(resMantissa);
+	bool roundNearEven = roundingMode == FPRoundMode::Nearest;
+	u32 roundIncrement = (!roundNearEven) ? ((roundingMode == (sign ? FPRoundMode::NegativeInfinity : FPRoundMode::PositiveInfinity)) ? 0x7FU : 0) : 0x40U;
+	u32 roundBits = resMantissa & 0x7F;
 
-		while (leadingBitPosition != IMPLICIT_LEADING_BIT_POS)
-		{
-			if (leadingBitPosition > IMPLICIT_LEADING_BIT_POS)
-			{
-				resMantissa >>= 1;
+	if (0x80000000 <= resMantissa + roundIncrement)
+		return sign ? Min() : Max();
 
-				s32 exp = resExponent + 1;
+	resMantissa = (resMantissa + roundIncrement) >> 7;
 
-				if (exp > 255)
-					return sign ? Min() : Max();
+	resMantissa &= ~(((roundBits ^ 0x40) == 0 & roundNearEven) ? 1U : 0U);
+	if (resMantissa == 0)
+		resExponent = 0;
 
-				resExponent = exp;
-
-				leadingBitPosition--;
-			}
-			else if (leadingBitPosition < IMPLICIT_LEADING_BIT_POS)
-			{
-				resMantissa <<= 1;
-
-				s32 exp = resExponent - 1;
-
-				if (exp <= 0)
-					return PS2Float(sign, 0, 0);
-
-				resExponent = exp;
-
-				leadingBitPosition++;
-			}
-		}
-	}
-
-	resMantissa &= 0x7FFFFF;
-	return PS2Float(sign, (u8)resExponent, resMantissa).RoundTowardsZero();
+	return PS2Float(sign, (u8)resExponent, resMantissa);
 }
 
 PS2Float PS2Float::SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add)

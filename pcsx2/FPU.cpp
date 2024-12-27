@@ -140,13 +140,21 @@ bool checkDivideByZero(u32& xReg, u32 yDivisorReg, u32 zDividendReg, u32 cFlagsT
 		PS2Float yMatrix = PS2Float(yDivisorReg);
 		PS2Float zMatrix = PS2Float(zDividendReg);
 
-		if (yMatrix.IsZero())
+		// Check Final Fantasy X controls and Klonoa 2 to test this code, they send a bunch of denormals which are often hack-fixed on the game code.
+		if (zMatrix.IsDenormalized() || yMatrix.IsDenormalized())
 		{
-			bool dividendZero = zMatrix.IsZero();
+			_ContVal_ |= 0;
+			xReg = PS2Float::SolveDivisionDenormalizedOperation(zMatrix, yMatrix).raw;
+			return true;
+		}
+
+		if (zMatrix.IsZero())
+		{
+			bool dividendZero = yMatrix.IsZero();
 
 			_ContVal_ |= dividendZero ? cFlagsToSet2 : cFlagsToSet1;
 
-			bool IsSigned = yMatrix.Sign() ^ zMatrix.Sign();
+			bool IsSigned = zMatrix.Sign() ^ yMatrix.Sign();
 
 			if (dividendZero)
 				xReg = IsSigned ? PS2Float::MIN_FLOATING_POINT_VALUE : PS2Float::MAX_FLOATING_POINT_VALUE;

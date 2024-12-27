@@ -43,7 +43,11 @@ public:
     constexpr u8 Exponent() const { return (raw >> 23) & 0xFF; }
     constexpr bool Sign() const { return ((raw >> 31) & 1) != 0; }
 
+    PS2Float(s32 value);
+
     PS2Float(u32 value);
+
+    PS2Float(float value);
 
     PS2Float(bool sign, u8 exponent, u32 mantissa);
 
@@ -54,6 +58,16 @@ public:
     static PS2Float One();
 
     static PS2Float MinOne();
+
+    static PS2Float SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add);
+
+	static PS2Float SolveAbnormalMultiplicationOrDivisionOperation(PS2Float a, PS2Float b, bool mul);
+
+	static PS2Float SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add);
+
+	static PS2Float SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b);
+
+	static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
 
     PS2Float Add(PS2Float addend);
 
@@ -67,6 +81,8 @@ public:
 
     PS2Float Rsqrt(PS2Float other);
 
+    PS2Float Pow(s32 exponent);
+
     bool IsDenormalized();
 
     bool IsAbnormal();
@@ -76,8 +92,6 @@ public:
     u32 Abs();
 
     PS2Float Negate();
-
-    PS2Float RoundTowardsZero();
 
     s32 CompareTo(PS2Float other);
 
@@ -96,16 +110,6 @@ private:
     PS2Float DoMul(PS2Float other);
 
     PS2Float DoDiv(PS2Float other);
-
-    static PS2Float SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add);
-
-    static PS2Float SolveAbnormalMultiplicationOrDivisionOperation(PS2Float a, PS2Float b, bool mul);
-
-    static PS2Float SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add);
-
-    static PS2Float SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b);
-
-    static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
 
     static bool DetermineMultiplicationDivisionOperationSign(PS2Float a, PS2Float b);
 
