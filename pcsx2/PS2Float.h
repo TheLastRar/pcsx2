@@ -31,11 +31,14 @@ public:
     static constexpr u32 SIGNMASK = 0x80000000;
     static constexpr u32 MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
     static constexpr u32 MIN_FLOATING_POINT_VALUE = 0xFFFFFFFF;
-    static constexpr u32 POSITIVE_INFINITY_VALUE = 0x7F800000;
-    static constexpr u32 NEGATIVE_INFINITY_VALUE = 0xFF800000;
     static constexpr u32 ONE = 0x3F800000;
     static constexpr u32 MIN_ONE = 0xBF800000;
     static constexpr int IMPLICIT_LEADING_BIT_POS = 23;
+
+    bool dz = false;
+    bool iv = false;
+    bool of = false;
+    bool uf = false;
 
     u32 raw;
 
@@ -59,15 +62,15 @@ public:
 
     static PS2Float MinOne();
 
-    static PS2Float SolveAbnormalAdditionOrSubtractionOperation(PS2Float a, PS2Float b, bool add);
+    static PS2Float SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add);
 
-	static PS2Float SolveAbnormalMultiplicationOrDivisionOperation(PS2Float a, PS2Float b, bool mul);
+    static PS2Float SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b);
 
-	static PS2Float SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add);
+    static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
 
-	static PS2Float SolveMultiplicationDenormalizedOperation(PS2Float a, PS2Float b);
+    static u32 Itof(s32 complement, s32 f1);
 
-	static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
+    static s32 Ftoi(s32 complement, u32 f1);
 
     PS2Float Add(PS2Float addend);
 
@@ -85,17 +88,15 @@ public:
 
     bool IsDenormalized();
 
-    bool IsAbnormal();
-
     bool IsZero();
 
     u32 Abs();
 
     PS2Float Negate();
 
-    s32 CompareTo(PS2Float other);
+    s32 CompareToSign(PS2Float other);
 
-    s32 CompareOperand(PS2Float other);
+    s32 CompareTo(PS2Float other);
 
     double ToDouble();
 
@@ -108,8 +109,6 @@ private:
     PS2Float DoAdd(PS2Float other);
 
     PS2Float DoMul(PS2Float other);
-
-    PS2Float DoDiv(PS2Float other);
 
     static bool DetermineMultiplicationDivisionOperationSign(PS2Float a, PS2Float b);
 

@@ -1609,49 +1609,42 @@ static __fi s32 float_to_int(float value)
 	return value;
 }
 
-static __fi s32 double_to_int(double value)
-{
-	if (value >= 2147483647.0)
-		return 2147483647LL;
-	if (value <= -2147483648.0)
-		return -2147483648LL;
-	return value;
-}
-
-static __fi void _vuFTOI0(VURegs*  VU) {
+static __fi void _vuFTOI0(VURegs* VU) {
 	if (_Ft_ == 0) return;
 
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		if (_X)
-			VU->VF[_Ft_].SL[0] = double_to_int(PS2Float(VU->VF[_Fs_].i.x).ToDouble());
-		if (_Y)
-			VU->VF[_Ft_].SL[1] = double_to_int(PS2Float(VU->VF[_Fs_].i.y).ToDouble());
-		if (_Z)
-			VU->VF[_Ft_].SL[2] = double_to_int(PS2Float(VU->VF[_Fs_].i.z).ToDouble());
-		if (_W)
-			VU->VF[_Ft_].SL[3] = double_to_int(PS2Float(VU->VF[_Fs_].i.w).ToDouble());
+		if (_X) VU->VF[_Ft_].SL[0] = PS2Float::Ftoi(0, VU->VF[_Fs_].i.x);
+		if (_Y) VU->VF[_Ft_].SL[1] = PS2Float::Ftoi(0, VU->VF[_Fs_].i.y);
+		if (_Z) VU->VF[_Ft_].SL[2] = PS2Float::Ftoi(0, VU->VF[_Fs_].i.z);
+		if (_W) VU->VF[_Ft_].SL[3] = PS2Float::Ftoi(0, VU->VF[_Fs_].i.w);
 	}
 	else
 	{
-		if (_X)
-			VU->VF[_Ft_].SL[0] = float_to_int(vuDouble(VU->VF[_Fs_].i.x));
-		if (_Y)
-			VU->VF[_Ft_].SL[1] = float_to_int(vuDouble(VU->VF[_Fs_].i.y));
-		if (_Z)
-			VU->VF[_Ft_].SL[2] = float_to_int(vuDouble(VU->VF[_Fs_].i.z));
-		if (_W)
-			VU->VF[_Ft_].SL[3] = float_to_int(vuDouble(VU->VF[_Fs_].i.w));
+		if (_X) VU->VF[_Ft_].SL[0] = float_to_int(vuDouble(VU->VF[_Fs_].i.x));
+		if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(vuDouble(VU->VF[_Fs_].i.y));
+		if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(vuDouble(VU->VF[_Fs_].i.z));
+		if (_W) VU->VF[_Ft_].SL[3] = float_to_int(vuDouble(VU->VF[_Fs_].i.w));
 	}
 }
 
-static __fi void _vuFTOI4(VURegs*  VU) {
+static __fi void _vuFTOI4(VURegs* VU) {
 	if (_Ft_ == 0) return;
 
-	if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.x)));
-	if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.y)));
-	if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.z)));
-	if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.w)));
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = PS2Float::Ftoi(4, VU->VF[_Fs_].i.x);
+		if (_Y) VU->VF[_Ft_].SL[1] = PS2Float::Ftoi(4, VU->VF[_Fs_].i.y);
+		if (_Z) VU->VF[_Ft_].SL[2] = PS2Float::Ftoi(4, VU->VF[_Fs_].i.z);
+		if (_W) VU->VF[_Ft_].SL[3] = PS2Float::Ftoi(4, VU->VF[_Fs_].i.w);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.x)));
+		if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.y)));
+		if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.z)));
+		if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int4(vuDouble(VU->VF[_Fs_].i.w)));
+	}
 }
 
 static __fi void _vuFTOI12(VURegs* VU)
@@ -1659,10 +1652,20 @@ static __fi void _vuFTOI12(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.x)));
-	if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.y)));
-	if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.z)));
-	if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.w)));
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = PS2Float::Ftoi(12, VU->VF[_Fs_].i.x);
+		if (_Y) VU->VF[_Ft_].SL[1] = PS2Float::Ftoi(12, VU->VF[_Fs_].i.y);
+		if (_Z) VU->VF[_Ft_].SL[2] = PS2Float::Ftoi(12, VU->VF[_Fs_].i.z);
+		if (_W) VU->VF[_Ft_].SL[3] = PS2Float::Ftoi(12, VU->VF[_Fs_].i.w);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.x)));
+		if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.y)));
+		if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.z)));
+		if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int12(vuDouble(VU->VF[_Fs_].i.w)));
+	}
 }
 
 static __fi void _vuFTOI15(VURegs* VU)
@@ -1670,10 +1673,20 @@ static __fi void _vuFTOI15(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.x)));
-	if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.y)));
-	if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.z)));
-	if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.w)));
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = PS2Float::Ftoi(15, VU->VF[_Fs_].i.x);
+		if (_Y) VU->VF[_Ft_].SL[1] = PS2Float::Ftoi(15, VU->VF[_Fs_].i.y);
+		if (_Z) VU->VF[_Ft_].SL[2] = PS2Float::Ftoi(15, VU->VF[_Fs_].i.z);
+		if (_W) VU->VF[_Ft_].SL[3] = PS2Float::Ftoi(15, VU->VF[_Fs_].i.w);
+    }
+	else
+	{
+		if (_X) VU->VF[_Ft_].SL[0] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.x)));
+		if (_Y) VU->VF[_Ft_].SL[1] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.y)));
+		if (_Z) VU->VF[_Ft_].SL[2] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.z)));
+		if (_W) VU->VF[_Ft_].SL[3] = float_to_int(float_to_int15(vuDouble(VU->VF[_Fs_].i.w)));
+	}
 }
 
 static __fi void _vuITOF0(VURegs* VU)
@@ -1681,10 +1694,20 @@ static __fi void _vuITOF0(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].f.x = (float)VU->VF[_Fs_].SL[0];
-	if (_Y) VU->VF[_Ft_].f.y = (float)VU->VF[_Fs_].SL[1];
-	if (_Z) VU->VF[_Ft_].f.z = (float)VU->VF[_Fs_].SL[2];
-	if (_W) VU->VF[_Ft_].f.w = (float)VU->VF[_Fs_].SL[3];
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(0, VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(0, VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(0, VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(0, VU->VF[_Fs_].SL[3]);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].f.x = (float)VU->VF[_Fs_].SL[0];
+		if (_Y) VU->VF[_Ft_].f.y = (float)VU->VF[_Fs_].SL[1];
+		if (_Z) VU->VF[_Ft_].f.z = (float)VU->VF[_Fs_].SL[2];
+		if (_W) VU->VF[_Ft_].f.w = (float)VU->VF[_Fs_].SL[3];
+	}
 }
 
 static __fi void _vuITOF4(VURegs* VU)
@@ -1692,10 +1715,20 @@ static __fi void _vuITOF4(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].f.x = int4_to_float(VU->VF[_Fs_].SL[0]);
-	if (_Y) VU->VF[_Ft_].f.y = int4_to_float(VU->VF[_Fs_].SL[1]);
-	if (_Z) VU->VF[_Ft_].f.z = int4_to_float(VU->VF[_Fs_].SL[2]);
-	if (_W) VU->VF[_Ft_].f.w = int4_to_float(VU->VF[_Fs_].SL[3]);
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(4, VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(4, VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(4, VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(4, VU->VF[_Fs_].SL[3]);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].f.x = int4_to_float(VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].f.y = int4_to_float(VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].f.z = int4_to_float(VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].f.w = int4_to_float(VU->VF[_Fs_].SL[3]);
+	}
 }
 
 static __fi void _vuITOF12(VURegs* VU)
@@ -1703,10 +1736,20 @@ static __fi void _vuITOF12(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].f.x = int12_to_float(VU->VF[_Fs_].SL[0]);
-	if (_Y) VU->VF[_Ft_].f.y = int12_to_float(VU->VF[_Fs_].SL[1]);
-	if (_Z) VU->VF[_Ft_].f.z = int12_to_float(VU->VF[_Fs_].SL[2]);
-	if (_W) VU->VF[_Ft_].f.w = int12_to_float(VU->VF[_Fs_].SL[3]);
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(12, VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(12, VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(12, VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(12, VU->VF[_Fs_].SL[3]);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].f.x = int12_to_float(VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].f.y = int12_to_float(VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].f.z = int12_to_float(VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].f.w = int12_to_float(VU->VF[_Fs_].SL[3]);
+	}
 }
 
 static __fi void _vuITOF15(VURegs* VU)
@@ -1714,10 +1757,20 @@ static __fi void _vuITOF15(VURegs* VU)
 	if (_Ft_ == 0)
 		return;
 
-	if (_X) VU->VF[_Ft_].f.x = int15_to_float(VU->VF[_Fs_].SL[0]);
-	if (_Y) VU->VF[_Ft_].f.y = int15_to_float(VU->VF[_Fs_].SL[1]);
-	if (_Z) VU->VF[_Ft_].f.z = int15_to_float(VU->VF[_Fs_].SL[2]);
-	if (_W) VU->VF[_Ft_].f.w = int15_to_float(VU->VF[_Fs_].SL[3]);
+	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
+	{
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(15, VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(15, VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(15, VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(15, VU->VF[_Fs_].SL[3]);
+	}
+	else
+	{
+		if (_X) VU->VF[_Ft_].f.x = int15_to_float(VU->VF[_Fs_].SL[0]);
+		if (_Y) VU->VF[_Ft_].f.y = int15_to_float(VU->VF[_Fs_].SL[1]);
+		if (_Z) VU->VF[_Ft_].f.z = int15_to_float(VU->VF[_Fs_].SL[2]);
+		if (_W) VU->VF[_Ft_].f.w = int15_to_float(VU->VF[_Fs_].SL[3]);
+	}
 }
 
 static __fi void _vuCLIP(VURegs* VU)

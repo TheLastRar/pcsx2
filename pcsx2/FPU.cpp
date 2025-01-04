@@ -252,15 +252,6 @@ static __fi u32 fpuAccurateDiv(u32 a, u32 b)
 	return std::bit_cast<u32>(fpuDouble(a) / fpuDouble(b));
 }
 
-static __fi s32 double_to_int(double value)
-{
-	if (value >= 2147483647.0)
-		return 2147483647LL;
-	if (value <= -2147483648.0)
-		return -2147483648LL;
-	return value;
-}
-
 static __fi void C_cond_S(uint8_t mode)
 {
 	switch (mode)
@@ -268,7 +259,7 @@ static __fi void C_cond_S(uint8_t mode)
 		case 0: // ==
 			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
 			{
-				_ContVal_ = (PS2Float(_FsValUl_).CompareTo(PS2Float(_FtValUl_)) == 0) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC); 
+				_ContVal_ = (PS2Float(_FsValUl_).CompareToSign(PS2Float(_FtValUl_)) == 0) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC); 
 			}
 			else
 			{
@@ -278,7 +269,7 @@ static __fi void C_cond_S(uint8_t mode)
 		case 1: // <=
 			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
 			{
-				int32_t cmpResult = PS2Float(_FsValUl_).CompareTo(PS2Float(_FtValUl_));
+				int32_t cmpResult = PS2Float(_FsValUl_).CompareToSign(PS2Float(_FtValUl_));
 				_ContVal_ = (cmpResult == 0 || cmpResult == -1) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
 			}
 			else
@@ -289,7 +280,7 @@ static __fi void C_cond_S(uint8_t mode)
 		case 2: // <
 			if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
 			{
-				_ContVal_ = (PS2Float(_FsValUl_).CompareTo(PS2Float(_FtValUl_)) == -1) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
+				_ContVal_ = (PS2Float(_FsValUl_).CompareToSign(PS2Float(_FtValUl_)) == -1) ? (_ContVal_ | FPUflagC) : (_ContVal_ & ~FPUflagC);
 			}
 			else
 			{
@@ -365,14 +356,21 @@ void CTC1() {
 }
 
 void CVT_S() {
-	_FdValf_ = (float)_FsValSl_;
-	_FdValf_ = fpuDouble( _FdValUl_ );
+	if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
+	{
+		_FdValUl_ = PS2Float::Itof(0, _FsValSl_);
+	}
+	else
+	{
+		_FdValf_ = (float)_FsValSl_;
+		_FdValf_ = fpuDouble(_FdValUl_);
+	}
 }
 
 void CVT_W() {
 	if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
 	{
-		_FdValSl_ = double_to_int(PS2Float(_FsValUl_).ToDouble());
+		_FdValSl_ = PS2Float::Ftoi(0, _FsValUl_);
 	}
 	else
 	{

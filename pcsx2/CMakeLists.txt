@@ -94,6 +94,7 @@ set(pcsx2Sources
 	MTVU.cpp
 	Patch.cpp
 	PS2Float.cpp
+	FpgaDiv.cpp
 	Pcsx2Config.cpp
 	PerformanceMetrics.cpp
 	PrecompiledHeader.cpp
@@ -175,6 +176,7 @@ set(pcsx2Headers
 	Memory.h
 	MemoryTypes.h
 	PS2Float.h
+	FpgaDiv.h
 	Patch.h
 	PerformanceMetrics.h
 	PrecompiledHeader.h
