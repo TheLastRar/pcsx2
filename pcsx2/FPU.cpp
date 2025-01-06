@@ -358,7 +358,7 @@ void CTC1() {
 void CVT_S() {
 	if (CHECK_FPU_SOFT_ADDSUB || CHECK_FPU_SOFT_MULDIV || CHECK_FPU_SOFT_SQRT)
 	{
-		_FdValUl_ = PS2Float::Itof(0, _FsValSl_);
+		_FdValUl_ = PS2Float::Itof(0, _FsValSl_).raw;
 	}
 	else
 	{
