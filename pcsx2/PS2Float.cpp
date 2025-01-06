@@ -87,7 +87,7 @@ PS2Float::PS2Float(bool sign, u8 exponent, u32 mantissa)
 {
 	raw = 0;
 	raw |= (sign ? 1u : 0u) << 31;
-	raw |= (u32)(exponent << 23);
+	raw |= (u32)(exponent << MANTISSA_BITS);
 	raw |= mantissa & 0x7FFFFF;
 }
 
@@ -371,7 +371,7 @@ PS2Float PS2Float::DoAdd(PS2Float other)
 	rawExp -= amount;
 	absMan <<= amount;
 
-	s32 msbIndex = Common::BitScanReverse8(absMan >> 23);
+	s32 msbIndex = Common::BitScanReverse8(absMan >> MANTISSA_BITS);
 	rawExp += msbIndex;
 	absMan >>= msbIndex;
 
@@ -388,7 +388,7 @@ PS2Float PS2Float::DoAdd(PS2Float other)
 		return result;
 	}
 
-	return PS2Float(((u32)man & SIGNMASK) | (u32)rawExp << 23 | ((u32)absMan & 0x7FFFFF));
+	return PS2Float(((u32)man & SIGNMASK) | (u32)rawExp << MANTISSA_BITS | ((u32)absMan & 0x7FFFFF));
 }
 
 PS2Float PS2Float::DoMul(PS2Float other)
@@ -400,7 +400,7 @@ PS2Float PS2Float::DoMul(PS2Float other)
 	u32 sign = (raw ^ other.raw) & SIGNMASK;
 
 	s32 resExponent = selfExponent + otherExponent - 127;
-	u32 resMantissa = (u32)(MulMantissa(selfMantissa, otherMantissa) >> 23);
+	u32 resMantissa = (u32)(MulMantissa(selfMantissa, otherMantissa) >> MANTISSA_BITS);
 
 	if (resMantissa > 0xFFFFFF)
 	{
@@ -421,7 +421,7 @@ PS2Float PS2Float::DoMul(PS2Float other)
 		return result;
 	}
 
-	return PS2Float(sign | (u32)(resExponent << 23) | (resMantissa & 0x7FFFFF));
+	return PS2Float(sign | (u32)(resExponent << MANTISSA_BITS) | (resMantissa & 0x7FFFFF));
 }
 
 PS2Float PS2Float::SolveAddSubDenormalizedOperation(PS2Float a, PS2Float b, bool add)
@@ -461,41 +461,49 @@ PS2Float PS2Float::SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b)
 	return PS2Float(0);
 }
 
-u32 PS2Float::Itof(s32 complement, s32 f1)
+PS2Float PS2Float::Itof(s32 complement, s32 f1)
 {
-	u8 specialCondition;
-	u32 result;
-	s32 subExponent, newExponent, floatResult;
+	if (f1 == 0)
+		return PS2Float(0);
 
-	if (f1 != 0)
+	s32 resExponent;
+
+	if (f1 == -2147483648)
 	{
-		specialCondition = 0;
-		subExponent = 158;
-		if (f1 < 0)
-		{
-			f1 = ~(f1 - 1);
-			specialCondition = 1;
-		}
-		while (f1 >= 0)
-		{
-			f1 *= 2;
-			--subExponent;
-		}
-		floatResult = (2 * f1) >> 9;
-		newExponent = subExponent - complement;
-		if (newExponent >= 0)
-		{
-			floatResult = (((u8)newExponent << 7) | ((floatResult >> 16) & 0x807F)) << 16 | (floatResult & 0xFFFF);
-			floatResult = (((specialCondition << 7) | ((floatResult >> 24) & 0x7F)) << 24) | (floatResult & 0xFFFFFF);
-			result = (u32)floatResult;
-		}
-		else
-			result = 0;
+		// special case
+		resExponent = 158 - complement;
+
+		if (resExponent >= 0)
+			return PS2Float(true, (u8)resExponent, 0);
+
+		return PS2Float(0);
+	}
+
+	bool negative = f1 < 0;
+	s32 u = std::abs(f1);
+
+	s32 shifts;
+
+	s32 lzcnt = Common::CountLeadingSignBits(u);
+	if (lzcnt < 8)
+	{
+		s32 count = 8 - lzcnt;
+		u >>= count;
+		shifts = -count;
 	}
 	else
-		result = 0;
+	{
+		s32 count = lzcnt - 8;
+		u <<= count;
+		shifts = count;
+	}
 
-	return result;
+	resExponent = BIAS + MANTISSA_BITS - shifts - complement;
+
+	if (resExponent >= 0)
+		return PS2Float(negative, (u8)resExponent, (u32)u);
+
+	return PS2Float(0);
 }
 
 s32 PS2Float::Ftoi(s32 complement, u32 f1)
@@ -507,7 +515,7 @@ s32 PS2Float::Ftoi(s32 complement, u32 f1)
 		result = 0;
 	else
 	{
-		complement = (s32)(f1 >> 23 & 0xFF) + complement;
+		complement = (s32)(f1 >> MANTISSA_BITS & 0xFF) + complement;
 		f1 &= 0x7FFFFF;
 		f1 |= 0x800000;
 		if (complement < 158)

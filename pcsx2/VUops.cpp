@@ -1696,10 +1696,10 @@ static __fi void _vuITOF0(VURegs* VU)
 
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(0, VU->VF[_Fs_].SL[0]);
-		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(0, VU->VF[_Fs_].SL[1]);
-		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(0, VU->VF[_Fs_].SL[2]);
-		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(0, VU->VF[_Fs_].SL[3]);
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(0, VU->VF[_Fs_].SL[0]).raw;
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(0, VU->VF[_Fs_].SL[1]).raw;
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(0, VU->VF[_Fs_].SL[2]).raw;
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(0, VU->VF[_Fs_].SL[3]).raw;
 	}
 	else
 	{
@@ -1717,10 +1717,10 @@ static __fi void _vuITOF4(VURegs* VU)
 
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(4, VU->VF[_Fs_].SL[0]);
-		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(4, VU->VF[_Fs_].SL[1]);
-		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(4, VU->VF[_Fs_].SL[2]);
-		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(4, VU->VF[_Fs_].SL[3]);
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(4, VU->VF[_Fs_].SL[0]).raw;
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(4, VU->VF[_Fs_].SL[1]).raw;
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(4, VU->VF[_Fs_].SL[2]).raw;
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(4, VU->VF[_Fs_].SL[3]).raw;
 	}
 	else
 	{
@@ -1738,10 +1738,10 @@ static __fi void _vuITOF12(VURegs* VU)
 
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(12, VU->VF[_Fs_].SL[0]);
-		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(12, VU->VF[_Fs_].SL[1]);
-		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(12, VU->VF[_Fs_].SL[2]);
-		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(12, VU->VF[_Fs_].SL[3]);
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(12, VU->VF[_Fs_].SL[0]).raw;
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(12, VU->VF[_Fs_].SL[1]).raw;
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(12, VU->VF[_Fs_].SL[2]).raw;
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(12, VU->VF[_Fs_].SL[3]).raw;
 	}
 	else
 	{
@@ -1759,10 +1759,10 @@ static __fi void _vuITOF15(VURegs* VU)
 
 	if (CHECK_VU_SOFT_ADDSUB((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_MULDIV((VU == &VU1) ? 1 : 0) || CHECK_VU_SOFT_SQRT((VU == &VU1) ? 1 : 0))
 	{
-		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(15, VU->VF[_Fs_].SL[0]);
-		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(15, VU->VF[_Fs_].SL[1]);
-		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(15, VU->VF[_Fs_].SL[2]);
-		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(15, VU->VF[_Fs_].SL[3]);
+		if (_X) VU->VF[_Ft_].i.x = PS2Float::Itof(15, VU->VF[_Fs_].SL[0]).raw;
+		if (_Y) VU->VF[_Ft_].i.y = PS2Float::Itof(15, VU->VF[_Fs_].SL[1]).raw;
+		if (_Z) VU->VF[_Ft_].i.z = PS2Float::Itof(15, VU->VF[_Fs_].SL[2]).raw;
+		if (_W) VU->VF[_Ft_].i.w = PS2Float::Itof(15, VU->VF[_Fs_].SL[3]).raw;
 	}
 	else
 	{

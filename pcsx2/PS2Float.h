@@ -28,12 +28,12 @@ class PS2Float
 public:
     
     static constexpr u8 BIAS = 127;
+    static constexpr u8 MANTISSA_BITS = 23;
     static constexpr u32 SIGNMASK = 0x80000000;
     static constexpr u32 MAX_FLOATING_POINT_VALUE = 0x7FFFFFFF;
     static constexpr u32 MIN_FLOATING_POINT_VALUE = 0xFFFFFFFF;
     static constexpr u32 ONE = 0x3F800000;
     static constexpr u32 MIN_ONE = 0xBF800000;
-    static constexpr int IMPLICIT_LEADING_BIT_POS = 23;
 
     bool dz = false;
     bool iv = false;
@@ -68,7 +68,7 @@ public:
 
     static PS2Float SolveDivisionDenormalizedOperation(PS2Float a, PS2Float b);
 
-    static u32 Itof(s32 complement, s32 f1);
+    static PS2Float Itof(s32 complement, s32 f1);
 
     static s32 Ftoi(s32 complement, u32 f1);
 
