@@ -34,13 +34,23 @@ namespace MTGS
 {
 	struct BufferedData
 	{
-		u128 m_Ring[RingBufferSize];
+		u128* m_Ring;
 		u8 Regs[Ps2MemSize::GSregs];
+
+		BufferedData()
+		{
+			m_Ring = new u128[RingBufferSize];
+		}
 
 		u128& operator[](uint idx)
 		{
 			pxAssert(idx < RingBufferSize);
 			return m_Ring[idx];
+		}
+
+		~BufferedData()
+		{
+			delete m_Ring;
 		}
 	};
 
