@@ -81,12 +81,14 @@ bool SaveStateBase::mtvuFreeze()
 
 VU_Thread::VU_Thread()
 {
+	buffer = new u32[buffer_size];
 	Reset();
 }
 
 VU_Thread::~VU_Thread()
 {
 	Close();
+	delete buffer;
 }
 
 void VU_Thread::Open()
