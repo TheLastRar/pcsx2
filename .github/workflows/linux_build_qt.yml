@@ -154,7 +154,8 @@ jobs:
           # Build
           ninja
           # Save the Cache
-          ccache -s
+          ccache --version
+          ccache -v -s
 
       - name: Run Tests
         working-directory: ./build
