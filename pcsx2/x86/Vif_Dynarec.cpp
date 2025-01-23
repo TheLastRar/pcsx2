@@ -254,11 +254,28 @@ void VifUnpackSSE_Dynarec::CompileRoutine()
 
 	pxAssume(vCL == 0);
 
+	// Need a zero register for V2_32/V3 unpacks.
+	bool needZeroReg = (upkNum >= 8 && upkNum <= 10) || upkNum == 4;
+
+#ifdef _WIN32
+	// Backup non-volatile registers
+	if (needZeroReg)
+	{
+		xSUB(rsp, 8 + 16 * 3);
+		xMOVAPS(ptr128[rsp + 32], zeroReg); // xmm15
+	}
+	else
+		xSUB(rsp, 8 + 16 * 2);
+
+	xMOVAPS(ptr128[rsp], xmmRow); // xmm6
+	xMOVAPS(ptr128[rsp + 16], xmmTemp); // and in doMaskWrite(), xmm7
+#endif
+
 	// Value passed determines # of col regs we need to load
 	SetMasks(isFill ? blockSize : cycleSize);
 
-	// Need a zero register for V2_32/V3 unpacks.
-	if ((upkNum >= 8 && upkNum <= 10) || upkNum == 4)
+	
+	if (needZeroReg)
 		xXOR.PS(zeroReg, zeroReg);
 
 	while (vNum)
@@ -306,6 +323,19 @@ void VifUnpackSSE_Dynarec::CompileRoutine()
 
 	if (doMode >= 2)
 		writeBackRow();
+
+#ifdef _WIN32
+	// Restore non-volatile registers
+	xMOVAPS(xmmRow, ptr128[rsp]);
+	xMOVAPS(xmmTemp, ptr128[rsp + 16]);
+	if (needZeroReg)
+	{
+		xMOVAPS(zeroReg, ptr128[rsp + 32]);
+		xADD(rsp, 8 + 16 * 3);
+	}
+	else
+		xADD(rsp, 8 + 16 * 2);
+#endif
 
 	xRET();
 }
