@@ -1926,34 +1926,71 @@ void recompileNextInstruction(bool delayslot, bool swapped_delay_slot)
 // This function is called from the recompiler prior to starting execution of *every* recompiled block.
 // Calling of this function can be enabled or disabled through the use of EmuConfig.Recompiler.PreBlockChecks
 #ifdef TRACE_BLOCKS
+#include "Counters.h"
 static void PreBlockCheck(u32 blockpc)
 {
-#if 0
+#if 1
 	static FILE* fp = nullptr;
 	static bool fp_opened = false;
+	static uint startFrameCount = 0;
+
+	if (g_FrameCount == 0 && cpuRegs.cycle == 0)
+		fp_opened = false;
 	if (!fp_opened && cpuRegs.cycle >= 0)
 	{
-		fp = std::fopen("C:\\Dumps\\comp\\reglog.txt", "wb");
+		//fp = std::fopen("C:\\Dumps\\comp\\reglog.txt", "wb");
+		fp = std::fopen("\\\\.\\pipe\\PCSX2_EE_Trace", "wb");
 		fp_opened = true;
+		if (fp)
+			std::fread(&startFrameCount, sizeof(startFrameCount), 1, fp);
 	}
 	if (fp)
 	{
-		u32 hash = crc32(0, (Bytef*)&cpuRegs, offsetof(cpuRegisters, pc));
-		u32 hashf = crc32(0, (Bytef*)&fpuRegs, sizeof(fpuRegisters));
-		u32 hashi = crc32(0, (Bytef*)&VU0, offsetof(VURegs, idx));
+		if (g_FrameCount < startFrameCount)
+			return;
 
-#if 1
+		const u32 hash = crc32(0, (Bytef*)&cpuRegs, offsetof(cpuRegisters, pc));
+		const u32 hashf = crc32(0, (Bytef*)&fpuRegs, sizeof(fpuRegisters));
+		const u32 hashi = crc32(0, (Bytef*)&VU0, offsetof(VURegs, idx));
+		const u32 data[] = {cpuRegs.pc, hash, hashf, hashi, //4
+							cpuRegs.cycle, cpuRegs.lastCOP0Cycle, cpuRegs.lastTestTIMRCycle, cpuRegs.lastEventCycle, cpuRegs.nextEventCycle, cpuRegs.nextEventCycleSrc}; //6
+
+		u8 buf[offsetof(cpuRegisters, pc) + sizeof(fpuRegisters) + (offsetof(VURegs, micro_statusflags) + sizeof(VU0.micro_statusflags))];
+
+		std::memcpy(buf, &cpuRegs, offsetof(cpuRegisters, pc));
+		std::memcpy(buf + offsetof(cpuRegisters, pc), &fpuRegs, sizeof(fpuRegisters));
+		std::memcpy(buf + offsetof(cpuRegisters, pc) + sizeof(fpuRegisters), &VU0, offsetof(VURegs, micro_statusflags) + sizeof(VU0.micro_statusflags));
+
+		std::fwrite(data, 4, 10, fp);
+		std::fwrite(buf, sizeof(buf), 1, fp);
+		//std::fwrite(&cpuRegs, offsetof(cpuRegisters, pc), 1, fp);
+		//std::fwrite(&fpuRegs, sizeof(fpuRegisters), 1, fp);
+		//std::fwrite(&VU0, offsetof(VURegs, micro_statusflags) + sizeof(VU0.micro_statusflags), 1, fp);
+		//std::fflush(fp);
+
+		return;
+#if 0
+
 		std::fprintf(fp, "%08X (%u; %08X; %08X; %08X):", cpuRegs.pc, cpuRegs.cycle, hash, hashf, hashi);
+		// GPR + HI + LO
 		for (int i = 0; i < 34; i++)
 		{
 			std::fprintf(fp, " %s: %08X%08X%08X%08X", R3000A::disRNameGPR[i], cpuRegs.GPR.r[i].UL[3], cpuRegs.GPR.r[i].UL[2], cpuRegs.GPR.r[i].UL[1], cpuRegs.GPR.r[i].UL[0]);
+		}
+		
+		// COP0
+		//std::fprintf(fp, "\nCP0 (%08X; %08X; %08X; %08X; %08X):", cpuRegs.lastCOP0Cycle, cpuRegs.lastMFC09Cycle, cpuRegs.lastMTC09Cycle, cpuRegs.lastTestTIMRCycle, cpuRegs.lastEventCycle);
+		std::fprintf(fp, "\nCP0 (%08X; %08X; %08X; %08X; %08X):", cpuRegs.lastCOP0Cycle, cpuRegs.lastTestTIMRCycle, cpuRegs.lastEventCycle, cpuRegs.nextEventCycle, cpuRegs.nextEventCycleSrc);
+		for (int i = 0; i < 32; i++)
+		{
+			std::fprintf(fp, " %s: %08X", R3000A::disRNameCP0[i], cpuRegs.CP0.r[i]);
 		}
 #if 1
 		std::fprintf(fp, "\nFPR: CR: %08X ACC: %08X", fpuRegs.fprc[31], fpuRegs.ACC.UL);
 		for (int i = 0; i < 32; i++)
 			std::fprintf(fp, " %08X", fpuRegs.fpr[i].UL);
 #endif
-#if 1
+#if 0
 		std::fprintf(fp, "\nVF: ");
 		for (int i = 0; i < 32; i++)
 			std::fprintf(fp, " %u: %08X %08X %08X %08X", i, VU0.VF[i].UL[0], VU0.VF[i].UL[1], VU0.VF[i].UL[2], VU0.VF[i].UL[3]);
@@ -1967,7 +2004,7 @@ static void PreBlockCheck(u32 blockpc)
 #endif
 		std::fprintf(fp, "\n");
 #else
-		std::fprintf(fp, "%08X (%u): %08X %08X %08X\n", cpuRegs.pc, cpuRegs.cycle, hash, hashf, hashi);
+		//std::fprintf(fp, "%08X (%u): %08X %08X %08X\n", cpuRegs.pc, cpuRegs.cycle, hash, hashf, hashi);
 #endif
 		// std::fflush(fp);
 	}
