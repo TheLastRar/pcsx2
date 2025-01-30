@@ -20,7 +20,7 @@ LIBPNG=1.6.45
 LIBWEBP=1.5.0
 LZ4=b8fd2d15309dd4e605070bd4486e26b6ef814e29
 SDL=SDL2-2.30.12
-QT=6.8.2
+QT=6.9.0-beta2
 ZSTD=1.5.7
 
 SHADERC=2024.1
@@ -39,12 +39,12 @@ fd6f417fe9e3a071cf1424a5152d926a34c4a3c5070745470be6cf12a404ed79  $LIBBACKTRACE.
 0728800155f3ed0a0c87e03addbd30ecbe374f7b080678bbca1506051d50dec3  $LZ4.tar.gz
 ac356ea55e8b9dd0b2d1fa27da40ef7e238267ccf9324704850d5d47375b48ea  $SDL.tar.gz
 eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3  zstd-$ZSTD.tar.gz
-012043ce6d411e6e8a91fdc4e05e6bedcfa10fcb1347d3c33908f7fdd10dfe05  qtbase-everywhere-src-$QT.tar.xz
-d2a1bbb84707b8a0aec29227b170be00f04383fbf2361943596d09e7e443c8e1  qtimageformats-everywhere-src-$QT.tar.xz
-aa2579f21ca66d19cbcf31d87e9067e07932635d36869c8239d4decd0a9dc1fa  qtsvg-everywhere-src-$QT.tar.xz
-326381b7d43f07913612f291abc298ae79bd95382e2233abce982cff2b53d2c0  qttools-everywhere-src-$QT.tar.xz
-d2106e8a580bfd77702c4c1840299288d344902b0e2c758ca813ea04c6d6a3d1  qttranslations-everywhere-src-$QT.tar.xz
-5e46157908295f2bf924462d8c0855b0508ba338ced9e810891fefa295dc9647  qtwayland-everywhere-src-$QT.tar.xz
+5311646231586f05cb7af8eb93fcc3ef56e6a4e74cbb11aa5bfce9e2928414d0  qtbase-everywhere-src-$QT.tar.xz
+11981b62d95be3bff814f8cbd550234a115df0a8a1a1c94b5875a959769aff70  qtimageformats-everywhere-src-$QT.tar.xz
+06b7050d0a26d42e2c4d35286e32a4fd822ff7b470df8d2e898ae79ffc3f8136  qtsvg-everywhere-src-$QT.tar.xz
+809e080d1e6e1b32c87168860ed646ae15a1c5840120fd9f518982ecaf72395b  qttools-everywhere-src-$QT.tar.xz
+61b30fdf311b3842c29264602b653168d8f72c79be6d111c64b35872619ce7b9  qttranslations-everywhere-src-$QT.tar.xz
+9d921155c3bbb1b801d5cf70eee4728e8db2768b1a43c9a80eb1e3749f11238f  qtwayland-everywhere-src-$QT.tar.xz
 eb3b5f0c16313d34f208d90c2fa1e588a23283eed63b101edd5422be6165d528  shaderc-$SHADERC.tar.gz
 aa27e4454ce631c5a17924ce0624eac736da19fc6f5a2ab15a6c58da7b36950f  shaderc-glslang-$SHADERC_GLSLANG.tar.gz
 5d866ce34a4b6908e262e5ebfffc0a5e11dd411640b5f24c85a80ad44c0d4697  shaderc-spirv-headers-$SHADERC_SPIRVHEADERS.tar.gz
@@ -59,12 +59,12 @@ curl -L \
 	-O "https://github.com/lz4/lz4/archive/$LZ4.tar.gz" \
 	-O "https://libsdl.org/release/$SDL.tar.gz" \
 	-O "https://github.com/facebook/zstd/releases/download/v$ZSTD/zstd-$ZSTD.tar.gz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtbase-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtimageformats-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtsvg-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttools-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere-src-$QT.tar.xz" \
-	-O "https://download.qt.io/official_releases/qt/${QT%.*}/$QT/submodules/qtwayland-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qtbase-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qtimageformats-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qtsvg-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qttools-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qttranslations-everywhere-src-$QT.tar.xz" \
+	-O "https://download.qt.io/development_releases/qt/${QT%.*}/$QT/submodules/qtwayland-everywhere-src-$QT.tar.xz" \
 	-o "shaderc-$SHADERC.tar.gz" "https://github.com/google/shaderc/archive/refs/tags/v$SHADERC.tar.gz" \
 	-o "shaderc-glslang-$SHADERC_GLSLANG.tar.gz" "https://github.com/KhronosGroup/glslang/archive/$SHADERC_GLSLANG.tar.gz" \
 	-o "shaderc-spirv-headers-$SHADERC_SPIRVHEADERS.tar.gz" "https://github.com/KhronosGroup/SPIRV-Headers/archive/$SHADERC_SPIRVHEADERS.tar.gz" \
@@ -196,13 +196,12 @@ cd "qttools-everywhere-src-$QT"
 patch -u configure.cmake <<EOF
 --- configure.cmake
 +++ configure.cmake
-@@ -14,12 +14,12 @@
- # Presumably because 6.0 ClangConfig.cmake files are not good enough?
- # In any case explicitly request a minimum version of 8.x for now, otherwise
- # building with CMake will fail at compilation time.
+@@ -3,11 +3,11 @@
+
+ #### Tests
+
 -qt_find_package(WrapLibClang 8 PROVIDED_TARGETS WrapLibClang::WrapLibClang)
 +#qt_find_package(WrapLibClang 8 PROVIDED_TARGETS WrapLibClang::WrapLibClang)
- # special case end
 
 -if(TARGET WrapLibClang::WrapLibClang)
 -    set(TEST_libclang "ON" CACHE BOOL "Required libclang version found." FORCE)

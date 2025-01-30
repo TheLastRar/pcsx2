@@ -47,8 +47,8 @@ set HARFBUZZ=10.0.1
 set LIBJPEG=9f
 set LIBPNG=1645
 set LZ4=b8fd2d15309dd4e605070bd4486e26b6ef814e29
-set QT=6.8.2
-set QTMINOR=6.8
+set QT=6.9.0-beta2
+set QTMINOR=6.9
 set SDL=SDL2-2.30.12
 set WEBP=1.5.0
 set ZLIB=1.3.1
@@ -67,11 +67,11 @@ call :downloadfile "jpegsr%LIBJPEG%.zip" https://ijg.org/files/jpegsr%LIBJPEG%.z
 call :downloadfile "libwebp-%WEBP%.tar.gz" "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%WEBP%.tar.gz" 7d6fab70cf844bf6769077bd5d7a74893f8ffd4dfb42861745750c63c2a5c92c || goto error
 call :downloadfile "lz4-%LZ4%.zip" "https://github.com/lz4/lz4/archive/%LZ4%.zip" 0c33119688d6b180c7e760b0acd70059222389cfd581632623784bee27e51a31 || goto error
 call :downloadfile "%SDL%.zip" "https://libsdl.org/release/%SDL%.zip" aa2808d0f2dc6b383c6689bf6d166e2de62db4d58be989e4b052acb31df0fba3 || goto error
-call :downloadfile "qtbase-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtbase-everywhere-src-%QT%.zip" 44087aec0caa4aa81437e787917d29d97536484a682a5d51ec035878e57c0b5c || goto error
-call :downloadfile "qtimageformats-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtimageformats-everywhere-src-%QT%.zip" 83c72b5dfad04854acf61d592e3f9cdc2ed894779aab8d0470d966715266caaf || goto error
-call :downloadfile "qtsvg-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtsvg-everywhere-src-%QT%.zip" 144d55e4d199793a76c53f19872633a79aec0314039f6f99b6a10b5be7a78fbf || goto error
-call :downloadfile "qttools-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qttools-everywhere-src-%QT%.zip" 102539447c1c76d206f24bcca2c911270cf53991548d9c3d7d0d01855f651e3b || goto error
-call :downloadfile "qttranslations-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qttranslations-everywhere-src-%QT%.zip" 33ccac9f99a357ffd83cb2d7179a0c0ffcba85a14d23d86619d5dc9721ded42f || goto error
+call :downloadfile "qtbase-everywhere-src-%QT%.zip" "https://download.qt.io/development_releases/qt/%QTMINOR%/%QT%/submodules/qtbase-everywhere-src-%QT%.zip" 6a649c728628bb47c1178241fca9096cfb3725b89b6092d4b2dcc89f228d6fd2 || goto error
+call :downloadfile "qtimageformats-everywhere-src-%QT%.zip" "https://download.qt.io/development_releases/qt/%QTMINOR%/%QT%/submodules/qtimageformats-everywhere-src-%QT%.zip" c4b10c0af142f5c1b69299590ac59e389bd2972eef4960c61aad1a072a435231 || goto error
+call :downloadfile "qtsvg-everywhere-src-%QT%.zip" "https://download.qt.io/development_releases/qt/%QTMINOR%/%QT%/submodules/qtsvg-everywhere-src-%QT%.zip" 95932e5609b6c97183b23c8733f26bc2b086f52af4ba057b515a8c8552dd0a2e || goto error
+call :downloadfile "qttools-everywhere-src-%QT%.zip" "https://download.qt.io/development_releases/qt/%QTMINOR%/%QT%/submodules/qttools-everywhere-src-%QT%.zip" 1478762e44d045b6caa610a59c790f2536abdd15bd185c2946072cb5c9ab4181 || goto error
+call :downloadfile "qttranslations-everywhere-src-%QT%.zip" "https://download.qt.io/development_releases/qt/%QTMINOR%/%QT%/submodules/qttranslations-everywhere-src-%QT%.zip" 1c64e7859cd35126dd5927bd447c2f6e7e26437c7424ab447d9b7c3af9e19c14 || goto error
 call :downloadfile "zlib%ZLIBSHORT%.zip" "https://zlib.net/zlib%ZLIBSHORT%.zip" 72af66d44fcc14c22013b46b814d5d2514673dda3d115e64b690c1ad636e7b17 || goto error
 call :downloadfile "zstd-%ZSTD%.zip" "https://github.com/facebook/zstd/archive/refs/tags/v%ZSTD%.zip" 7897bc5d620580d9b7cd3539c44b59d78f3657d33663fe97a145e07b4ebd69a4 || goto error
 
