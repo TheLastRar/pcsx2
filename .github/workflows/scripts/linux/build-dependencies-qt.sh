@@ -20,7 +20,7 @@ LIBPNG=1.6.45
 LIBWEBP=1.5.0
 LZ4=b8fd2d15309dd4e605070bd4486e26b6ef814e29
 SDL=SDL2-2.30.12
-QT=6.9.0-beta2
+QT=6.9.0-beta3
 ZSTD=1.5.7
 
 SHADERC=2024.1
@@ -39,12 +39,12 @@ fd6f417fe9e3a071cf1424a5152d926a34c4a3c5070745470be6cf12a404ed79  $LIBBACKTRACE.
 0728800155f3ed0a0c87e03addbd30ecbe374f7b080678bbca1506051d50dec3  $LZ4.tar.gz
 ac356ea55e8b9dd0b2d1fa27da40ef7e238267ccf9324704850d5d47375b48ea  $SDL.tar.gz
 eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3  zstd-$ZSTD.tar.gz
-5311646231586f05cb7af8eb93fcc3ef56e6a4e74cbb11aa5bfce9e2928414d0  qtbase-everywhere-src-$QT.tar.xz
-11981b62d95be3bff814f8cbd550234a115df0a8a1a1c94b5875a959769aff70  qtimageformats-everywhere-src-$QT.tar.xz
-06b7050d0a26d42e2c4d35286e32a4fd822ff7b470df8d2e898ae79ffc3f8136  qtsvg-everywhere-src-$QT.tar.xz
-809e080d1e6e1b32c87168860ed646ae15a1c5840120fd9f518982ecaf72395b  qttools-everywhere-src-$QT.tar.xz
-61b30fdf311b3842c29264602b653168d8f72c79be6d111c64b35872619ce7b9  qttranslations-everywhere-src-$QT.tar.xz
-9d921155c3bbb1b801d5cf70eee4728e8db2768b1a43c9a80eb1e3749f11238f  qtwayland-everywhere-src-$QT.tar.xz
+ef1232b84ac1da558ae4a1b67427aa9113ae1a615e6a33e9b8d400a83373710b  qtbase-everywhere-src-$QT.tar.xz
+858ca74f45214b5ebafc1a5d90ad8464e5ad739d02820f3fc1bbcf97b4d8ea1e  qtimageformats-everywhere-src-$QT.tar.xz
+8ad7b9336e3b857b3ea4c3af6d9c55c9e12699dbe561ce339c3757ffbd1ef54d  qtsvg-everywhere-src-$QT.tar.xz
+65eec5de7c6bd874670033bdc02816167c765ba8308fc35acbab01fc62e54d71  qttools-everywhere-src-$QT.tar.xz
+7653e15001dbee8e900f975fc2c13b60f5ddd96f17a9ab6b695e828d8ee718a2  qttranslations-everywhere-src-$QT.tar.xz
+4d22d94ee8238e2ef827267590fd66cf7c00ea31a0a018cc303a0a1579c360e6  qtwayland-everywhere-src-$QT.tar.xz
 eb3b5f0c16313d34f208d90c2fa1e588a23283eed63b101edd5422be6165d528  shaderc-$SHADERC.tar.gz
 aa27e4454ce631c5a17924ce0624eac736da19fc6f5a2ab15a6c58da7b36950f  shaderc-glslang-$SHADERC_GLSLANG.tar.gz
 5d866ce34a4b6908e262e5ebfffc0a5e11dd411640b5f24c85a80ad44c0d4697  shaderc-spirv-headers-$SHADERC_SPIRVHEADERS.tar.gz
