@@ -321,7 +321,8 @@ std::string Path::RealPath(const std::string_view path)
 	{
 		if (!realpath.empty())
 		{
-			realpath.push_back(FS_OSPATH_SEPARATOR_CHARACTER);
+			if (realpath.back() != FS_OSPATH_SEPARATOR_CHARACTER)
+				realpath.push_back(FS_OSPATH_SEPARATOR_CHARACTER);
 			realpath.append(comp);
 		}
 		else if (skip_first)
@@ -332,6 +333,9 @@ std::string Path::RealPath(const std::string_view path)
 		else
 		{
 			realpath.append(comp);
+			// Avoid passing a drive relative path
+			if (realpath.length() == 2 && ((realpath[0] >= 'A' && realpath[0] <= 'Z') || (realpath[0] >= 'a' && realpath[0] <= 'z')) && realpath[1] == ':')
+				realpath.push_back(FS_OSPATH_SEPARATOR_CHARACTER);
 		}
 		if (test_symlink)
 		{
