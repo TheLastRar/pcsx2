@@ -885,10 +885,7 @@ TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display,
 			{
 				std::lock_guard lock(m_controllers_key_mutex);
 
-				SDL_GamepadType type = SDL_GAMEPAD_TYPE_UNKNOWN;
-				auto it = GetControllerDataForPlayerId(key.source_index);
-				if (it != m_controllers.end())
-					type = SDL_GetRealGamepadType(it->gamepad);
+				const SDL_GamepadType type = GetGamepadTypeForPlayerId(key.source_index);
 
 				if (key.data < std::size(s_sdl_axis_names))
 				{
@@ -920,10 +917,7 @@ TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display,
 			{
 				std::lock_guard lock(m_controllers_key_mutex);
 
-				SDL_GamepadType type = SDL_GAMEPAD_TYPE_UNKNOWN;
-				auto it = GetControllerDataForPlayerId(key.source_index);
-				if (it != m_controllers.end())
-					type = SDL_GetRealGamepadType(it->gamepad);
+				const SDL_GamepadType type = GetGamepadTypeForPlayerId(key.source_index);
 
 				if (type > SDL_GAMEPAD_TYPE_STANDARD && type < std::size(s_sdl_button_names_list) &&
 					key.data < s_sdl_button_namesize_list[type] && s_sdl_button_names_list[type][key.data] != nullptr)
@@ -933,6 +927,7 @@ TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display,
 				else if (key.data < 4)
 				{
 					SDL_GamepadButtonLabel label = SDL_GAMEPAD_BUTTON_LABEL_UNKNOWN;
+					const auto it = GetControllerDataForPlayerId(key.source_index);
 					if (it != m_controllers.end() && it->gamepad)
 						label = SDL_GetGamepadButtonLabel(it->gamepad, static_cast<SDL_GamepadButton>(key.data));
 
@@ -990,10 +985,7 @@ TinyString SDLInputSource::ConvertKeyToIcon(InputBindingKey key)
 	{
 		std::lock_guard lock(m_controllers_key_mutex);
 
-		SDL_GamepadType type = SDL_GAMEPAD_TYPE_UNKNOWN;
-		auto it = GetControllerDataForPlayerId(key.source_index);
-		if (it != m_controllers.end())
-			type = SDL_GetRealGamepadType(it->gamepad);
+		const SDL_GamepadType type = GetGamepadTypeForPlayerId(key.source_index);
 
 		if (key.source_subtype == InputSubclass::ControllerAxis)
 		{
@@ -1025,6 +1017,7 @@ TinyString SDLInputSource::ConvertKeyToIcon(InputBindingKey key)
 			else if (key.data < 4)
 			{
 				SDL_GamepadButtonLabel label = SDL_GAMEPAD_BUTTON_LABEL_UNKNOWN;
+				const auto it = GetControllerDataForPlayerId(key.source_index);
 				if (it != m_controllers.end() && it->gamepad)
 					label = SDL_GetGamepadButtonLabel(it->gamepad, static_cast<SDL_GamepadButton>(key.data));
 
@@ -1517,6 +1510,14 @@ bool SDLInputSource::GetGenericBindingMapping(const std::string_view device, Inp
 		// joysticks have arbitrary axis numbers, so automapping isn't going to work here.
 		return false;
 	}
+}
+
+SDL_GamepadType SDLInputSource::GetGamepadTypeForPlayerId(int id)
+{
+	const auto it = GetControllerDataForPlayerId(id);
+	if (it != m_controllers.end())
+		return SDL_GetRealGamepadType(it->gamepad);
+	return SDL_GAMEPAD_TYPE_UNKNOWN;
 }
 
 void SDLInputSource::UpdateMotorState(InputBindingKey key, float intensity)

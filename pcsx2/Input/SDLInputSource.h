@@ -87,6 +87,8 @@ private:
 	bool HandleJoystickHatEvent(const SDL_JoyHatEvent* ev);
 	void SendRumbleUpdate(ControllerData* cd);
 
+	SDL_GamepadType GetGamepadTypeForPlayerId(int id);
+
 	ControllerDataVector m_controllers;
 
 	// ConvertKeyToString and ConvertKeyToIcon can inspect the
