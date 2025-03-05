@@ -1512,6 +1512,30 @@ bool SDLInputSource::GetGenericBindingMapping(const std::string_view device, Inp
 	}
 }
 
+InputLayout SDLInputSource::GetControllerLayout(u32 index)
+{
+	const SDL_GamepadType type = GetGamepadTypeForPlayerId(index);
+
+	switch (type)
+	{
+		case (SDL_GAMEPAD_TYPE_STANDARD):
+		case (SDL_GAMEPAD_TYPE_XBOX360):
+		case (SDL_GAMEPAD_TYPE_XBOXONE):
+			return InputLayout::Xbox;
+		case (SDL_GAMEPAD_TYPE_PS3):
+		case (SDL_GAMEPAD_TYPE_PS4):
+		case (SDL_GAMEPAD_TYPE_PS5):
+			return InputLayout::Playstation;
+		case (SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_PRO):
+		case (SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_LEFT):
+		case (SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_RIGHT):
+		case (SDL_GAMEPAD_TYPE_NINTENDO_SWITCH_JOYCON_PAIR):
+			return InputLayout::Nintendo;
+		default:
+			return InputLayout::Unknown;
+	}
+}
+
 SDL_GamepadType SDLInputSource::GetGamepadTypeForPlayerId(int id)
 {
 	const auto it = GetControllerDataForPlayerId(id);
