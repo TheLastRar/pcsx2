@@ -212,7 +212,7 @@ tar xf "v$MOLTENVK.tar.gz"
 cd "MoltenVK-${MOLTENVK}"
 sed -i '' 's/xcodebuild "$@"/xcodebuild $XCODEBUILD_EXTRA_ARGS "$@"/g' fetchDependencies
 sed -i '' 's/XCODEBUILD :=/XCODEBUILD ?=/g' Makefile
-XCODEBUILD_EXTRA_ARGS="VALID_ARCHS=x86_64" ./fetchDependencies --macos
+XCODEBUILD_EXTRA_ARGS="VALID_ARCHS=x86_64 -jobs 2" ./fetchDependencies --macos
 XCODEBUILD="set -o pipefail && xcodebuild VALID_ARCHS=x86_64 -jobs 2" make macos
 cp Package/Latest/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib "$INSTALLDIR/lib/"
 cd ..
