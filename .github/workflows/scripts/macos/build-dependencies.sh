@@ -13,7 +13,7 @@ fi
 
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
-NPROCS="$(getconf _NPROCESSORS_ONLN)"
+NPROCS=2
 SCRIPTDIR=$(realpath $(dirname "${BASH_SOURCE[0]}"))
 INSTALLDIR="$1"
 if [ "${INSTALLDIR:0:1}" != "/" ]; then
