@@ -1954,7 +1954,7 @@ void Achievements::DrawGameOverlays()
 			GSTexture* badge = ImGuiFullscreen::GetCachedTextureAsync(indicator.badge_path.c_str());
 			if (badge)
 			{
-				dl->AddImage(reinterpret_cast<ImTextureID>(badge->GetNativeHandle()),
+				dl->AddImage(reinterpret_cast<ImTextureUserID>(badge->GetNativeHandle()),
 					current_position, current_position + image_size, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), col);
 				current_position.x -= x_advance;
 			}
@@ -1995,7 +1995,7 @@ void Achievements::DrawGameOverlays()
 		if (badge)
 		{
 			const ImVec2 badge_pos = box_min + ImVec2(padding, padding);
-			dl->AddImage(reinterpret_cast<ImTextureID>(badge->GetNativeHandle()),
+			dl->AddImage(reinterpret_cast<ImTextureUserID>(badge->GetNativeHandle()),
 				badge_pos, badge_pos + image_size, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), col);
 		}
 
@@ -2113,7 +2113,7 @@ void Achievements::DrawPauseMenuOverlays()
 			if (!badge)
 				continue;
 
-			dl->AddImage(reinterpret_cast<ImTextureID>(badge->GetNativeHandle()), position, position + image_size);
+			dl->AddImage(reinterpret_cast<ImTextureUserID>(badge->GetNativeHandle()), position, position + image_size);
 
 			const char* achievement_title = indicator.achievement->title;
 			const char* achievement_title_end = achievement_title + std::strlen(indicator.achievement->title);
@@ -2203,7 +2203,7 @@ void Achievements::DrawAchievementsWindow()
 				GSTexture* badge = ImGuiFullscreen::GetCachedTextureAsync(s_game_icon.c_str());
 				if (badge)
 				{
-					ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(badge->GetNativeHandle()),
+					ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureUserID>(badge->GetNativeHandle()),
 						icon_min, icon_max, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), IM_COL32(255, 255, 255, 255));
 				}
 			}
@@ -2392,7 +2392,7 @@ void Achievements::DrawAchievement(const rc_client_achievement_t* cheevo)
 		GSTexture* badge = ImGuiFullscreen::GetCachedTextureAsync(badge_path->c_str());
 		if (badge)
 		{
-			ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(badge->GetNativeHandle()),
+			ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureUserID>(badge->GetNativeHandle()),
 				bb.Min, bb.Min + image_size, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), IM_COL32(255, 255, 255, 255));
 		}
 	}

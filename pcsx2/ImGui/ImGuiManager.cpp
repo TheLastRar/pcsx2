@@ -1023,7 +1023,7 @@ void ImGuiManager::DrawSoftwareCursor(const SoftwareCursor& sc, const std::pair<
 	ImDrawList* dl = ImGui::GetForegroundDrawList();
 
 	dl->AddImage(
-		reinterpret_cast<ImTextureID>(sc.texture.get()->GetNativeHandle()), min, max, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), sc.color);
+		reinterpret_cast<ImTextureUserID>(sc.texture.get()->GetNativeHandle()), min, max, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), sc.color);
 }
 
 void ImGuiManager::DrawSoftwareCursors()

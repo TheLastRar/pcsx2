@@ -1298,7 +1298,7 @@ void FullscreenUI::DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size)
 		{
 			const ImVec2 logo_pos = LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING);
 			const ImVec2 logo_size = LayoutScale(LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY, LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
-			dl->AddImage(reinterpret_cast<ImTextureID>(GetCachedTexture("icons/AppIconLarge.png")->GetNativeHandle()),
+			dl->AddImage(reinterpret_cast<ImTextureUserID>(GetCachedTexture("icons/AppIconLarge.png")->GetNativeHandle()),
 				logo_pos, logo_pos + logo_size);
 			dl->AddText(heading_font, heading_font->FontSize,
 				ImVec2(logo_pos.x + logo_size.x + LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING), logo_pos.y),
@@ -1337,7 +1337,7 @@ void FullscreenUI::DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size)
 					const ImVec2 badge_pos =
 						ImVec2(name_pos.x - badge_size.x - LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING), time_pos.y);
 
-					dl->AddImage(reinterpret_cast<ImTextureID>(GetCachedTextureAsync(badge_path)->GetNativeHandle()),
+					dl->AddImage(reinterpret_cast<ImTextureUserID>(GetCachedTextureAsync(badge_path)->GetNativeHandle()),
 						badge_pos, badge_pos + badge_size);
 				}
 			}
