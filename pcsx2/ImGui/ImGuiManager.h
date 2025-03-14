@@ -16,6 +16,12 @@ enum class InputLayout : u8;
 
 namespace ImGuiManager
 {
+	struct Font
+	{
+		ImFont* im_font;
+		float size;
+	};
+
 	/// Sets the path to the font to use. Empty string means to use the default.
 	void SetFontPathAndRange(std::string path, std::vector<u16> range);
 
@@ -57,18 +63,18 @@ namespace ImGuiManager
 	bool AddFullscreenFontsIfMissing();
 
 	/// Returns the standard font for external drawing.
-	ImFont* GetStandardFont();
+	const Font& GetStandardFont();
 
 	/// Returns the fixed-width font for external drawing.
-	ImFont* GetFixedFont();
+	const Font& GetFixedFont();
 
 	/// Returns the medium font for external drawing, scaled by ImGuiFullscreen.
 	/// This font is allocated on demand.
-	ImFont* GetMediumFont();
+	const Font& GetMediumFont();
 
 	/// Returns the large font for external drawing, scaled by ImGuiFullscreen.
 	/// This font is allocated on demand.
-	ImFont* GetLargeFont();
+	const Font& GetLargeFont();
 
 	/// Returns true if imgui wants to intercept text input.
 	bool WantsTextInput();

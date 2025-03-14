@@ -370,7 +370,7 @@ void GSDumpReplayer::RenderUI()
 	float position_y = margin;
 
 	ImDrawList* dl = ImGui::GetBackgroundDrawList();
-	ImFont* font = ImGuiManager::GetFixedFont();
+	const ImGuiManager::Font& font = ImGuiManager::GetFixedFont();
 	std::string text;
 	ImVec2 text_size;
 	text.reserve(128);
@@ -378,9 +378,9 @@ void GSDumpReplayer::RenderUI()
 #define DRAW_LINE(font, text, color) \
 	do \
 	{ \
-		text_size = font->CalcTextSizeA(font->FontSize, std::numeric_limits<float>::max(), -1.0f, (text), nullptr, nullptr); \
-		dl->AddText(font, font->FontSize, ImVec2(margin + shadow_offset, position_y + shadow_offset), IM_COL32(0, 0, 0, 100), (text)); \
-		dl->AddText(font, font->FontSize, ImVec2(margin, position_y), color, (text)); \
+		text_size = font.im_font->CalcTextSizeA(font.size, std::numeric_limits<float>::max(), -1.0f, (text), nullptr, nullptr); \
+		dl->AddText(font.im_font, font.size, ImVec2(margin + shadow_offset, position_y + shadow_offset), IM_COL32(0, 0, 0, 100), (text)); \
+		dl->AddText(font.im_font, font.size, ImVec2(margin, position_y), color, (text)); \
 		position_y += text_size.y + spacing; \
 	} while (0)
 
