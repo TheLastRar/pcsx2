@@ -14,7 +14,7 @@
 
 // Forward declarations
 struct ImFontAtlas;
-struct ImFontBuilderIO;
+struct ImFontLoader;
 
 // Hinting greatly impacts visuals (and glyph sizes).
 // - By default, hinting is enabled and the font's native hinter is preferred over the auto-hinter.
@@ -41,13 +41,16 @@ namespace ImGuiFreeType
 {
     // This is automatically assigned when using '#define IMGUI_ENABLE_FREETYPE'.
     // If you need to dynamically select between multiple builders:
-    // - you can manually assign this builder with 'atlas->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType()'
-    // - prefer deep-copying this into your own ImFontBuilderIO instance if you use hot-reloading that messes up static data.
-    IMGUI_API const ImFontBuilderIO*    GetBuilderForFreeType();
+    // - you can manually assign this builder with 'atlas->FontLoader = ImGuiFreeType::GetFontLoader()'
+    // - prefer deep-copying this into your own ImFontLoader instance if you use hot-reloading that messes up static data.
+    IMGUI_API const ImFontLoader*       GetFontLoader();
 
     // Override allocators. By default ImGuiFreeType will use IM_ALLOC()/IM_FREE()
     // However, as FreeType does lots of allocations we provide a way for the user to redirect it to a separate memory heap if desired.
     IMGUI_API void                      SetAllocatorFunctions(void* (*alloc_func)(size_t sz, void* user_data), void (*free_func)(void* ptr, void* user_data), void* user_data = nullptr);
+
+    // Display UI to edit FontBuilderFlags in ImFontAtlas (shared) or ImFontConfig (single source)
+    IMGUI_API bool                      DebugEditFontBuilderFlags(unsigned int* p_font_loader_flags);
 
     // Obsolete names (will be removed soon)
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
