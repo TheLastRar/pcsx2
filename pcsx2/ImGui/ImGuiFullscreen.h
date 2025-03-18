@@ -7,8 +7,8 @@
 
 #include "IconsFontAwesome5.h"
 #include "imgui.h"
-#include "imgui_internal.h"
 
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -68,13 +68,13 @@ namespace ImGuiFullscreen
 	extern ImVec4 UISecondaryWeakColor;
 	extern ImVec4 UISecondaryTextColor;
 
-	static __fi float LayoutScale(float v) { return ImCeil(g_layout_scale * v); }
-	static __fi ImVec2 LayoutScale(const ImVec2& v) { return ImVec2(ImCeil(v.x * g_layout_scale), ImCeil(v.y * g_layout_scale)); }
-	static __fi ImVec2 LayoutScale(float x, float y) { return ImVec2(ImCeil(x * g_layout_scale), ImCeil(y * g_layout_scale)); }
+	static __fi float LayoutScale(float v) { return std::ceil(g_layout_scale * v); }
+	static __fi ImVec2 LayoutScale(const ImVec2& v) { return ImVec2(std::ceil(v.x * g_layout_scale), std::ceil(v.y * g_layout_scale)); }
+	static __fi ImVec2 LayoutScale(float x, float y) { return ImVec2(std::ceil(x * g_layout_scale), std::ceil(y * g_layout_scale)); }
 
-	static __fi float LayoutUnscale(float v) { return ImCeil(g_rcp_layout_scale * v); }
-	static __fi ImVec2 LayoutUnscale(const ImVec2& v) { return ImVec2(ImCeil(v.x * g_rcp_layout_scale), ImCeil(v.y * g_rcp_layout_scale)); }
-	static __fi ImVec2 LayoutUnscale(float x, float y) { return ImVec2(ImCeil(x * g_rcp_layout_scale), ImCeil(y * g_rcp_layout_scale)); }
+	static __fi float LayoutUnscale(float v) { return std::ceil(g_rcp_layout_scale * v); }
+	static __fi ImVec2 LayoutUnscale(const ImVec2& v) { return ImVec2(std::ceil(v.x * g_rcp_layout_scale), std::ceil(v.y * g_rcp_layout_scale)); }
+	static __fi ImVec2 LayoutUnscale(float x, float y) { return ImVec2(std::ceil(x * g_rcp_layout_scale), std::ceil(y * g_rcp_layout_scale)); }
 
 	static __fi ImVec4 ModAlpha(const ImVec4& v, float a) { return ImVec4(v.x, v.y, v.z, a); }
 	static __fi ImVec4 MulAlpha(const ImVec4& v, float a) { return ImVec4(v.x, v.y, v.z, v.w * a); }
@@ -86,8 +86,8 @@ namespace ImGuiFullscreen
 	}
 
 	/// Centers an image within the specified bounds, scaling up or down as needed.
-	ImRect CenterImage(const ImVec2& fit_size, const ImVec2& image_size);
-	ImRect CenterImage(const ImRect& fit_rect, const ImVec2& image_size);
+	ImVec4 CenterImage(const ImVec2& fit_size, const ImVec2& image_size);
+	ImVec4 CenterImage(const ImVec4& fit_rect, const ImVec2& image_size);
 
 	/// Initializes, setting up any state.
 	bool Initialize(const char* placeholder_image_path);

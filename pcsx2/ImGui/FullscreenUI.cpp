@@ -5335,7 +5335,7 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 			display_size.y - LayoutScale(LAYOUT_FOOTER_HEIGHT) - LayoutScale(10.0f + image_height) - rp_height);
 		const ImVec2 image_max(image_min.x + LayoutScale(image_width), image_min.y + LayoutScale(image_height) + rp_height);
 		const ImRect image_rect(CenterImage(
-			ImRect(image_min, image_max), ImVec2(static_cast<float>(cover->GetWidth()), static_cast<float>(cover->GetHeight()))));
+			ImRect(image_min, image_max).ToVec4(), ImVec2(static_cast<float>(cover->GetWidth()), static_cast<float>(cover->GetHeight()))));
 		dl->AddImage(reinterpret_cast<ImTextureID>(cover->GetNativeHandle()), image_rect.Min, image_rect.Max);
 	}
 
@@ -5888,7 +5888,7 @@ void FullscreenUI::DrawSaveStateSelector(bool is_loading)
 				bb.Max -= style.FramePadding;
 
 				const GSTexture* const screenshot = entry.preview_texture ? entry.preview_texture.get() : GetPlaceholderTexture().get();
-				const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size),
+				const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size).ToVec4(),
 					ImVec2(static_cast<float>(screenshot->GetWidth()), static_cast<float>(screenshot->GetHeight()))));
 
 				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(screenshot->GetNativeHandle()),
@@ -6326,7 +6326,7 @@ void FullscreenUI::DrawGameList(const ImVec2& heading_size)
 			const std::string_view filename(Path::GetFileName(entry->path));
 			summary.append(filename);
 
-			const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size),
+			const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size).ToVec4(),
 				ImVec2(static_cast<float>(cover_texture->GetWidth()), static_cast<float>(cover_texture->GetHeight()))));
 
 			ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(cover_texture->GetNativeHandle()),
@@ -6552,7 +6552,7 @@ void FullscreenUI::DrawGameGrid(const ImVec2& heading_size)
 			bb.Max -= style.FramePadding;
 
 			const GSTexture* const cover_texture = GetGameListCover(entry);
-			const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size),
+			const ImRect image_rect(CenterImage(ImRect(bb.Min, bb.Min + image_size).ToVec4(),
 				ImVec2(static_cast<float>(cover_texture->GetWidth()), static_cast<float>(cover_texture->GetHeight()))));
 
 			ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(cover_texture->GetNativeHandle()),
