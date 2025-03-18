@@ -187,7 +187,7 @@ void ImGuiManager::Shutdown(bool clear_state)
 	DestroySoftwareCursorTextures();
 
 	FullscreenUI::Shutdown(clear_state);
-	ImGuiFullscreen::SetFonts(nullptr, nullptr, nullptr);
+	ImGuiFullscreen::SetFonts(nullptr, nullptr, nullptr, 0, 0, 0);
 	SaveStateSelectorUI::DestroyTextures();
 	if (clear_state)
 		s_fullscreen_ui_was_initialized = false;
@@ -546,16 +546,20 @@ bool ImGuiManager::AddImGuiFonts(bool fullscreen_fonts)
 		s_large_font = AddTextFont(large_font_size);
 		if (!s_large_font || !AddIconFonts(large_font_size))
 			return false;
+
+		ImGuiFullscreen::SetFonts(s_standard_font, s_medium_font, s_large_font, 
+			standard_font_size, medium_font_size, large_font_size);
 	}
 	else
 	{
 		s_medium_font = nullptr;
 		s_large_font = nullptr;
+
+		ImGuiFullscreen::SetFonts(s_standard_font, s_medium_font, s_large_font, 
+			standard_font_size, 0, 0);
 	}
 
-	ImGuiFullscreen::SetFonts(s_standard_font, s_medium_font, s_large_font);
-
-	return io.Fonts->Build();
+	return true;
 }
 
 bool ImGuiManager::AddFullscreenFontsIfMissing()
@@ -713,6 +717,7 @@ void ImGuiManager::DrawOSDMessages(Common::Timer::Value current_time)
 	static constexpr float MOVE_DURATION = 0.5f;
 
 	ImFont* const font = ImGui::GetFont();
+	const float font_size = ImGui::GetFontSize();
 	const float scale = s_global_scale;
 	const float spacing = std::ceil(5.0f * scale);
 	const float margin = std::ceil(10.0f * scale);
@@ -785,7 +790,7 @@ void ImGuiManager::DrawOSDMessages(Common::Timer::Value current_time)
 			break;
 
 		const ImVec2 text_size(
-			font->CalcTextSizeA(font->FontSize, max_width, max_width, msg.text.c_str(), msg.text.c_str() + msg.text.length()));
+			font->CalcTextSizeA(font_size, max_width, max_width, msg.text.c_str(), msg.text.c_str() + msg.text.length()));
 		const ImVec2 size(text_size.x + padding * 2.0f, text_size.y + padding * 2.0f);
 		const ImVec2 pos(position_x - (GSConfig.OsdMessagesPos == OsdOverlayPos::TopRight ? size.x : 0), actual_y);
 		const ImVec4 text_rect(pos.x + padding, pos.y + padding, pos.x + size.x - padding, pos.y + size.y - padding);
@@ -793,7 +798,7 @@ void ImGuiManager::DrawOSDMessages(Common::Timer::Value current_time)
 		ImDrawList* dl = ImGui::GetBackgroundDrawList();
 		dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(0x21, 0x21, 0x21, opacity), rounding);
 		dl->AddRect(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(0x48, 0x48, 0x48, opacity), rounding);
-		dl->AddText(font, font->FontSize, ImVec2(text_rect.x, text_rect.y), IM_COL32(0xff, 0xff, 0xff, opacity), msg.text.c_str(),
+		dl->AddText(font, font_size, ImVec2(text_rect.x, text_rect.y), IM_COL32(0xff, 0xff, 0xff, opacity), msg.text.c_str(),
 			msg.text.c_str() + msg.text.length(), max_width, &text_rect);
 		position_y += size.y + spacing;
 	}
@@ -821,26 +826,26 @@ float ImGuiManager::GetGlobalScale()
 	return s_global_scale;
 }
 
-ImFont* ImGuiManager::GetStandardFont()
+std::pair<ImFont*, float> ImGuiManager::GetStandardFont()
 {
-	return s_standard_font;
+	return {s_standard_font, std::ceil(15.0f * s_global_scale)};
 }
 
-ImFont* ImGuiManager::GetFixedFont()
+std::pair<ImFont*, float> ImGuiManager::GetFixedFont()
 {
-	return s_fixed_font;
+	return {s_fixed_font, std::ceil(15.0f * s_global_scale)};
 }
 
-ImFont* ImGuiManager::GetMediumFont()
+std::pair<ImFont*, float> ImGuiManager::GetMediumFont()
 {
 	AddFullscreenFontsIfMissing();
-	return s_medium_font;
+	return {s_medium_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE)};
 }
 
-ImFont* ImGuiManager::GetLargeFont()
+std::pair<ImFont*, float> ImGuiManager::GetLargeFont()
 {
 	AddFullscreenFontsIfMissing();
-	return s_large_font;
+	return {s_large_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE)};
 }
 
 bool ImGuiManager::WantsTextInput()
