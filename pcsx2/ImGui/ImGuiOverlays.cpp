@@ -1,6 +1,14 @@
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
+#include "ImGui/FullscreenUI.h"
+#include "ImGui/ImGuiAnimated.h"
+#include "ImGui/ImGuiFullscreen.h"
+#include "ImGui/ImGuiManager.h"
+#include "ImGui/ImGuiOverlays.h"
+
+#include "imgui.h"
+
 #include "BuildVersion.h"
 #include "Config.h"
 #include "Counters.h"
@@ -12,11 +20,6 @@
 #include "Host.h"
 #include "IconsFontAwesome5.h"
 #include "IconsPromptFont.h"
-#include "ImGui/FullscreenUI.h"
-#include "ImGui/ImGuiAnimated.h"
-#include "ImGui/ImGuiFullscreen.h"
-#include "ImGui/ImGuiManager.h"
-#include "ImGui/ImGuiOverlays.h"
 #include "Input/InputManager.h"
 #include "MTGS.h"
 #include "PerformanceMetrics.h"
@@ -35,7 +38,6 @@
 
 #include "fmt/chrono.h"
 #include "fmt/format.h"
-#include "imgui.h"
 
 #include <array>
 #include <chrono>

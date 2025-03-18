@@ -3,6 +3,14 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+#include "ImGui/FullscreenUI.h"
+#include "ImGui/ImGuiFullscreen.h"
+#include "ImGui/ImGuiManager.h"
+#include "ImGui/ImGuiOverlays.h"
+
+#include "imgui.h"
+#include "imgui_internal.h"
+
 #include "BuildVersion.h"
 #include "CDVD/CDVDcommon.h"
 #include "GS/Renderers/Common/GSDevice.h"
@@ -13,10 +21,6 @@
 #include "Host.h"
 #include "Host/AudioStream.h"
 #include "INISettingsInterface.h"
-#include "ImGui/FullscreenUI.h"
-#include "ImGui/ImGuiFullscreen.h"
-#include "ImGui/ImGuiManager.h"
-#include "ImGui/ImGuiOverlays.h"
 #include "Input/InputManager.h"
 #include "MTGS.h"
 #include "Patch.h"
@@ -43,8 +47,6 @@
 
 #include "IconsFontAwesome5.h"
 #include "IconsPromptFont.h"
-#include "imgui.h"
-#include "imgui_internal.h"
 
 #include "fmt/chrono.h"
 #include "fmt/format.h"
