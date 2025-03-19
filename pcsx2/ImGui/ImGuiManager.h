@@ -50,12 +50,6 @@ namespace ImGuiManager
 	/// Returns the scale of all on-screen elements.
 	float GetGlobalScale();
 
-	/// Returns true if fullscreen fonts are present.
-	bool HasFullscreenFonts();
-
-	/// Allocates/adds fullscreen fonts if they're not loaded.
-	bool AddFullscreenFontsIfMissing();
-
 	/// Returns the standard font for external drawing.
 	std::pair<ImFont*, float> GetStandardFont();
 

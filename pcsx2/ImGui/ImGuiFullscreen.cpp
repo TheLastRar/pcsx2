@@ -199,11 +199,11 @@ namespace ImGuiFullscreen
 	static InputLayout s_gamepad_layout = InputLayout::Unknown;
 } // namespace ImGuiFullscreen
 
-void ImGuiFullscreen::SetFonts(ImFont* standard_font, ImFont* medium_font, ImFont* large_font, float standard_size, float medium_size, float large_size)
+void ImGuiFullscreen::SetFonts(ImFont* standard_font, float standard_size, float medium_size, float large_size)
 {
 	g_standard_font = {standard_font, standard_size};
-	g_medium_font = {medium_font, medium_size};
-	g_large_font = {large_font, large_size};
+	g_medium_font = {standard_font, medium_size};
+	g_large_font = {standard_font, large_size};
 }
 
 bool ImGuiFullscreen::Initialize(const char* placeholder_image_path)
@@ -656,7 +656,7 @@ bool ImGuiFullscreen::BeginFullscreenColumns(const char* title, float pos_y, boo
 	bool clipped;
 	if (title)
 	{
-		ImGui::PushFont(g_large_font.first);
+		ImGui::PushFont(g_large_font.first, g_large_font.second);
 		clipped = ImGui::Begin(title, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
 		ImGui::PopFont();
 	}
@@ -900,7 +900,7 @@ void ImGuiFullscreen::DrawWindowTitle(const char* title)
 	if (!ImGui::ItemAdd(rect, window->GetID("window_title")))
 		return;
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::RenderTextClipped(rect.Min, rect.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &rect);
 	ImGui::PopFont();
 
@@ -1055,7 +1055,7 @@ void ImGuiFullscreen::MenuHeading(const char* title, bool draw_line /*= true*/)
 		return;
 
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 	ImGui::PopFont();
 	ImGui::PopStyleColor();
@@ -1082,7 +1082,7 @@ bool ImGuiFullscreen::MenuHeadingButton(
 
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 
 	if (value)
@@ -1135,7 +1135,7 @@ bool ImGuiFullscreen::ActiveButtonWithRightText(const char* title, const char* r
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 
 
@@ -1171,13 +1171,13 @@ bool ImGuiFullscreen::MenuButton(const char* title, const char* summary, bool en
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::PopFont();
 
 	if (summary)
 	{
-		ImGui::PushFont(summary_font.first);
+		ImGui::PushFont(summary_font.first, summary_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, summary, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}
@@ -1204,7 +1204,7 @@ bool ImGuiFullscreen::MenuButtonWithoutSummary(const char* title, bool enabled, 
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, text_align, &title_bb);
 	ImGui::PopFont();
 
@@ -1235,13 +1235,13 @@ bool ImGuiFullscreen::MenuImageButton(const char* title, const char* summary, Im
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(title_font.first);
+	ImGui::PushFont(title_font.first, title_font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::PopFont();
 
 	if (summary)
 	{
-		ImGui::PushFont(summary_font.first);
+		ImGui::PushFont(summary_font.first, summary_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, summary, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}
@@ -1333,7 +1333,7 @@ bool ImGuiFullscreen::FloatingButton(const char* text, float x, float y, float w
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, text, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 	ImGui::PopFont();
 
@@ -1359,13 +1359,13 @@ bool ImGuiFullscreen::ToggleButton(
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::PopFont();
 
 	if (summary)
 	{
-		ImGui::PushFont(summary_font.first);
+		ImGui::PushFont(summary_font.first, summary_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, summary, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}
@@ -1430,13 +1430,13 @@ bool ImGuiFullscreen::ThreeWayToggleButton(
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::PopFont();
 
 	if (summary)
 	{
-		ImGui::PushFont(summary_font.first);
+		ImGui::PushFont(summary_font.first, summary_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, summary, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}
@@ -1510,14 +1510,14 @@ bool ImGuiFullscreen::MenuButtonWithValue(
 	if (!enabled)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, value, nullptr, nullptr, ImVec2(1.0f, 0.5f), &bb);
 	ImGui::PopFont();
 
 	if (summary)
 	{
-		ImGui::PushFont(summary_font.first);
+		ImGui::PushFont(summary_font.first, summary_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, summary, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}
@@ -1609,7 +1609,7 @@ void ImGuiFullscreen::NavTitle(const char* title, float height /*= LAYOUT_MENU_B
 	bb.Min.y += style.FramePadding.y;
 	bb.Max.y -= style.FramePadding.y;
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 	ImGui::PopFont();
 }
@@ -1683,7 +1683,7 @@ bool ImGuiFullscreen::NavButton(const char* title, bool is_active, bool enabled 
 	ImGui::PushStyleColor(
 		ImGuiCol_Text, ImGui::GetColorU32(enabled ? (is_active ? ImGuiCol_Text : ImGuiCol_TextDisabled) : ImGuiCol_ButtonHovered));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 	ImGui::PopFont();
 
@@ -1765,7 +1765,7 @@ bool ImGuiFullscreen::NavTab(const char* title, bool is_active, bool enabled /* 
 		ImGuiCol_Text,
 		ImGui::GetColorU32(enabled ? (is_active ? ImGuiCol_Text : ImGuiCol_TextDisabled) : ImGuiCol_ButtonHovered));
 
-	ImGui::PushFont(font.first);
+	ImGui::PushFont(font.first, font.second);
 	ImGui::RenderTextClipped(bb.Min, bb.Max, title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &bb);
 	ImGui::PopFont();
 
@@ -2002,7 +2002,7 @@ void ImGuiFullscreen::DrawFileSelector()
 
 	FileSelectorItem* selected = nullptr;
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
@@ -2128,7 +2128,7 @@ void ImGuiFullscreen::DrawChoiceDialog()
 	if (!s_choice_dialog_open)
 		return;
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
@@ -2252,7 +2252,7 @@ void ImGuiFullscreen::DrawInputDialog()
 		ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 	ImGui::OpenPopup(s_input_dialog_title.c_str());
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
@@ -2403,7 +2403,7 @@ void ImGuiFullscreen::DrawMessageDialog()
 	ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize * 0.5f, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 	ImGui::OpenPopup(win_id);
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, LayoutScale(20.0f, 20.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
@@ -2568,7 +2568,7 @@ void ImGuiFullscreen::DrawBackgroundProgressDialogs(ImVec2& position, float spac
 	ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, LayoutScale(1.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, LayoutScale(10.0f, 10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, LayoutScale(10.0f, 10.0f));
-	ImGui::PushFont(g_medium_font.first);
+	ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 
 	ImDrawList* dl = ImGui::GetForegroundDrawList();
 

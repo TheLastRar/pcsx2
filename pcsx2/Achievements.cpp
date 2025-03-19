@@ -2232,7 +2232,7 @@ void Achievements::DrawAchievementsWindow()
 
 			top += g_large_font.second + spacing;
 
-			ImGui::PushFont(g_large_font.first);
+			ImGui::PushFont(g_large_font.first, g_large_font.second);
 			ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, text.c_str(), text.end_ptr(), nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 			ImGui::PopFont();
 
@@ -2258,7 +2258,7 @@ void Achievements::DrawAchievementsWindow()
 
 			top += g_medium_font.second + spacing;
 
-			ImGui::PushFont(g_medium_font.first);
+			ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 			ImGui::RenderTextClipped(
 				summary_bb.Min, summary_bb.Max, text.c_str(), text.end_ptr(), nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 			ImGui::PopFont();
@@ -2440,12 +2440,12 @@ void Achievements::DrawAchievement(const rc_client_achievement_t* cheevo)
 	const ImRect lock_bb(
 		ImVec2(points_template_start + ((points_template_size.x - right_icon_size.x) * 0.5f), bb.Min.y), ImVec2(bb.Max.x, midpoint));
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, cheevo->title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::RenderTextClipped(lock_bb.Min, lock_bb.Max, right_icon_text, nullptr, &right_icon_size, ImVec2(0.0f, 0.0f), &lock_bb);
 	ImGui::PopFont();
 
-	ImGui::PushFont(g_medium_font.first);
+	ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 	if (cheevo->description && summary_length > 0)
 	{
 		ImGui::RenderTextWrapped(summary_bb.Min, cheevo->description, cheevo->description + summary_length, summary_wrap_width);
@@ -2598,7 +2598,7 @@ void Achievements::DrawLeaderboardsWindow()
 
 			top += g_large_font.second + spacing;
 
-			ImGui::PushFont(g_large_font.first);
+			ImGui::PushFont(g_large_font.first, g_large_font.second);
 			ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, text.c_str(), text.end_ptr(), nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 			ImGui::PopFont();
 
@@ -2609,7 +2609,7 @@ void Achievements::DrawLeaderboardsWindow()
 
 				top += g_large_font.second + spacing_small;
 
-				ImGui::PushFont(g_large_font.first);
+				ImGui::PushFont(g_large_font.first, g_large_font.second);
 				ImGui::RenderTextClipped(
 					subtitle_bb.Min, subtitle_bb.Max, text.c_str(), text.end_ptr(), nullptr, ImVec2(0.0f, 0.0f), &subtitle_bb);
 				ImGui::PopFont();
@@ -2627,7 +2627,7 @@ void Achievements::DrawLeaderboardsWindow()
 			const ImRect summary_bb(ImVec2(left, top), ImVec2(right, top + g_medium_font.second));
 			top += g_medium_font.second + spacing_small;
 
-			ImGui::PushFont(g_medium_font.first);
+			ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 			ImGui::RenderTextClipped(
 				summary_bb.Min, summary_bb.Max, text.c_str(), text.end_ptr(), nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 
@@ -2674,7 +2674,7 @@ void Achievements::DrawLeaderboardsWindow()
 				const float midpoint = bb.Min.y + g_large_font.second + LayoutScale(4.0f);
 				float text_start_x = bb.Min.x + LayoutScale(15.0f) + padding;
 
-				ImGui::PushFont(g_large_font.first);
+				ImGui::PushFont(g_large_font.first, g_large_font.second);
 
 				const ImRect rank_bb(ImVec2(text_start_x, bb.Min.y), ImVec2(bb.Max.x, midpoint));
 				ImGui::RenderTextClipped(
@@ -2758,7 +2758,7 @@ void Achievements::DrawLeaderboardsWindow()
 				}
 				else
 				{
-					ImGui::PushFont(g_large_font.first);
+					ImGui::PushFont(g_large_font.first, g_large_font.second);
 
 					const ImVec2 pos_min(0.0f, heading_height);
 					const ImVec2 pos_max(display_size.x, display_size.y);
@@ -2788,7 +2788,7 @@ void Achievements::DrawLeaderboardsWindow()
 					const float midpoint = bb.Min.y + g_large_font.second + LayoutScale(4.0f);
 					const ImRect title_bb(bb.Min, ImVec2(bb.Max.x, midpoint));
 
-					ImGui::PushFont(g_large_font.first);
+					ImGui::PushFont(g_large_font.first, g_large_font.second);
 					ImGui::RenderTextClipped(
 						title_bb.Min, title_bb.Max, TRANSLATE("Achievements", "Loading..."), nullptr, nullptr, ImVec2(0, 0), &title_bb);
 					ImGui::PopFont();
@@ -2828,7 +2828,7 @@ void Achievements::DrawLeaderboardEntry(const rc_client_leaderboard_entry_t& ent
 
 	text.format("{}", entry.rank);
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 
 	if (is_self)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 242, 0, 255));
@@ -2907,13 +2907,13 @@ void Achievements::DrawLeaderboardListEntry(const rc_client_leaderboard_t* lboar
 	const ImRect title_bb(ImVec2(text_start_x, bb.Min.y), ImVec2(bb.Max.x, midpoint));
 	const ImRect summary_bb(ImVec2(text_start_x, midpoint), bb.Max);
 
-	ImGui::PushFont(g_large_font.first);
+	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::RenderTextClipped(title_bb.Min, title_bb.Max, lboard->title, nullptr, nullptr, ImVec2(0.0f, 0.0f), &title_bb);
 	ImGui::PopFont();
 
 	if (lboard->description && lboard->description[0] != '\0')
 	{
-		ImGui::PushFont(g_medium_font.first);
+		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 		ImGui::RenderTextClipped(summary_bb.Min, summary_bb.Max, lboard->description, nullptr, nullptr, ImVec2(0.0f, 0.0f), &summary_bb);
 		ImGui::PopFont();
 	}

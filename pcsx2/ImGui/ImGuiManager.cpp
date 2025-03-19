@@ -54,11 +54,11 @@ namespace ImGuiManager
 	static void SetKeyMap();
 	static bool LoadFontData();
 	static void UnloadFontData();
-	static bool AddImGuiFonts(bool fullscreen_fonts);
-	static ImFont* AddTextFont(float size);
-	static ImFont* AddFixedFont(float size);
-	static bool AddIconFonts(float size);
-	static bool AddFallbackFonts(bool fixed, float size);
+	static bool AddImGuiFonts();
+	static ImFont* AddTextFont();
+	static ImFont* AddFixedFont();
+	static bool AddIconFonts();
+	static bool AddFallbackFonts(bool fixed);
 	static void AcquirePendingOSDMessages(Common::Timer::Value current_time);
 	static void DrawOSDMessages(Common::Timer::Value current_time);
 	static void CreateSoftwareCursorTextures();
@@ -77,8 +77,6 @@ static std::vector<std::string> s_font_fallback_paths;
 
 static ImFont* s_standard_font;
 static ImFont* s_fixed_font;
-static ImFont* s_medium_font;
-static ImFont* s_large_font;
 
 static std::vector<u8> s_standard_font_data;
 static std::vector<std::vector<u8>> s_fallback_fonts_data;
@@ -125,7 +123,7 @@ void ImGuiManager::SetFontPathAndRange(std::string path, std::vector<u16> range,
 		if (!LoadFontData())
 			pxFailRel("Failed to load font data");
 
-		if (!AddImGuiFonts(HasFullscreenFonts()))
+		if (!AddImGuiFonts())
 			pxFailRel("Failed to create ImGui font text");
 
 		NewFrame();
@@ -164,7 +162,7 @@ bool ImGuiManager::Initialize()
 	if (add_fullscreen_fonts)
 		ImGuiFullscreen::UpdateLayoutScale();
 
-	if (!AddImGuiFonts(add_fullscreen_fonts))
+	if (!AddImGuiFonts())
 	{
 		Host::ReportErrorAsync("ImGuiManager", "Failed to create ImGui font text");
 		ImGui::DestroyContext();
@@ -193,7 +191,7 @@ void ImGuiManager::Shutdown(bool clear_state)
 	DestroySoftwareCursorTextures();
 
 	FullscreenUI::Shutdown(clear_state);
-	ImGuiFullscreen::SetFonts(nullptr, nullptr, nullptr, 0, 0, 0);
+	ImGuiFullscreen::SetFonts(nullptr, 0, 0, 0);
 	SaveStateSelectorUI::DestroyTextures();
 	if (clear_state)
 		s_fullscreen_ui_was_initialized = false;
@@ -205,8 +203,6 @@ void ImGuiManager::Shutdown(bool clear_state)
 
 	s_standard_font = nullptr;
 	s_fixed_font = nullptr;
-	s_medium_font = nullptr;
-	s_large_font = nullptr;
 
 	if (clear_state)
 		UnloadFontData();
@@ -246,14 +242,11 @@ void ImGuiManager::UpdateScale()
 	const float window_scale = g_gs_device ? g_gs_device->GetWindowScale() : 1.0f;
 	const float scale = std::max(window_scale * (EmuConfig.GS.OsdScale / 100.0f), 0.5f);
 
-	if ((!HasFullscreenFonts() || !ImGuiFullscreen::UpdateLayoutScale()) && scale == s_global_scale)
+	if ((!ImGuiFullscreen::UpdateLayoutScale()) && scale == s_global_scale)
 		return;
 
 	s_global_scale = scale;
 	SetStyle();
-
-	if (!AddImGuiFonts(HasFullscreenFonts()))
-		pxFailRel("Failed to create ImGui font text");
 }
 
 void ImGuiManager::NewFrame()
@@ -461,7 +454,10 @@ void ImGuiManager::UnloadFontData()
 	std::vector<u8>().swap(s_icon_pf_font_data);
 }
 
-ImFont* ImGuiManager::AddTextFont(float size)
+// A resonable default font size is recommended
+#define FONT_BASE_SIZE 15.0f
+
+ImFont* ImGuiManager::AddTextFont()
 {
 	static const ImWchar default_ranges[] = {
 		// Basic Latin + Latin Supplement + Central European diacritics
@@ -486,19 +482,19 @@ ImFont* ImGuiManager::AddTextFont(float size)
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
 	return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-		s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), size, &cfg,
+		s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), FONT_BASE_SIZE, &cfg,
 		s_font_range.empty() ? default_ranges : s_font_range.data());
 }
 
-ImFont* ImGuiManager::AddFixedFont(float size)
+ImFont* ImGuiManager::AddFixedFont()
 {
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
 	return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-		s_fixed_font_data.data(), static_cast<int>(s_fixed_font_data.size()), size, &cfg, nullptr);
+		s_fixed_font_data.data(), static_cast<int>(s_fixed_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr);
 }
 
-bool ImGuiManager::AddIconFonts(float size)
+bool ImGuiManager::AddIconFonts()
 {
 	// clang-format off
 	static constexpr ImWchar range_fa[] = { 0xe06f,0xe06f,0xf002,0xf002,0xf005,0xf005,0xf007,0xf007,0xf00c,0xf00e,0xf011,0xf011,0xf013,0xf013,0xf017,0xf017,0xf019,0xf019,0xf021,0xf023,0xf025,0xf028,0xf02b,0xf02b,0xf02e,0xf02e,0xf030,0xf030,0xf03a,0xf03a,0xf03d,0xf03e,0xf04b,0xf04c,0xf04e,0xf04e,0xf050,0xf050,0xf052,0xf052,0xf05a,0xf05a,0xf05e,0xf05e,0xf063,0xf063,0xf067,0xf067,0xf06a,0xf06a,0xf06e,0xf06e,0xf071,0xf071,0xf077,0xf078,0xf07b,0xf07c,0xf084,0xf084,0xf091,0xf091,0xf0ac,0xf0ad,0xf0b0,0xf0b0,0xf0c5,0xf0c5,0xf0c7,0xf0c8,0xf0cb,0xf0cb,0xf0d0,0xf0d0,0xf0dc,0xf0dc,0xf0e2,0xf0e2,0xf0eb,0xf0eb,0xf0f3,0xf0f3,0xf0fe,0xf0fe,0xf11b,0xf11c,0xf120,0xf121,0xf129,0xf12a,0xf140,0xf140,0xf14a,0xf14a,0xf15b,0xf15b,0xf15d,0xf15d,0xf187,0xf188,0xf191,0xf192,0xf1b3,0xf1b3,0xf1de,0xf1de,0xf1e6,0xf1e6,0xf1ea,0xf1eb,0xf1f8,0xf1f8,0xf1fc,0xf1fc,0xf21e,0xf21e,0xf245,0xf245,0xf26c,0xf26c,0xf279,0xf279,0xf2bd,0xf2bd,0xf2db,0xf2db,0xf2f2,0xf2f2,0xf302,0xf302,0xf3c1,0xf3c1,0xf3fd,0xf3fd,0xf410,0xf410,0xf462,0xf462,0xf466,0xf466,0xf4e2,0xf4e2,0xf51f,0xf51f,0xf545,0xf545,0xf54c,0xf54c,0xf553,0xf553,0xf56d,0xf56d,0xf5a2,0xf5a2,0xf65d,0xf65e,0xf6a9,0xf6a9,0xf70e,0xf70e,0xf756,0xf756,0xf780,0xf780,0xf794,0xf794,0xf815,0xf815,0xf84c,0xf84c,0xf8cc,0xf8cc,0x0,0x0 };
@@ -509,12 +505,12 @@ bool ImGuiManager::AddIconFonts(float size)
 		ImFontConfig cfg;
 		cfg.MergeMode = true;
 		cfg.PixelSnapH = true;
-		cfg.GlyphMinAdvanceX = size;
-		cfg.GlyphMaxAdvanceX = size;
+		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-				s_icon_fa_font_data.data(), static_cast<int>(s_icon_fa_font_data.size()), size * 0.75f, &cfg, range_fa))
+				s_icon_fa_font_data.data(), static_cast<int>(s_icon_fa_font_data.size()), FONT_BASE_SIZE * 0.75f, &cfg, range_fa))
 		{
 			return false;
 		}
@@ -524,12 +520,12 @@ bool ImGuiManager::AddIconFonts(float size)
 		ImFontConfig cfg;
 		cfg.MergeMode = true;
 		cfg.PixelSnapH = true;
-		cfg.GlyphMinAdvanceX = size;
-		cfg.GlyphMaxAdvanceX = size;
+		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-				s_icon_pf_font_data.data(), static_cast<int>(s_icon_pf_font_data.size()), size * 1.2f, &cfg, range_pf))
+				s_icon_pf_font_data.data(), static_cast<int>(s_icon_pf_font_data.size()), FONT_BASE_SIZE * 1.2f, &cfg, range_pf))
 		{
 			return false;
 		}
@@ -538,7 +534,7 @@ bool ImGuiManager::AddIconFonts(float size)
 	return true;
 }
 
-bool ImGuiManager::AddFallbackFonts(bool fixed, float size)
+bool ImGuiManager::AddFallbackFonts(bool fixed)
 {
 	if (fixed)
 	{
@@ -547,7 +543,7 @@ bool ImGuiManager::AddFallbackFonts(bool fixed, float size)
 		cfg.FontDataOwnedByAtlas = false;
 		// TODO, care about failure
 		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-			s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), size, &cfg, nullptr);
+			s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr);
 	}
 
 	for (std::vector<u8>& fallback_font_data : s_fallback_fonts_data)
@@ -557,75 +553,30 @@ bool ImGuiManager::AddFallbackFonts(bool fixed, float size)
 		cfg.FontDataOwnedByAtlas = false;
 		// TODO, care about failure
 		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
-			fallback_font_data.data(), static_cast<int>(fallback_font_data.size()), size, &cfg, nullptr);
+			fallback_font_data.data(), static_cast<int>(fallback_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr);
 	}
 	return true;
 }
 
-bool ImGuiManager::AddImGuiFonts(bool fullscreen_fonts)
+bool ImGuiManager::AddImGuiFonts()
 {
 	const float standard_font_size = std::ceil(15.0f * s_global_scale);
+	const float medium_font_size = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE);
+	const float large_font_size = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE);
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->Clear();
 
-	s_standard_font = AddTextFont(standard_font_size);
-	if (!s_standard_font || !AddIconFonts(standard_font_size) || !AddFallbackFonts(false, standard_font_size))
+	s_standard_font = AddTextFont();
+	if (!s_standard_font || !AddIconFonts() || !AddFallbackFonts(false))
 		return false;
 
-	s_fixed_font = AddFixedFont(standard_font_size);
-	if (!s_fixed_font || !AddFallbackFonts(true, standard_font_size))
+	s_fixed_font = AddFixedFont();
+	if (!s_fixed_font || !AddFallbackFonts(true))
 		return false;
 
-	if (fullscreen_fonts)
-	{
-		const float medium_font_size = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE);
-		s_medium_font = AddTextFont(medium_font_size);
-		if (!s_medium_font || !AddIconFonts(medium_font_size) || !AddFallbackFonts(false, medium_font_size))
-			return false;
-
-		const float large_font_size = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE);
-		s_large_font = AddTextFont(large_font_size);
-		if (!s_large_font || !AddIconFonts(large_font_size) || !AddFallbackFonts(false, large_font_size))
-			return false;
-
-		ImGuiFullscreen::SetFonts(s_standard_font, s_medium_font, s_large_font, 
-			standard_font_size, medium_font_size, large_font_size);
-	}
-	else
-	{
-		s_medium_font = nullptr;
-		s_large_font = nullptr;
-
-		ImGuiFullscreen::SetFonts(s_standard_font, s_medium_font, s_large_font, 
-			standard_font_size, 0, 0);
-	}
-
+	ImGuiFullscreen::SetFonts(s_standard_font, standard_font_size, medium_font_size, large_font_size);
 	return true;
-}
-
-bool ImGuiManager::AddFullscreenFontsIfMissing()
-{
-	if (HasFullscreenFonts())
-		return true;
-
-	// can't do this in the middle of a frame
-	ImGui::EndFrame();
-
-	if (!AddImGuiFonts(true))
-	{
-		Console.Error("Failed to lazily allocate fullscreen fonts.");
-		AddImGuiFonts(false);
-	}
-
-	NewFrame();
-
-	return HasFullscreenFonts();
-}
-
-bool ImGuiManager::HasFullscreenFonts()
-{
-	return (s_medium_font && s_large_font);
 }
 
 struct OSDMessage
@@ -880,14 +831,12 @@ std::pair<ImFont*, float> ImGuiManager::GetFixedFont()
 
 std::pair<ImFont*, float> ImGuiManager::GetMediumFont()
 {
-	AddFullscreenFontsIfMissing();
-	return {s_medium_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE)};
+	return {s_standard_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE)};
 }
 
 std::pair<ImFont*, float> ImGuiManager::GetLargeFont()
 {
-	AddFullscreenFontsIfMissing();
-	return {s_large_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE)};
+	return {s_standard_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE)};
 }
 
 bool ImGuiManager::WantsTextInput()

@@ -310,7 +310,7 @@ __ri void ImGuiManager::DrawPerformanceOverlay(float& position_y, float scale, f
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-			ImGui::PushFont(fixed_font.first);
+			ImGui::PushFont(fixed_font.first, fixed_font.second);
 			if (ImGui::Begin("##frame_times", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs))
 			{
 				auto [min, max] = GetMinMax(PerformanceMetrics::GetFrameTimeHistory());
@@ -1051,7 +1051,8 @@ void SaveStateSelectorUI::Draw()
 
 				ImGui::TextUnformatted(entry.title.c_str(), entry.title.c_str() + entry.title.length());
 				ImGui::TextUnformatted(entry.summary.c_str(), entry.summary.c_str() + entry.summary.length());
-				ImGui::PushFont(ImGuiManager::GetFixedFont().first);
+				const std::pair<ImFont*, float> font = ImGuiManager::GetFixedFont();
+				ImGui::PushFont(font.first, font.second);
 				ImGui::TextUnformatted(entry.filename.c_str(), entry.filename.c_str() + entry.filename.length());
 				ImGui::PopFont();
 

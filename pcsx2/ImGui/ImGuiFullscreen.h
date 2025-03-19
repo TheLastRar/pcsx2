@@ -93,8 +93,7 @@ namespace ImGuiFullscreen
 	bool Initialize(const char* placeholder_image_path);
 
 	void SetTheme(std::string_view theme);
-	void SetFonts(ImFont* standard_font, ImFont* medium_font, ImFont* large_font,
-		float standard_size, float medium_size, float large_size);
+	void SetFonts(ImFont* standard_font, float standard_size, float medium_size, float large_size);
 	bool UpdateLayoutScale();
 
 	/// Shuts down, optionally clearing all state (including notifications).
