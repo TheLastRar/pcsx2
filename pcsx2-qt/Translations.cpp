@@ -60,6 +60,7 @@ namespace QtHost
 	static void UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::string_view language);
 	static bool DownloadMissingFont(QWidget* dialog_parent, const char* font_name, const std::string& path);
 	static const GlyphInfo* GetGlyphInfo(const std::string_view language);
+	static std::vector<const char*> GetFallbackFonts(const std::string_view language);
 
 	static constexpr const char* DEFAULT_IMGUI_FONT_NAME = "Roboto-Regular.ttf";
 
@@ -340,19 +341,30 @@ void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::s
 			"fonts" FS_OSPATH_SEPARATOR_STR "{}", DEFAULT_IMGUI_FONT_NAME));
 	}
 
+	// Get other installed fonts as fallbacks
+	std::vector<const char*> imgui_font_fallbacks = GetFallbackFonts(language);
+	std::vector<std::string> fallback_fonts_paths;
+	for (const char* it : imgui_font_fallbacks)
+	{
+		std::string fallback_font_path = EmuFolders::GetOverridableResourcePath(SmallString::from_format(
+			"fonts" FS_OSPATH_SEPARATOR_STR "{}", it));
+		if (FileSystem::FileExists(fallback_font_path.c_str()))
+			fallback_fonts_paths.push_back(fallback_font_path);
+	}
+
 	// Called on UI thread, so we need to do this on the CPU/GS thread if it's active.
 	if (g_emu_thread)
 	{
-		Host::RunOnCPUThread([font_path = std::move(font_path), glyph_ranges = std::move(glyph_ranges)]() mutable {
+		Host::RunOnCPUThread([font_path = std::move(font_path), glyph_ranges = std::move(glyph_ranges), fallback_fonts_paths = std::move(fallback_fonts_paths)]() mutable {
 			if (MTGS::IsOpen())
 			{
-				MTGS::RunOnGSThread([font_path = std::move(font_path), glyph_ranges = std::move(glyph_ranges)]() mutable {
-					ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges));
+				MTGS::RunOnGSThread([font_path = std::move(font_path), glyph_ranges = std::move(glyph_ranges), fallback_fonts_paths = std::move(fallback_fonts_paths)]() mutable {
+					ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges), std::move(fallback_fonts_paths));
 				});
 			}
 			else
 			{
-				ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges));
+				ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges), std::move(fallback_fonts_paths));
 			}
 
 			Host::ClearTranslationCache();
@@ -361,7 +373,7 @@ void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::s
 	else
 	{
 		// Startup, safe to set directly.
-		ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges));
+		ImGuiManager::SetFontPathAndRange(std::move(font_path), std::move(glyph_ranges), std::move(fallback_fonts_paths));
 		Host::ClearTranslationCache();
 	}
 }
@@ -443,6 +455,17 @@ const QtHost::GlyphInfo* QtHost::GetGlyphInfo(const std::string_view language)
 	}
 
 	return nullptr;
+}
+
+std::vector<const char*> QtHost::GetFallbackFonts(const std::string_view language)
+{
+	std::vector<const char*> ret;
+	for (const GlyphInfo& it : s_glyph_info)
+	{
+		if (language != it.language && it.imgui_font_name != nullptr)
+			ret.push_back(it.imgui_font_name);
+	}
+	return ret;
 }
 
 int QtHost::LocaleSensitiveCompare(QStringView lhs, QStringView rhs)
