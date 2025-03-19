@@ -32,7 +32,7 @@ all_source_files = list(functools.reduce(lambda prev, src_dir: prev + glob.glob(
     glob.glob(os.path.join(src_dir, "**", "*.h"), recursive=True) + \
     glob.glob(os.path.join(src_dir, "**", "*.inl"), recursive=True), src_dirs, []))
 
-tokens = set()
+fa_tokens = set()
 pf_tokens = set()
 for filename in all_source_files:
     data = None
@@ -42,12 +42,14 @@ for filename in all_source_files:
         except:
             continue
 
-    tokens = tokens.union(set(re.findall("(ICON_FA_[a-zA-Z0-9_]+)", data)))
+    fa_tokens = fa_tokens.union(set(re.findall("(ICON_FA_[a-zA-Z0-9_]+)", data)))
     pf_tokens = pf_tokens.union(set(re.findall("(ICON_PF_[a-zA-Z0-9_]+)", data)))
 
-print("{}/{} tokens found.".format(len(tokens), len(pf_tokens)))
-if len(tokens) == 0 and len(pf_tokens) == 0:
+print("{}/{} tokens found.".format(len(fa_tokens), len(pf_tokens)))
+if len(fa_tokens) == 0 and len(pf_tokens) == 0:
     sys.exit(0)
+
+tokens = fa_tokens.union(pf_tokens)
 
 u8_encodings = {}
 with open(fa_file, "r") as f:
@@ -65,8 +67,9 @@ with open(pf_file, "r") as f:
 
 out_fa_pattern = r"(static constexpr ImWchar range_fa\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
 out_pf_pattern = r"(static constexpr ImWchar range_pf\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
+out_ex_pattern = r"(static constexpr ImWchar range_exclude_icons\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
 
-def get_pairs(tokens):
+def get_pairs(tokens, merge_range=1):
     codepoints = list()
     for token in tokens:
         u8_bytes = u8_encodings[token]
@@ -84,7 +87,7 @@ def get_pairs(tokens):
     endc = None
     pairs = [startc]
     for codepoint in codepoints:
-        if endc is not None and (endc + 1) != codepoint:
+        if endc is not None and (((endc + merge_range) < codepoint) or (codepoint == 0)):
             pairs.append(endc)
             pairs.append(codepoint)
             startc = codepoint
@@ -98,8 +101,11 @@ def get_pairs(tokens):
 
 with open(dst_file, "r") as f:
     original = f.read()
-    updated = re.sub(out_pattern, "\\1 " + get_pairs(tokens) + " \\2", original)
+    updated = re.sub(out_fa_pattern, "\\1 " + get_pairs(fa_tokens) + " \\2", original)
     updated = re.sub(out_pf_pattern, "\\1 " + get_pairs(pf_tokens) + " \\2", updated)
+    # ImGui asserts if more than 32 ranges are provided for exclusion
+    # we should also use as few as reasonable for performance reasons
+    updated = re.sub(out_ex_pattern, "\\1 " + get_pairs(tokens, 256) + " \\2", updated)
     if original != updated:
         with open(dst_file, "w") as f:
             f.write(updated)

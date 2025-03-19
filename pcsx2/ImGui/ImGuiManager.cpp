@@ -479,8 +479,14 @@ ImFont* ImGuiManager::AddTextFont()
 		0,
 	};
 
+	// Exclude FA and PF ranges
+	// clang-format off
+	static constexpr ImWchar range_exclude_icons[] = { 0x2198,0x24ff,0x2605,0x278e,0xe000,0xe06f,0xf002,0xf8cc,0xff21,0xff3a,0x0,0x0 };
+	// clang-format on
+
 	ImFontConfig cfg;
 	cfg.FontDataOwnedByAtlas = false;
+	cfg.GlyphExcludeRanges = range_exclude_icons;
 	return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
 		s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), FONT_BASE_SIZE, &cfg,
 		s_font_range.empty() ? default_ranges : s_font_range.data());
