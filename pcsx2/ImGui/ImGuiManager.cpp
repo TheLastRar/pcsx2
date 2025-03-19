@@ -7,6 +7,7 @@
 #include "ImGui/ImGuiOverlays.h"
 
 #include "imgui.h"
+#include "imgui_freetype.h"
 #include "imgui_internal.h"
 
 #include "GS/Renderers/Common/GSDevice.h"
@@ -479,12 +480,16 @@ ImFont* ImGuiManager::AddFixedFont()
 
 bool ImGuiManager::AddIconFonts()
 {
+	// Exclude Emojis
+	static constexpr ImWchar range_emoji[] = {0x10000, 0x1ffff};
+
 	{
 		ImFontConfig cfg;
 		cfg.MergeMode = true;
 		cfg.PixelSnapH = true;
 		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
 		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphExcludeRanges = range_emoji;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
@@ -500,6 +505,7 @@ bool ImGuiManager::AddIconFonts()
 		cfg.PixelSnapH = true;
 		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
 		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphExcludeRanges = range_emoji;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
@@ -514,6 +520,53 @@ bool ImGuiManager::AddIconFonts()
 
 bool ImGuiManager::AddFallbackFonts(bool fixed)
 {
+	{
+		// ImGui can't correctly handle some Unicode codepoints
+		// With the Windows emoji font, ImGui renders an extra blank space
+		// See https://github.com/ocornut/imgui/issues/8240
+		static ImFontLoader filter_loader;
+		filter_loader.Name = "Emoji Preprocessor";
+		filter_loader.FontSrcContainsGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImWchar codepoint) {
+			if (codepoint == 0xfe0e || codepoint == 0xfe0f)
+				return true;
+			return false;
+		};
+		filter_loader.FontBakedLoadGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImFontBaked* baked, void*, ImWchar codepoint) {
+			if (codepoint != 0xfe0e && codepoint != 0xfe0f)
+				return static_cast<ImFontGlyph*>(nullptr);
+
+			ImFontGlyph glyph_in = {};
+			ImFontGlyph* glyph = &glyph_in;
+			glyph->Codepoint = codepoint;
+			glyph->AdvanceX = 0.0f;
+			glyph->X0 = 0;
+			glyph->Y0 = 0;
+			glyph->X1 = 0;
+			glyph->Y1 = 0;
+			glyph->Visible = false;
+			glyph->Colored = false;
+
+			ImFontGlyph* out_glyph = ImFontAtlasBakedAddFontGlyph(atlas, baked, src, &glyph_in);
+			return out_glyph;
+		};
+
+		ImFontConfig cfg;
+		strcpy(cfg.Name, filter_loader.Name);
+		cfg.MergeMode = true;
+		cfg.SizePixels = FONT_BASE_SIZE;
+		cfg.FontLoader = &filter_loader;
+		ImGui::GetIO().Fonts->AddFont(&cfg);
+	}
+
+	{
+		ImFontConfig cfg;
+		cfg.MergeMode = true;
+		cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+		// Need SVG for NotoColorEmoji-Regular.ttf
+		// Can load the Windows emoji font without SVG
+		ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", FONT_BASE_SIZE * 0.8f, &cfg, nullptr);
+	}
+
 	if (fixed)
 	{
 		ImFontConfig cfg;
