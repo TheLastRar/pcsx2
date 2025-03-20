@@ -63,8 +63,8 @@ with open(pf_file, "r") as f:
             continue
         u8_encodings[match[1]] = bytes.fromhex(match[2].replace("\\x", ""))
 
-out_pattern = "(static constexpr ImWchar range_fa\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
-out_pf_pattern = "(static constexpr ImWchar range_pf\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
+out_fa_pattern = r"(static constexpr ImWchar range_fa\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
+out_pf_pattern = r"(static constexpr ImWchar range_pf\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
 
 def get_pairs(tokens):
     codepoints = list()
