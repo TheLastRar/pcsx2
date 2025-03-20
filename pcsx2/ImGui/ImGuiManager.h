@@ -17,7 +17,7 @@ enum class InputLayout : u8;
 namespace ImGuiManager
 {
 	/// Sets the path to the font to use. Empty string means to use the default.
-	void SetFontPathAndRange(std::string path, std::vector<u16> range, std::vector<std::string> fallback_paths);
+	void SetFontPath(std::string path, std::vector<std::string> fallback_paths);
 
 	/// Initializes ImGui, creates fonts, etc.
 	bool Initialize();

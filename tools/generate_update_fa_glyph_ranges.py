@@ -65,8 +65,6 @@ with open(pf_file, "r") as f:
             continue
         u8_encodings[match[1]] = bytes.fromhex(match[2].replace("\\x", ""))
 
-out_fa_pattern = r"(static constexpr ImWchar range_fa\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
-out_pf_pattern = r"(static constexpr ImWchar range_pf\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
 out_ex_pattern = r"(static constexpr ImWchar range_exclude_icons\[\] = \{)[0-9A-Z_a-z, \n]+(\};)"
 
 def get_pairs(tokens, merge_range=1):
@@ -101,8 +99,6 @@ def get_pairs(tokens, merge_range=1):
 
 with open(dst_file, "r") as f:
     original = f.read()
-    updated = re.sub(out_fa_pattern, "\\1 " + get_pairs(fa_tokens) + " \\2", original)
-    updated = re.sub(out_pf_pattern, "\\1 " + get_pairs(pf_tokens) + " \\2", updated)
     # ImGui asserts if more than 32 ranges are provided for exclusion
     # we should also use as few as reasonable for performance reasons
     updated = re.sub(out_ex_pattern, "\\1 " + get_pairs(tokens, 256) + " \\2", updated)
