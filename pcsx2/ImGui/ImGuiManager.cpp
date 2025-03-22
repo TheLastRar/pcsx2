@@ -124,9 +124,6 @@ void ImGuiManager::SetFontPathAndRange(std::string path, std::vector<u16> range)
 		if (!AddImGuiFonts(HasFullscreenFonts()))
 			pxFailRel("Failed to create ImGui font text");
 
-		if (!g_gs_device->UpdateImGuiFontTexture())
-			pxFailRel("Failed to recreate font texture after scale+resize");
-
 		NewFrame();
 	}
 }
@@ -146,7 +143,7 @@ bool ImGuiManager::Initialize()
 
 	ImGuiIO& io = ImGui::GetIO();
 	io.IniFilename = nullptr;
-	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_HasGamepad;
+	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasTextures | ImGuiBackendFlags_HasGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
 	io.KeyRepeatDelay = 0.5f;
 
@@ -163,16 +160,13 @@ bool ImGuiManager::Initialize()
 	if (add_fullscreen_fonts)
 		ImGuiFullscreen::UpdateLayoutScale();
 
-	if (!AddImGuiFonts(add_fullscreen_fonts) || !g_gs_device->UpdateImGuiFontTexture())
+	if (!AddImGuiFonts(add_fullscreen_fonts))
 	{
 		Host::ReportErrorAsync("ImGuiManager", "Failed to create ImGui font text");
 		ImGui::DestroyContext();
 		UnloadFontData();
 		return false;
 	}
-
-	// don't need the font data anymore, save some memory
-	ImGui::GetIO().Fonts->ClearTexData();
 
 	NewFrame();
 
@@ -199,6 +193,8 @@ void ImGuiManager::Shutdown(bool clear_state)
 	SaveStateSelectorUI::DestroyTextures();
 	if (clear_state)
 		s_fullscreen_ui_was_initialized = false;
+
+	g_gs_device->DestroyImGuiTextures();
 
 	if (ImGui::GetCurrentContext())
 		ImGui::DestroyContext();
@@ -254,9 +250,6 @@ void ImGuiManager::UpdateScale()
 
 	if (!AddImGuiFonts(HasFullscreenFonts()))
 		pxFailRel("Failed to create ImGui font text");
-
-	if (!g_gs_device->UpdateImGuiFontTexture())
-		pxFailRel("Failed to recreate font texture after scale+resize");
 
 	if (FullscreenUI::IsInitialized())
 		FullscreenUI::ReloadSvgResources();
@@ -584,7 +577,6 @@ bool ImGuiManager::AddFullscreenFontsIfMissing()
 		AddImGuiFonts(false);
 	}
 
-	g_gs_device->UpdateImGuiFontTexture();
 	NewFrame();
 
 	return HasFullscreenFonts();
