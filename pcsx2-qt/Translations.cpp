@@ -395,10 +395,16 @@ const QtHost::FontInfo* QtHost::GetFontInfo(const std::string_view language)
 std::vector<const char*> QtHost::GetFallbackFonts(const std::string_view language)
 {
 	std::vector<const char*> ret;
+	if (GetFontInfo(language) != nullptr)
+		ret.push_back(DEFAULT_IMGUI_FONT_NAME);
+
 	for (const FontInfo& it : s_font_info)
 	{
-		if (language != it.language && it.imgui_font_name != nullptr)
+		if (language != it.language && it.imgui_font_name != nullptr &&
+			!(std::find(ret.begin(), ret.end(), it.imgui_font_name) != ret.end()))
+		{
 			ret.push_back(it.imgui_font_name);
+		}
 	}
 	return ret;
 }
