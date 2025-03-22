@@ -34,6 +34,7 @@
 
 #include "IconsPromptFont.h"
 #include "fmt/format.h"
+#include "imgui_internal.h"
 #include "rc_client.h"
 
 #include <algorithm>

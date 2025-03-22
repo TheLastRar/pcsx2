@@ -453,19 +453,19 @@ bool ImGuiFullscreen::UpdateLayoutScale()
 	return g_layout_scale != old_scale;
 }
 
-ImRect ImGuiFullscreen::CenterImage(const ImVec2& fit_size, const ImVec2& image_size)
+ImVec4 ImGuiFullscreen::CenterImage(const ImVec2& fit_size, const ImVec2& image_size)
 {
 	const float fit_ar = fit_size.x / fit_size.y;
 	const float image_ar = image_size.x / image_size.y;
 
-	ImRect ret;
+	ImVec4 ret;
 	if (fit_ar > image_ar)
 	{
 		// center horizontally
 		const float width = fit_size.y * image_ar;
 		const float offset = (fit_size.x - width) / 2.0f;
 		const float height = fit_size.y;
-		ret = ImRect(ImVec2(offset, 0.0f), ImVec2(offset + width, height));
+		ret = ImVec4(offset, 0.0f, offset + width, height);
 	}
 	else
 	{
@@ -473,17 +473,18 @@ ImRect ImGuiFullscreen::CenterImage(const ImVec2& fit_size, const ImVec2& image_
 		const float height = fit_size.x / image_ar;
 		const float offset = (fit_size.y - height) / 2.0f;
 		const float width = fit_size.x;
-		ret = ImRect(ImVec2(0.0f, offset), ImVec2(width, offset + height));
+		ret = ImVec4(0.0f, offset, width, offset + height);
 	}
 
 	return ret;
 }
 
-ImRect ImGuiFullscreen::CenterImage(const ImRect& fit_rect, const ImVec2& image_size)
+ImVec4 ImGuiFullscreen::CenterImage(const ImVec4& fit_rect, const ImVec2& image_size)
 {
-	ImRect ret(CenterImage(fit_rect.Max - fit_rect.Min, image_size));
-	ret.Translate(fit_rect.Min);
-	return ret;
+	const ImRect rect(fit_rect);
+	ImRect ret(CenterImage(rect.Max - rect.Min, image_size));
+	ret.Translate(rect.Min);
+	return ret.ToVec4();
 }
 
 void ImGuiFullscreen::BeginLayout()
