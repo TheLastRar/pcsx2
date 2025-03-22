@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
+#include "ImGui/FullscreenUI.h"
+#include "ImGui/ImGuiFullscreen.h"
+#include "ImGui/ImGuiManager.h"
+
+#include "imgui_internal.h"
+
 #include "Achievements.h"
 #include "BuildVersion.h"
 #include "CDVD/CDVD.h"
 #include "Elfheader.h"
 #include "Host.h"
 #include "GS/Renderers/Common/GSTexture.h"
-#include "ImGui/FullscreenUI.h"
-#include "ImGui/ImGuiFullscreen.h"
-#include "ImGui/ImGuiManager.h"
 #include "IopMem.h"
 #include "MTGS.h"
 #include "Memory.h"
@@ -32,7 +35,6 @@
 
 #include "IconsPromptFont.h"
 #include "fmt/format.h"
-#include "imgui_internal.h"
 #include "rc_client.h"
 
 #include <algorithm>

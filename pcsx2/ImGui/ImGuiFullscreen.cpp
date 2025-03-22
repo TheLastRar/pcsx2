@@ -1,14 +1,18 @@
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
-#include "fmt/format.h"
-#include "Host.h"
-#include "GS/Renderers/Common/GSDevice.h"
-#include "GS/Renderers/Common/GSTexture.h"
 #include "ImGui/FullscreenUI.h"
 #include "ImGui/ImGuiAnimated.h"
 #include "ImGui/ImGuiFullscreen.h"
 #include "ImGui/ImGuiManager.h"
+
+#include "imgui_internal.h"
+#include "imgui_stdlib.h"
+
+#include "fmt/format.h"
+#include "Host.h"
+#include "GS/Renderers/Common/GSDevice.h"
+#include "GS/Renderers/Common/GSTexture.h"
 #include "Input/InputManager.h"
 
 #include "common/Assertions.h"
@@ -23,8 +27,6 @@
 #include "common/Timer.h"
 
 #include "IconsFontAwesome5.h"
-#include "imgui_internal.h"
-#include "imgui_stdlib.h"
 
 #include <plutovg.h>
 #include <plutosvg.h>
