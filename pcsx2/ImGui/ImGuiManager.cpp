@@ -58,6 +58,7 @@ namespace ImGuiManager
 	static ImFont* AddTextFont();
 	static ImFont* AddFixedFont();
 	static bool AddIconFonts();
+	static bool AddFallbackFonts(bool fixed);
 	static void AcquirePendingOSDMessages(Common::Timer::Value current_time);
 	static void DrawOSDMessages(Common::Timer::Value current_time);
 	static void CreateSoftwareCursorTextures();
@@ -72,10 +73,13 @@ static float s_global_scale = 1.0f;
 static std::string s_font_path;
 static std::vector<ImWchar> s_font_range;
 
+static std::vector<std::string> s_font_fallback_paths;
+
 static ImFont* s_standard_font;
 static ImFont* s_fixed_font;
 
 static std::vector<u8> s_standard_font_data;
+static std::vector<std::vector<u8>> s_fallback_fonts_data;
 static std::vector<u8> s_fixed_font_data;
 static std::vector<u8> s_icon_fa_font_data;
 static std::vector<u8> s_icon_pf_font_data;
@@ -101,14 +105,16 @@ static bool s_scale_changed = false;
 
 static std::array<ImGuiManager::SoftwareCursor, InputManager::MAX_SOFTWARE_CURSORS> s_software_cursors = {};
 
-void ImGuiManager::SetFontPathAndRange(std::string path, std::vector<u16> range)
+void ImGuiManager::SetFontPathAndRange(std::string path, std::vector<u16> range, std::vector<std::string> fallback_paths)
 {
-	if (s_font_path == path && s_font_range == range)
+	if (s_font_path == path && s_font_range == range && s_font_fallback_paths == fallback_paths)
 		return;
 
 	s_font_path = std::move(path);
 	s_font_range = std::move(range);
+	s_font_fallback_paths = std::move(fallback_paths);
 	s_standard_font_data = {};
+	s_fallback_fonts_data = {};
 
 	if (ImGui::GetCurrentContext())
 	{
@@ -399,6 +405,18 @@ bool ImGuiManager::LoadFontData()
 		s_standard_font_data = std::move(font_data.value());
 	}
 
+	if (s_fallback_fonts_data.empty())
+	{
+		for (const std::string& fallback_font_path : s_font_fallback_paths)
+		{
+			std::optional<std::vector<u8>> font_data = FileSystem::ReadBinaryFile(fallback_font_path.c_str());
+			if (!font_data.has_value())
+				return false;
+
+			s_fallback_fonts_data.push_back(std::move(font_data.value()));
+		}
+	}
+
 	if (s_fixed_font_data.empty())
 	{
 		std::optional<std::vector<u8>> font_data = FileSystem::ReadBinaryFile(
@@ -435,6 +453,7 @@ bool ImGuiManager::LoadFontData()
 void ImGuiManager::UnloadFontData()
 {
 	std::vector<u8>().swap(s_standard_font_data);
+	std::vector<std::vector<u8>>().swap(s_fallback_fonts_data);
 	std::vector<u8>().swap(s_fixed_font_data);
 	std::vector<u8>().swap(s_icon_fa_font_data);
 	std::vector<u8>().swap(s_icon_pf_font_data);
@@ -520,17 +539,41 @@ bool ImGuiManager::AddIconFonts()
 	return true;
 }
 
+bool ImGuiManager::AddFallbackFonts(bool fixed)
+{
+	if (fixed)
+	{
+		ImFontConfig cfg;
+		cfg.MergeMode = true;
+		cfg.FontDataOwnedByAtlas = false;
+		// TODO, care about failure
+		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+			s_standard_font_data.data(), static_cast<int>(s_standard_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr);
+	}
+
+	for (std::vector<u8>& fallback_font_data : s_fallback_fonts_data)
+	{
+		ImFontConfig cfg;
+		cfg.MergeMode = true;
+		cfg.FontDataOwnedByAtlas = false;
+		// TODO, care about failure
+		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+			fallback_font_data.data(), static_cast<int>(fallback_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr);
+	}
+	return true;
+}
+
 bool ImGuiManager::AddImGuiFonts()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->Clear();
 
 	s_standard_font = AddTextFont();
-	if (!s_standard_font || !AddIconFonts())
+	if (!s_standard_font || !AddIconFonts() || !AddFallbackFonts(false))
 		return false;
 
 	s_fixed_font = AddFixedFont();
-	if (!s_fixed_font)
+	if (!s_fixed_font || !AddFallbackFonts(true))
 		return false;
 
 	ImGuiFullscreen::SetFont(s_standard_font);
