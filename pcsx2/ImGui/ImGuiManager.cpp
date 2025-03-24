@@ -579,6 +579,8 @@ bool ImGuiManager::AddEmojiFont()
 	{
 		ImFontConfig cfg;
 		cfg.MergeMode = true;
+		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
 		cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
 		cfg.FontDataOwnedByAtlas = false;
 
