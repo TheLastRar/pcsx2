@@ -737,6 +737,43 @@ void ImGuiFullscreen::EndFullscreenWindow()
 	ImGui::PopStyleColor();
 }
 
+bool ImGuiFullscreen::BeginFullscreenWindowChild(float left, float top, float width, float height, const char* name,
+	const ImVec4& background /* = HEX_TO_IMVEC4(0x212121, 0xFF) */, float rounding /*= 0.0f*/,
+	const ImVec2& padding /*= 0.0f*/, ImGuiWindowFlags flags /*= 0*/)
+{
+	if (left < 0.0f)
+		left = (LAYOUT_SCREEN_WIDTH - width) * -left;
+	if (top < 0.0f)
+		top = (LAYOUT_SCREEN_HEIGHT - height) * -top;
+
+	const ImVec2 pos(ImVec2(LayoutScale(left) + g_layout_padding_left, LayoutScale(top) + g_layout_padding_top));
+	const ImVec2 size(LayoutScale(ImVec2(width, height)));
+	return BeginFullscreenWindowChild(pos, size, name, background, rounding, padding, flags);
+}
+
+bool ImGuiFullscreen::BeginFullscreenWindowChild(const ImVec2& position, const ImVec2& size, const char* name,
+	const ImVec4& background /* = HEX_TO_IMVEC4(0x212121, 0xFF) */, float rounding /*= 0.0f*/,
+	const ImVec2& padding /*= 0.0f*/, ImGuiWindowFlags flags /*= 0*/)
+{
+	ImGui::SetNextWindowPos(position);
+
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, background);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, LayoutScale(padding));
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, LayoutScale(rounding));
+
+	return ImGui::BeginChild(name, size, ImGuiChildFlags_NavFlattened,
+		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus |
+			flags);
+}
+
+void ImGuiFullscreen::EndFullscreenWindowChild()
+{
+	ImGui::EndChild();
+	ImGui::PopStyleVar(3);
+	ImGui::PopStyleColor();
+}
+
 bool ImGuiFullscreen::IsGamepadInputSource()
 {
 	return (ImGui::GetCurrentContext()->NavInputSource == ImGuiInputSource_Gamepad);
@@ -1787,7 +1824,7 @@ bool ImGuiFullscreen::BeginHorizontalMenu(const char* name, const ImVec2& positi
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, LayoutScale(1.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(item_spacing, 0.0f));
 
-	if (!BeginFullscreenWindow(position, size, name, UIBackgroundColor, 0.0f, ImVec2()))
+	if (!BeginFullscreenWindowChild(position, size, name, UIBackgroundColor, 0.0f, ImVec2()))
 		return false;
 
 	ImGui::SetCursorPos(ImVec2((size.x - menu_width) * 0.5f, (size.y - menu_height) * 0.5f));
@@ -1799,7 +1836,7 @@ bool ImGuiFullscreen::BeginHorizontalMenu(const char* name, const ImVec2& positi
 void ImGuiFullscreen::EndHorizontalMenu()
 {
 	ImGui::PopStyleVar(4);
-	EndFullscreenWindow();
+	EndFullscreenWindowChild();
 }
 
 bool ImGuiFullscreen::HorizontalMenuItem(GSTexture* icon, const char* title, const char* description)

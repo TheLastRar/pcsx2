@@ -118,6 +118,7 @@ using ImGuiFullscreen::AddNotification;
 using ImGuiFullscreen::BeginFullscreenColumns;
 using ImGuiFullscreen::BeginFullscreenColumnWindow;
 using ImGuiFullscreen::BeginFullscreenWindow;
+using ImGuiFullscreen::BeginFullscreenWindowChild;
 using ImGuiFullscreen::BeginHorizontalMenu;
 using ImGuiFullscreen::BeginMenuButtons;
 using ImGuiFullscreen::BeginNavBar;
@@ -127,6 +128,7 @@ using ImGuiFullscreen::CloseFileSelector;
 using ImGuiFullscreen::EndFullscreenColumns;
 using ImGuiFullscreen::EndFullscreenColumnWindow;
 using ImGuiFullscreen::EndFullscreenWindow;
+using ImGuiFullscreen::EndFullscreenWindowChild;
 using ImGuiFullscreen::EndHorizontalMenu;
 using ImGuiFullscreen::EndMenuButtons;
 using ImGuiFullscreen::EndNavBar;
@@ -1285,7 +1287,7 @@ void FullscreenUI::DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size)
 	*menu_pos = ImVec2(0.0f, heading_size.y);
 	*menu_size = ImVec2(io.DisplaySize.x, io.DisplaySize.y - heading_size.y - LayoutScale(LAYOUT_FOOTER_HEIGHT));
 
-	if (BeginFullscreenWindow(ImVec2(0.0f, 0.0f), heading_size, "landing_heading", UIPrimaryColor))
+	if (BeginFullscreenWindowChild(ImVec2(0.0f, 0.0f), heading_size, "landing_heading", UIPrimaryColor))
 	{
 		ImFont* const heading_font = g_large_font;
 		ImDrawList* const dl = ImGui::GetWindowDrawList();
@@ -1346,17 +1348,20 @@ void FullscreenUI::DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size)
 		ImGui::PopStyleColor();
 		ImGui::PopFont();
 	}
-	EndFullscreenWindow();
+	EndFullscreenWindowChild();
 }
 
 void FullscreenUI::DrawLandingWindow()
 {
+	const ImGuiIO& io = ImGui::GetIO();
+	BeginFullscreenWindow(ImVec2(0.0f, 0.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y - LayoutScale(LAYOUT_FOOTER_HEIGHT)), "landing_window");
+
 	ImVec2 menu_pos, menu_size;
 	DrawLandingTemplate(&menu_pos, &menu_size);
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("landing_window", menu_pos, menu_size, 4))
+	if (BeginHorizontalMenu("landing_menu", menu_pos, menu_size, 4))
 	{
 		ResetFocusHere();
 
@@ -1389,6 +1394,7 @@ void FullscreenUI::DrawLandingWindow()
 		}
 	}
 	EndHorizontalMenu();
+	EndFullscreenWindow();
 
 	ImGui::PopStyleColor();
 
@@ -1429,12 +1435,15 @@ void FullscreenUI::DrawLandingWindow()
 
 void FullscreenUI::DrawStartGameWindow()
 {
+	const ImGuiIO& io = ImGui::GetIO();
+	BeginFullscreenWindow(ImVec2(0.0f, 0.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y - LayoutScale(LAYOUT_FOOTER_HEIGHT)), "start_game_window");
+
 	ImVec2 menu_pos, menu_size;
 	DrawLandingTemplate(&menu_pos, &menu_size);
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("start_game_window", menu_pos, menu_size, 4))
+	if (BeginHorizontalMenu("start_game_menu", menu_pos, menu_size, 4))
 	{
 		ResetFocusHere();
 
@@ -1466,6 +1475,7 @@ void FullscreenUI::DrawStartGameWindow()
 		}
 	}
 	EndHorizontalMenu();
+	EndFullscreenWindow();
 
 	ImGui::PopStyleColor();
 
@@ -1498,12 +1508,15 @@ void FullscreenUI::DrawStartGameWindow()
 
 void FullscreenUI::DrawExitWindow()
 {
+	const ImGuiIO& io = ImGui::GetIO();
+	BeginFullscreenWindow(ImVec2(0.0f, 0.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y - LayoutScale(LAYOUT_FOOTER_HEIGHT)), "exit_window");
+
 	ImVec2 menu_pos, menu_size;
 	DrawLandingTemplate(&menu_pos, &menu_size);
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("exit_window", menu_pos, menu_size, 3))
+	if (BeginHorizontalMenu("exit_menu", menu_pos, menu_size, 3))
 	{
 		ResetFocusHere();
 
@@ -1529,6 +1542,7 @@ void FullscreenUI::DrawExitWindow()
 		}
 	}
 	EndHorizontalMenu();
+	EndFullscreenWindow();
 
 	ImGui::PopStyleColor();
 

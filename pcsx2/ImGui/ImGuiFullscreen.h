@@ -149,6 +149,14 @@ namespace ImGuiFullscreen
 		ImGuiWindowFlags flags = 0);
 	void EndFullscreenWindow();
 
+	bool BeginFullscreenWindowChild(float left, float top, float width, float height, const char* name,
+		const ImVec4& background = HEX_TO_IMVEC4(0x212121, 0xFF), float rounding = 0.0f, const ImVec2& padding = ImVec2(),
+		ImGuiWindowFlags flags = 0);
+	bool BeginFullscreenWindowChild(const ImVec2& position, const ImVec2& size, const char* name,
+		const ImVec4& background = HEX_TO_IMVEC4(0x212121, 0xFF), float rounding = 0.0f, const ImVec2& padding = ImVec2(),
+		ImGuiWindowFlags flags = 0);
+	void EndFullscreenWindowChild();
+
 	bool IsGamepadInputSource();
 	void ReportGamepadLayout(InputLayout layout);
 	InputLayout GetGamepadLayout();
