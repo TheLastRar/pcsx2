@@ -884,7 +884,7 @@ void ImDrawList::AddPolyline(const ImVec2* points, const int points_count, ImU32
                 dm_x *= half_draw_size; // dm_x, dm_y are offset to the outer edge of the AA area
                 dm_y *= half_draw_size;
 
-                // Add temporary vertexes for the outer edges
+                // Add temporary vertices for the outer edges
                 ImVec2* out_vtx = &temp_points[i2 * 2];
                 out_vtx[0].x = points[i2].x + dm_x;
                 out_vtx[0].y = points[i2].y + dm_y;
@@ -911,7 +911,7 @@ void ImDrawList::AddPolyline(const ImVec2* points, const int points_count, ImU32
                 idx1 = idx2;
             }
 
-            // Add vertexes for each point on the line
+            // Add vertices for each point on the line
             if (use_texture)
             {
                 // If we're using textures we only need to emit the left/right edge vertices
@@ -3301,8 +3301,10 @@ const ImTextureRect* ImFontAtlas::GetCustomRect(int id)
 void ImFontAtlas::GetCustomRectUV(const ImTextureRect* rect, ImVec2* out_uv_min, ImVec2* out_uv_max) const
 {
     IM_ASSERT(TexData->Width > 0 && TexData->Height > 0);   // Font atlas needs to be built before we can calculate UV coordinates
-    *out_uv_min = ImVec2((float)rect->x * TexUvScale.x, (float)rect->y * TexUvScale.y);
-    *out_uv_max = ImVec2((float)(rect->x + rect->w) * TexUvScale.x, (float)(rect->y + rect->h) * TexUvScale.y);
+    ImVec2 pos = ImVec2((float)rect->x, (float)rect->y);
+    ImVec2 size = ImVec2((float)rect->w, (float)rect->h);
+    *out_uv_min = (pos) * TexUvScale;
+    *out_uv_max = (pos + size) * TexUvScale;
 }
 
 bool ImFontAtlasGetMouseCursorTexData(ImFontAtlas* atlas, ImGuiMouseCursor cursor_type, ImVec2* out_offset, ImVec2* out_size, ImVec2 out_uv_border[2], ImVec2 out_uv_fill[2])
@@ -3583,6 +3585,7 @@ bool ImFontAtlasBuildAddFont(ImFontAtlas* atlas, ImFontConfig* src)
         if (!loader->FontSrcInit(atlas, src))
             return false;
 
+    atlas->TexIsBuilt = false; // For legacy backends
     ImFontAtlasBuildSetupFontSpecialGlyphs(atlas, font, src);
     return true;
 }
