@@ -763,7 +763,7 @@ void ImGuiManager::DrawOSDMessages(Common::Timer::Value current_time)
 	static constexpr float MOVE_DURATION = 0.5f;
 
 	ImFont* const font = s_standard_font;
-	const float font_size = std::ceil(15.0f * s_global_scale);
+	const float font_size = GetFontSizeStandard();
 	const float scale = s_global_scale;
 	const float spacing = std::ceil(5.0f * scale);
 	const float margin = std::ceil(10.0f * scale);
@@ -872,24 +872,29 @@ float ImGuiManager::GetGlobalScale()
 	return s_global_scale;
 }
 
-std::pair<ImFont*, float> ImGuiManager::GetStandardFont()
+ImFont* ImGuiManager::GetStandardFont()
 {
-	return {s_standard_font, std::ceil(15.0f * s_global_scale)};
+	return s_standard_font;
 }
 
-std::pair<ImFont*, float> ImGuiManager::GetFixedFont()
+ImFont* ImGuiManager::GetFixedFont()
 {
-	return {s_fixed_font, std::ceil(15.0f * s_global_scale)};
+	return s_fixed_font;
 }
 
-std::pair<ImFont*, float> ImGuiManager::GetMediumFont()
+float ImGuiManager::GetFontSizeStandard()
 {
-	return {s_standard_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE)};
+	return std::ceil(15.0f * s_global_scale);
 }
 
-std::pair<ImFont*, float> ImGuiManager::GetLargeFont()
+float ImGuiManager::GetFontSizeMedium()
 {
-	return {s_standard_font, ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE)};
+	return ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE);
+}
+
+float ImGuiManager::GetFontSizeLarge()
+{
+	return ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE);
 }
 
 bool ImGuiManager::WantsTextInput()
