@@ -762,8 +762,8 @@ void ImGuiManager::DrawOSDMessages(Common::Timer::Value current_time)
 {
 	static constexpr float MOVE_DURATION = 0.5f;
 
-	ImFont* const font = ImGui::GetFont();
-	const float font_size = ImGui::GetFontSize();
+	ImFont* const font = s_standard_font;
+	const float font_size = std::ceil(15.0f * s_global_scale);
 	const float scale = s_global_scale;
 	const float spacing = std::ceil(5.0f * scale);
 	const float margin = std::ceil(10.0f * scale);
