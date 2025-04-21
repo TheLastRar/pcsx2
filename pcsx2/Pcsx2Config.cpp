@@ -538,26 +538,68 @@ void Pcsx2Config::RecompilerOptions::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapBitBool(vu0SignOverflow);
 	SettingsWrapBitBool(vu0Underflow);
 
-	SettingsWrapBitBool(vu0SoftAddSub);
-	SettingsWrapBitBool(vu0SoftMulDiv);
-	SettingsWrapBitBool(vu0SoftSqrt);
+	bool softAddSub = false;
+	bool softMulDiv = false;
+	bool softSqrt = false;
+	if (wrap.IsSaving())
+	{
+		softAddSub = vu0SoftFloat & SOFT_FLOAT_ADDSUB;
+		softMulDiv = vu0SoftFloat & SOFT_FLOAT_MULDIV;
+		softSqrt = vu0SoftFloat & SOFT_FLOAT_SQRT;
+	}
+	SettingsWrapBitBoolEx(softAddSub, "vu0SoftAddSub");
+	SettingsWrapBitBoolEx(softMulDiv, "vu0SoftMulDiv");
+	SettingsWrapBitBoolEx(softSqrt, "vu0SoftSqrt");
+	if (wrap.IsLoading())
+	{
+		vu0SoftFloat =
+			(softAddSub ? SOFT_FLOAT_ADDSUB : 0) |
+			(softMulDiv ? SOFT_FLOAT_MULDIV : 0) |
+			(softSqrt ? SOFT_FLOAT_SQRT : 0);
+	}
 
 	SettingsWrapBitBool(vu1Overflow);
 	SettingsWrapBitBool(vu1ExtraOverflow);
 	SettingsWrapBitBool(vu1SignOverflow);
 	SettingsWrapBitBool(vu1Underflow);
 
-	SettingsWrapBitBool(vu1SoftAddSub);
-	SettingsWrapBitBool(vu1SoftMulDiv);
-	SettingsWrapBitBool(vu1SoftSqrt);
+	if (wrap.IsSaving())
+	{
+		softAddSub = vu1SoftFloat & SOFT_FLOAT_ADDSUB;
+		softMulDiv = vu1SoftFloat & SOFT_FLOAT_MULDIV;
+		softSqrt = vu1SoftFloat & SOFT_FLOAT_SQRT;
+	}
+	SettingsWrapBitBoolEx(softAddSub, "vu1SoftAddSub");
+	SettingsWrapBitBoolEx(softMulDiv, "vu1SoftMulDiv");
+	SettingsWrapBitBoolEx(softSqrt, "vu1SoftSqrt");
+	if (wrap.IsLoading())
+	{
+		vu1SoftFloat =
+			(softAddSub ? SOFT_FLOAT_ADDSUB : 0) |
+			(softMulDiv ? SOFT_FLOAT_MULDIV : 0) |
+			(softSqrt ? SOFT_FLOAT_SQRT : 0);
+	}
 
 	SettingsWrapBitBool(fpuOverflow);
 	SettingsWrapBitBool(fpuExtraOverflow);
 	SettingsWrapBitBool(fpuFullMode);
 
-	SettingsWrapBitBool(fpuSoftAddSub);
-	SettingsWrapBitBool(fpuSoftMulDiv);
-	SettingsWrapBitBool(fpuSoftSqrt);
+	if (wrap.IsSaving())
+	{
+		softAddSub = fpuSoftFloat & SOFT_FLOAT_ADDSUB;
+		softMulDiv = fpuSoftFloat & SOFT_FLOAT_MULDIV;
+		softSqrt = fpuSoftFloat & SOFT_FLOAT_SQRT;
+	}
+	SettingsWrapBitBoolEx(softAddSub, "fpuSoftAddSub");
+	SettingsWrapBitBoolEx(softMulDiv, "fpuSoftMulDiv");
+	SettingsWrapBitBoolEx(softSqrt, "fpuSoftSqrt");
+	if (wrap.IsLoading())
+	{
+		fpuSoftFloat =
+			(softAddSub ? SOFT_FLOAT_ADDSUB : 0) |
+			(softMulDiv ? SOFT_FLOAT_MULDIV : 0) |
+			(softSqrt ? SOFT_FLOAT_SQRT : 0);
+	}
 }
 
 u32 Pcsx2Config::RecompilerOptions::GetEEClampMode() const
