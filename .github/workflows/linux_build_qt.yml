@@ -160,7 +160,7 @@ jobs:
 
       - name: Run Tests
         working-directory: ./build
-        run: ninja unittests
+        run: ninja -j1 unittests
 
       - name: Package AppImage
         if: inputs.buildAppImage == true
