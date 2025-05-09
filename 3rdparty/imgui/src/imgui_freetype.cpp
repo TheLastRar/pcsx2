@@ -687,6 +687,57 @@ static lunasvg::Document* ImGuiLunasvgPortLoad(LunasvgPortState* state, FT_SVG_D
 	return state->entries.back().document.get();
 }
 
+enum class LengthType
+{
+	Unkown,
+	Fixed,
+	Percent
+};
+
+struct Length
+{
+    float value;
+	LengthType type;
+};
+
+static bool ImGuiLunasvgPlutoParseLength(const lunasvg::Element& element, std::string attr, Length& length)
+{
+	std::string value = element.getAttribute(attr);
+	if (value.empty())
+		return false;
+	assert(false);
+
+    // TODO
+}
+
+static void ImGuiLunasvgGetPlutoSize(lunasvg::Document* document, float& width, float& height)
+{
+	// Emulate plutoSVG logic
+	lunasvg::Element rootElement = document->documentElement();
+	Length w{100, LengthType::Percent};
+	Length h{100, LengthType::Percent};
+
+	ImGuiLunasvgPlutoParseLength(document->documentElement(), "width", w);
+	ImGuiLunasvgPlutoParseLength(document->documentElement(), "height", h);
+
+    float intrinsic_width = w.type == LengthType::Percent ? w.value * width / 100.f : w.value;
+	float intrinsic_height = h.type == LengthType::Percent ? h.value * width / 100.f : h.value;
+
+    if (intrinsic_width <= 0.f || intrinsic_height <= 0.f)
+	{
+		assert(false);
+	}
+
+	std::string vb = rootElement.getAttribute("viewBox");
+
+    // Return values
+    width = intrinsic_width;
+	height = intrinsic_height;
+
+    //TODO: PlutoSVG uses viewbox/width in rendering https://github.com/sammycage/plutosvg/issues/25#issuecomment-2872962934
+    // If I ever come back to this, that will need to be checked against luna and replicated if needed
+}
+
 static FT_Error ImGuiLunasvgPortPresetSlot(FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* _state)
 {
 	FT_SVG_Document ft_document = (FT_SVG_Document)slot->other;
@@ -720,16 +771,24 @@ static FT_Error ImGuiLunasvgPortPresetSlot(FT_GlyphSlot slot, FT_Bool cache, FT_
 		return FT_Err_Invalid_SVG_Document;
 	}
 
+    // Emulate plutoSVG logic (TODO)
+    float document_width = ft_document->units_per_EM;
+	float document_height = ft_document->units_per_EM;
+	ImGuiLunasvgGetPlutoSize(document, document_width, document_height);
+
+
 	auto extents = element.getLocalBoundingBox();
-	auto scale = std::min(ft_metrics.x_ppem / extents.w, ft_metrics.y_ppem / extents.h);
+    //plutoSVG has a bug(?) which treats documents without width/height attribute as being units_per_EM x units_per_EM in size
+	//auto scale = std::min(ft_metrics.x_ppem / extents.w, ft_metrics.y_ppem / extents.h);
+	auto scale = std::min(ft_metrics.x_ppem / (float)ft_document->units_per_EM, ft_metrics.y_ppem / (float)ft_document->units_per_EM);
 	auto matrix = lunasvg::Matrix::scaled(scale, scale);
 	matrix *= lunasvg::Matrix{
 		(float)ft_document->transform.xx / (1 << 16),
 		-(float)ft_document->transform.xy / (1 << 16),
 		-(float)ft_document->transform.yx / (1 << 16),
 		(float)ft_document->transform.yy / (1 << 16),
-		(float)ft_document->delta.x / 64 * extents.w / ft_metrics.x_ppem,
-		-(float)ft_document->delta.y / 64 * extents.h / ft_metrics.y_ppem};
+		(float)ft_document->delta.x / 64 * (float)ft_document->units_per_EM / ft_metrics.x_ppem,
+		-(float)ft_document->delta.y / 64 * (float)ft_document->units_per_EM / ft_metrics.y_ppem};
 
 	extents.transform(matrix);
 
