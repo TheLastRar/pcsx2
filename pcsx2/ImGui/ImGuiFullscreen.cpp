@@ -28,8 +28,7 @@
 
 #include "IconsFontAwesome5.h"
 
-#include <plutovg.h>
-#include <plutosvg.h>
+#include <lunasvg.h>
 
 #include <array>
 #include <cmath>
@@ -397,86 +396,55 @@ std::optional<RGBA8Image> ImGuiFullscreen::LoadSvgTextureImage(const char* path,
 	if (data_ptr)
 	{
 		// Load SVG
-		plutosvg_document_t* pluto_svg = plutosvg_document_load_from_data(reinterpret_cast<char*>(data_ptr->data()),
-			data_ptr->size(), -1, -1, nullptr, nullptr);
-
-		if (pluto_svg == nullptr)
+		auto document = lunasvg::Document::loadFromData(reinterpret_cast<char*>(data_ptr->data()), data_ptr->size());
+		if (document == nullptr)
 		{
 			Console.Error("Failed to load svg '%s'", path);
 			return image;
 		}
 
-		const float base_width = plutosvg_document_get_width(pluto_svg);
-		const float base_height = plutosvg_document_get_height(pluto_svg);
+		const float base_width = document->width();
+		const float base_height = document->height();
 
-		// Create a surface large enough to store the SVG.
+		// Create a vector large enough to store the SVG.
 		const int px_width = std::ceil(size.x);
 		const int px_height = std::ceil(size.y);
 
 		std::vector<u32> pixel_data;
 		pixel_data.resize(px_width * px_height);
 
-		plutovg_surface_t* pluto_surface = plutovg_surface_create_for_data(reinterpret_cast<unsigned char*>(pixel_data.data()),
-			px_width, px_height, px_width * 4);
-		if (pluto_surface == nullptr)
-		{
-			plutosvg_document_destroy(pluto_svg);
-			Console.Error("Failed to create plutovg surface '%s'", path);
-			return image;
-		}
-
-		// Create a drawing canvas.
-		plutovg_canvas_t* pluto_canvas = plutovg_canvas_create(pluto_surface);
-		if (pluto_canvas == nullptr)
-		{
-			plutovg_surface_destroy(pluto_surface);
-			plutosvg_document_destroy(pluto_svg);
-			Console.Error("Failed to create plutovg canvas '%s'", path);
-			return image;
-		}
-
 		// Scale & position SVG.
-		// ImGui positions images from top left, so we can ignore integer size of surface.
+		// ImGui positions images from top left, so we can ignore integer size of bitmap.
+		lunasvg::Matrix m;
 		switch (mode)
 		{
 			case SvgScaling::Stretch:
-				plutovg_canvas_scale(pluto_canvas, size.x / base_width, size.y / base_height);
+				m = lunasvg::Matrix(size.x / base_width, 0, 0, size.y / base_height, 0, 0);
 				break;
 			case SvgScaling::Fit:
 			{
 				const ImRect rect = CenterImage(size, {base_width, base_height}, false);
 				const float scale = (rect.Max.y - rect.Min.y) / base_height;
-				plutovg_canvas_scale(pluto_canvas, scale, scale);
-				plutovg_canvas_translate(pluto_canvas, rect.Min.x / scale, rect.Min.y / scale);
+				m = lunasvg::Matrix(scale, 0, 0, scale, rect.Min.x, rect.Min.y);
 				break;
 			}
 			case SvgScaling::ZoomFill:
 			{
 				const ImRect rect = CenterImage(size, {base_width, base_height}, true);
 				const float scale = (rect.Max.y - rect.Min.y) / base_height;
-				plutovg_canvas_scale(pluto_canvas, scale, scale);
-				plutovg_canvas_translate(pluto_canvas, rect.Min.x / scale, rect.Min.y / scale);
+				m = lunasvg::Matrix(scale, 0, 0, scale, rect.Min.x, rect.Min.y);
 				break;
 			}
 		}
 
 		// Render
-		const bool success = plutosvg_document_render(pluto_svg, nullptr, pluto_canvas, nullptr, nullptr, nullptr);
-
-		// Free pluto objects
-		plutovg_canvas_destroy(pluto_canvas);
-		plutovg_surface_destroy(pluto_surface);
-		plutosvg_document_destroy(pluto_svg);
-
-		if (!success)
 		{
-			Console.Error("Failed to render svg '%s'", path);
-			return image;
+			lunasvg::Bitmap bm(reinterpret_cast<unsigned char*>(pixel_data.data()),
+				px_width, px_height, px_width * 4);
+			document->render(bm, m);
+			bm.convertToRGBA();
 		}
 
-		// Convert to RGBA8Image
-		plutovg_convert_argb_to_rgba(reinterpret_cast<unsigned char*>(pixel_data.data()), reinterpret_cast<unsigned char*>(pixel_data.data()),
-			px_width, px_height, px_width * 4);
 		image = RGBA8Image(px_width, px_height, std::move(pixel_data));
 	}
 	else

@@ -3,7 +3,7 @@
   "buildsystem": "cmake-ninja",
   "builddir": true,
   "config-opts": [
-    "-DBUILD_SHARED_LIBS=ON",
+    "-DBUILD_SHARED_LIBS=OFF",
     "-DPLUTOVG_BUILD_EXAMPLES=OFF"
   ],
   "build-options": {
@@ -18,11 +18,6 @@
     }
   ],
   "cleanup": [
-    "/bin",
-    "/include",
-    "/lib/*.a",
-    "/lib/*.la",
-    "/lib/cmake",
-    "/lib/pkgconfig"
+    "*"
   ]
 }

@@ -26,7 +26,7 @@ LZ4=1.10.0
 ZSTD=1.5.7
 KDDOCKWIDGETS=2.2.3
 PLUTOVG=0.0.13
-PLUTOSVG=0.0.6
+LUNASVG=3.2.1
 
 SHADERC=2024.1
 SHADERC_GLSLANG=142052fa30f9eca191aa9dcf65359fcaed09eeec
@@ -58,7 +58,7 @@ aa27e4454ce631c5a17924ce0624eac736da19fc6f5a2ab15a6c58da7b36950f  shaderc-glslan
 03ee1a2c06f3b61008478f4abe9423454e53e580b9488b47c8071547c6a9db47  shaderc-spirv-tools-$SHADERC_SPIRVTOOLS.tar.gz
 b8529755b2d54205341766ae168e83177c6120660539f9afba71af6bca4b81ec  KDDockWidgets-$KDDOCKWIDGETS.tar.gz
 f49d62709d6bf1808ddc9b8f71e22a755484f75c7bbb0fb368f7fb2ffc7cf645  plutovg-$PLUTOVG.tar.gz
-01f8aee511bd587a602a166642a96522cc9522efd1e38c2d00e4fbc0aa22d7a0  plutosvg-$PLUTOSVG.tar.gz
+3420175c9632007edfcd0198001abc116c5c646af8e928d393cd029985cc4ee8  lunasvg-$LUNASVG.tar.gz
 EOF
 
 curl -L \
@@ -83,7 +83,7 @@ curl -L \
 	-o "shaderc-spirv-tools-$SHADERC_SPIRVTOOLS.tar.gz" "https://github.com/KhronosGroup/SPIRV-Tools/archive/$SHADERC_SPIRVTOOLS.tar.gz" \
 	-o "KDDockWidgets-$KDDOCKWIDGETS.tar.gz" "https://github.com/KDAB/KDDockWidgets/archive/v$KDDOCKWIDGETS.tar.gz" \
 	-o "plutovg-$PLUTOVG.tar.gz" "https://github.com/sammycage/plutovg/archive/v$PLUTOVG.tar.gz" \
-	-o "plutosvg-$PLUTOSVG.tar.gz" "https://github.com/sammycage/plutosvg/archive/v$PLUTOSVG.tar.gz"
+	-o "lunasvg-$LUNASVG.tar.gz" "https://github.com/sammycage/lunasvg/archive/v$LUNASVG.tar.gz"
 
 shasum -a 256 --check SHASUMS
 
@@ -264,16 +264,17 @@ echo "Building PlutoVG..."
 rm -fr "plutovg-$PLUTOVG"
 tar xf "plutovg-$PLUTOVG.tar.gz"
 cd "plutovg-$PLUTOVG"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DBUILD_SHARED_LIBS=ON -DPLUTOVG_BUILD_EXAMPLES=OFF -B build -G Ninja
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DBUILD_SHARED_LIBS=OFF -DPLUTOVG_BUILD_EXAMPLES=OFF -B build -G Ninja
 cmake --build build --parallel
 ninja -C build install
 cd ..
 
-echo "Building PlutoSVG..."
-rm -fr "plutosvg-$PLUTOSVG"
-tar xf "plutosvg-$PLUTOSVG.tar.gz"
-cd "plutosvg-$PLUTOSVG"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DBUILD_SHARED_LIBS=ON -DPLUTOSVG_ENABLE_FREETYPE=ON -DPLUTOSVG_BUILD_EXAMPLES=OFF -B build -G Ninja
+echo "Building LunaSVG..."
+rm -fr "lunasvg-$LUNASVG"
+tar xf "lunasvg-$LUNASVG.tar.gz"
+cd "lunasvg-$LUNASVG"
+patch -p1 < "$SCRIPTDIR/../common/lunasvg-dll.patch"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$INSTALLDIR" -DCMAKE_INSTALL_PREFIX="$INSTALLDIR" -DBUILD_SHARED_LIBS=ON -DLUNASVG_BUILD_EXAMPLES=OFF -B build -G Ninja
 cmake --build build --parallel
 ninja -C build install
 cd ..
