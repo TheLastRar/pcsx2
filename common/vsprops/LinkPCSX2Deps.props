@@ -4,7 +4,7 @@
   <ItemDefinitionGroup>
     <Link>
       <AdditionalLibraryDirectories>$(DepsLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies);freetype.lib;jpeg.lib;libpng16.lib;libwebp.lib;lz4.lib;SDL3.lib;zlib.lib;zstd.lib;kddockwidgets-qt62.lib;plutovg.lib;plutosvg.lib</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies);freetype.lib;jpeg.lib;libpng16.lib;libwebp.lib;lz4.lib;SDL3.lib;zlib.lib;zstd.lib;kddockwidgets-qt62.lib;lunasvg.lib</AdditionalDependencies>
    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -20,8 +20,7 @@
     <DepsDLLs Include="$(DepsBinDir)zlib1.dll" />
     <DepsDLLs Include="$(DepsBinDir)zstd.dll" />
     <DepsDLLs Include="$(DepsBinDir)kddockwidgets-qt62.dll" />
-    <DepsDLLs Include="$(DepsBinDir)plutovg.dll" />
-    <DepsDLLs Include="$(DepsBinDir)plutosvg.dll" />
+    <DepsDLLs Include="$(DepsBinDir)lunasvg.dll" />
   </ItemGroup>
   <Target Name="DepsCopyDLLs"
     AfterTargets="Build"
