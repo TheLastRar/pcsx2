@@ -189,7 +189,7 @@ endif()
 if(MSVC)
 	# Enable PDB generation in release builds
 	add_compile_options(
-		$<${CONFIG_REL_NO_DEB}:/Zi>
+		$<${CONFIG_REL_NO_DEB}:/Z7>
 	)
 	add_link_options(
 		$<${CONFIG_REL_NO_DEB}:/DEBUG>
