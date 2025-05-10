@@ -154,6 +154,7 @@ jobs:
           if "${{ inputs.configuration }}"=="CMake" (
             call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
             set CCACHE_DIR=%cd%\.ccache
+            where ccache
             ccache -p || exit /b
             ccache -s --verbose || exit /b
             ccache -z || exit /b
