@@ -553,16 +553,15 @@ bool ImGuiManager::AddEmojiFont()
 				return true;
 			return false;
 		};
-		filter_loader.FontBakedLoadGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImFontBaked* baked, void*, ImWchar codepoint) {
+		filter_loader.FontBakedLoadGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImFontBaked* baked, void*, ImWchar codepoint, ImFontGlyph* out_glyph) {
 			if (codepoint != 0xfe0e && codepoint != 0xfe0f)
-				return static_cast<ImFontGlyph*>(nullptr);
+				return false;
 
-			ImFontGlyph glyph{};
-			glyph.Codepoint = codepoint;
-			glyph.AdvanceX = 0.0f;
-			glyph.Visible = false;
+			out_glyph->Codepoint = codepoint;
+			out_glyph->AdvanceX = 0.0f;
+			out_glyph->Visible = false;
 
-			return ImFontAtlasBakedAddFontGlyph(atlas, baked, src, &glyph);
+			return true;
 		};
 
 		ImFontConfig cfg;
