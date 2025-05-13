@@ -1278,7 +1278,7 @@ GSTextureCache::Source* GSTextureCache::LookupSource(const bool is_color, const 
 			{
 				// If the BP is block offset it's unlikely to be a target, but a target can be made by a HW move, so we need to check for a match.
 				// Good for Baldurs Gate Dark Alliance (HW Move), bad for Tomb Raider Legends (just offset).
-				if (((bp & (BLOCKS_PER_PAGE - 1)) != (t->m_TEX0.TBP0 & (BLOCKS_PER_PAGE - 1))) && (bp & (BLOCKS_PER_PAGE - 1)))
+				if (((bp & (GS_BLOCKS_PER_PAGE - 1)) != (t->m_TEX0.TBP0 & (GS_BLOCKS_PER_PAGE - 1))) && (bp & (GS_BLOCKS_PER_PAGE - 1)))
 					continue;
 
 				//const bool overlaps = t->Inside(bp, bw, psm, block_boundary_rect);
@@ -4512,7 +4512,7 @@ void GSTextureCache::InvalidateLocalMem(const GSOffset& off, const GSVector4i& r
 					bool only_in_dirty_area = true;
 					off.pageLooperForRect(r).loopPagesWithBreak([t, &dirty_rect, &only_in_dirty_area](u32 page) {
 						const GSVector4i page_rect = GSLocalMemory::GetRectForPageOffset(t->m_TEX0.TBP0,
-							page * BLOCKS_PER_PAGE, t->m_TEX0.TBW, t->m_TEX0.PSM);
+							page * GS_BLOCKS_PER_PAGE, t->m_TEX0.TBW, t->m_TEX0.PSM);
 						if (!dirty_rect.rintersect(page_rect).eq(page_rect))
 						{
 							only_in_dirty_area = false;
@@ -4938,9 +4938,9 @@ bool GSTextureCache::PageMove(u32 SBP, u32 DBP, u32 BW, u32 PSM, int sx, int sy,
 	const GSVector2i& pgs = GSLocalMemory::m_psm[PSM].pgs;
 	const u32 num_pages = (h / pgs.y) * BW;
 	const u32 src_page_offset = ((sy / pgs.y) * BW) + (sx / pgs.x);
-	const u32 src_block_end = SBP + (((src_page_offset + num_pages) * BLOCKS_PER_PAGE) - 1);
+	const u32 src_block_end = SBP + (((src_page_offset + num_pages) * GS_BLOCKS_PER_PAGE) - 1);
 	const u32 dst_page_offset = ((dy / pgs.y) * BW) + (dx / pgs.x);
-	const u32 dst_block_end = DBP + (((dst_page_offset + num_pages) * BLOCKS_PER_PAGE) - 1);
+	const u32 dst_block_end = DBP + (((dst_page_offset + num_pages) * GS_BLOCKS_PER_PAGE) - 1);
 	pxAssert(num_pages > 0);
 	GL_PUSH("TC: GSTextureCache::PageMove(): %u pages, with offset of %u src %u dst", num_pages, src_page_offset,
 		dst_page_offset);
@@ -4977,15 +4977,15 @@ bool GSTextureCache::PageMove(u32 SBP, u32 DBP, u32 BW, u32 PSM, int sx, int sy,
 	}
 
 	// Double-check that we're not copying to a non-page-aligned target.
-	if (((SBP - stgt->m_TEX0.TBP0) % BLOCKS_PER_PAGE) != 0 || ((DBP - dtgt->m_TEX0.TBP0) % BLOCKS_PER_PAGE) != 0)
+	if (((SBP - stgt->m_TEX0.TBP0) % GS_BLOCKS_PER_PAGE) != 0 || ((DBP - dtgt->m_TEX0.TBP0) % GS_BLOCKS_PER_PAGE) != 0)
 	{
 		GL_INS("TC: Effective SBP of %x or DBP of %x is not page aligned.", SBP - stgt->m_TEX0.TBP0, DBP - dtgt->m_TEX0.TBP0);
 		return false;
 	}
 
 	// Need to offset based on the target's actual BP.
-	const u32 real_src_offset = ((SBP - stgt->m_TEX0.TBP0) / BLOCKS_PER_PAGE) + src_page_offset;
-	const u32 real_dst_offset = ((DBP - dtgt->m_TEX0.TBP0) / BLOCKS_PER_PAGE) + dst_page_offset;
+	const u32 real_src_offset = ((SBP - stgt->m_TEX0.TBP0) / GS_BLOCKS_PER_PAGE) + src_page_offset;
+	const u32 real_dst_offset = ((DBP - dtgt->m_TEX0.TBP0) / GS_BLOCKS_PER_PAGE) + dst_page_offset;
 	CopyPages(stgt, stgt->m_TEX0.TBW, real_src_offset, dtgt, dtgt->m_TEX0.TBW, real_dst_offset, num_pages);
 	return true;
 }
@@ -6754,8 +6754,8 @@ bool GSTextureCache::Surface::Overlaps(u32 bp, u32 bw, u32 psm, const GSVector4i
 	}
 
 	// Wrapping around to the beginning of memory.
-	if (end_block > MAX_BLOCKS && bp < m_end_block && m_end_block < m_TEX0.TBP0)
-		bp += MAX_BLOCKS;
+	if (end_block > GS_MAX_BLOCKS && bp < m_end_block && m_end_block < m_TEX0.TBP0)
+		bp += GS_MAX_BLOCKS;
 
 	const bool overlap = GSTextureCache::CheckOverlap(m_TEX0.TBP0, UnwrappedEndBlock(), start_block, end_block);
 	return overlap;
@@ -6851,7 +6851,7 @@ void GSTextureCache::Source::Update(const GSVector4i& rect, int level)
 	u32 blocks = 0;
 
 	if (!m_valid)
-		m_valid = std::make_unique<u32[]>(MAX_PAGES);
+		m_valid = std::make_unique<u32[]>(GS_MAX_PAGES);
 
 	if (m_repeating)
 	{
@@ -6860,7 +6860,7 @@ void GSTextureCache::Source::Update(const GSVector4i& rect, int level)
 			for (int x = r.left; x < r.right; bn.nextBlockX(), x += bs.x)
 			{
 				const int i = (bn.blkY() << 7) + bn.blkX();
-				const u32 addr = i % MAX_BLOCKS;
+				const u32 addr = i % GS_MAX_BLOCKS;
 
 				const u32 row = addr >> 5u;
 				const u32 col = 1 << (addr & 31u);
@@ -8228,7 +8228,7 @@ __fi static void BlockHashReset(BlockHashState& st)
 
 __fi static void BlockHashAccumulate(BlockHashState& st, const u8* bp)
 {
-	GSXXH3_64bits_update(&st, bp, BLOCK_SIZE);
+	GSXXH3_64bits_update(&st, bp, GS_BLOCK_SIZE);
 }
 
 __fi static void BlockHashAccumulate(BlockHashState& st, const u8* bp, u32 size)
