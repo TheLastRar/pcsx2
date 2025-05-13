@@ -25,6 +25,7 @@
 
 #include "fmt/format.h"
 #include "imgui.h"
+#include "imgui_freetype.h"
 #include "imgui_internal.h"
 #include "common/Image.h"
 
@@ -56,6 +57,7 @@ namespace ImGuiManager
 	static ImFont* AddTextFont();
 	static ImFont* AddFixedFont();
 	static bool AddIconFonts();
+	static bool AddEmojiFont();
 	static bool AddFallbackFonts(bool fixed);
 	static void AcquirePendingOSDMessages(Common::Timer::Value current_time);
 	static void DrawOSDMessages(Common::Timer::Value current_time);
@@ -78,6 +80,7 @@ static ImFont* s_fixed_font;
 static std::vector<u8> s_standard_font_data;
 static std::vector<std::vector<u8>> s_fallback_fonts_data;
 static std::vector<u8> s_fixed_font_data;
+static std::vector<u8> s_emoji_font_data;
 static std::vector<u8> s_icon_fa_font_data;
 static std::vector<u8> s_icon_pf_font_data;
 
@@ -429,6 +432,16 @@ bool ImGuiManager::LoadFontData()
 		s_fixed_font_data = std::move(font_data.value());
 	}
 
+	if (s_emoji_font_data.empty())
+	{
+		std::optional<std::vector<u8>> font_data = FileSystem::ReadBinaryFile(
+			EmuFolders::GetOverridableResourcePath("fonts" FS_OSPATH_SEPARATOR_STR "NotoColorEmoji-Regular.ttf").c_str());
+		if (!font_data.has_value())
+			return false;
+
+		s_emoji_font_data = std::move(font_data.value());
+	}
+
 	if (s_icon_fa_font_data.empty())
 	{
 		std::optional<std::vector<u8>> font_data =
@@ -457,6 +470,7 @@ void ImGuiManager::UnloadFontData()
 	std::vector<u8>().swap(s_standard_font_data);
 	std::vector<std::vector<u8>>().swap(s_fallback_fonts_data);
 	std::vector<u8>().swap(s_fixed_font_data);
+	std::vector<u8>().swap(s_emoji_font_data);
 	std::vector<u8>().swap(s_icon_fa_font_data);
 	std::vector<u8>().swap(s_icon_pf_font_data);
 }
@@ -488,12 +502,16 @@ ImFont* ImGuiManager::AddFixedFont()
 
 bool ImGuiManager::AddIconFonts()
 {
+	// Exclude Emojis
+	static constexpr ImWchar range_emoji[] = {0x10000, 0x1ffff, 0x0, 0x0};
+
 	{
 		ImFontConfig cfg;
 		cfg.MergeMode = true;
 		cfg.PixelSnapH = true;
 		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
 		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphExcludeRanges = range_emoji;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
@@ -509,6 +527,7 @@ bool ImGuiManager::AddIconFonts()
 		cfg.PixelSnapH = true;
 		cfg.GlyphMinAdvanceX = FONT_BASE_SIZE;
 		cfg.GlyphMaxAdvanceX = FONT_BASE_SIZE;
+		cfg.GlyphExcludeRanges = range_emoji;
 		cfg.FontDataOwnedByAtlas = false;
 
 		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
@@ -518,6 +537,55 @@ bool ImGuiManager::AddIconFonts()
 		}
 	}
 
+	return true;
+}
+
+bool ImGuiManager::AddEmojiFont()
+{
+	{
+		// ImGui can't correctly handle some Unicode codepoints
+		// Remove them to avoid rendering blank/fallback characters
+		// See https://github.com/ocornut/imgui/issues/8240
+		static ImFontLoader filter_loader;
+		filter_loader.Name = "Emoji Preprocessor";
+		filter_loader.FontSrcContainsGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImWchar codepoint) {
+			if (codepoint == 0xfe0e || codepoint == 0xfe0f)
+				return true;
+			return false;
+		};
+		filter_loader.FontBakedLoadGlyph = [](ImFontAtlas* atlas, ImFontConfig* src, ImFontBaked* baked, void*, ImWchar codepoint) {
+			if (codepoint != 0xfe0e && codepoint != 0xfe0f)
+				return static_cast<ImFontGlyph*>(nullptr);
+
+			ImFontGlyph glyph{};
+			glyph.Codepoint = codepoint;
+			glyph.AdvanceX = 0.0f;
+			glyph.Visible = false;
+
+			return ImFontAtlasBakedAddFontGlyph(atlas, baked, src, &glyph);
+		};
+
+		ImFontConfig cfg;
+		StringUtil::Strlcpy(cfg.Name, filter_loader.Name, sizeof(cfg.Name));
+		cfg.MergeMode = true;
+		cfg.SizePixels = FONT_BASE_SIZE;
+		cfg.FontLoader = &filter_loader;
+		if (!ImGui::GetIO().Fonts->AddFont(&cfg))
+			return false;
+	}
+
+	{
+		ImFontConfig cfg;
+		cfg.MergeMode = true;
+		cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+		cfg.FontDataOwnedByAtlas = false;
+
+		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+				s_emoji_font_data.data(), static_cast<int>(s_emoji_font_data.size()), FONT_BASE_SIZE, &cfg, nullptr))
+		{
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -551,11 +619,11 @@ bool ImGuiManager::AddImGuiFonts()
 	io.Fonts->Clear();
 
 	s_standard_font = AddTextFont();
-	if (!s_standard_font || !AddIconFonts() || !AddFallbackFonts(false))
+	if (!s_standard_font || !AddIconFonts() || !AddEmojiFont() || !AddFallbackFonts(false))
 		return false;
 
 	s_fixed_font = AddFixedFont();
-	if (!s_fixed_font || !AddFallbackFonts(true))
+	if (!s_fixed_font || !AddEmojiFont() || !AddFallbackFonts(true))
 		return false;
 
 	ImGuiFullscreen::SetFont(s_standard_font);
