@@ -51,9 +51,9 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)pcsx2</AdditionalIncludeDirectories>
       <!-- Needed for moc pch -->
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ProjectDir)\Settings;$(ProjectDir)\GameList;$(ProjectDir)\Tools\InputRecording;$(ProjectDir)\Debugger;$(ProjectDir)\Debugger\Breakpoints;$(ProjectDir)\Debugger\Docking;$(ProjectDir)\Debugger\Memory;$(ProjectDir)\Debugger\SymbolTree</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)=='true'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="$(PCSX2DisablePrecompiledHeader)!='true'">PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
-      <ForcedIncludeFiles>PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions Condition="'$(Platform)'!='ARM64'">ENABLE_RAINTEGRATION;ENABLE_OPENGL;ENABLE_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>LZMA_API_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>QT_NO_EXCEPTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
