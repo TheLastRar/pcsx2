@@ -13,6 +13,8 @@
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QListWidget>
 
+#include "common/Pcsx2Defs.h"
+
 class SettingsWindow;
 
 struct AvailableMcdInfo;
