@@ -30,6 +30,7 @@ jobs:
       artifactPrefixName: "PCSX2-windows-Qt-x64-sse4-msvc"
       configuration: Release
       simd: "SSE4"
+      ccacheSize: "1500M"
     secrets: inherit
 
   build_qt_avx2:
@@ -41,6 +42,7 @@ jobs:
       jobName: "MSVC AVX2"
       artifactPrefixName: "PCSX2-windows-Qt-x64-avx2-msvc"
       configuration: Release AVX2
+      ccacheSize: "1500M"
     secrets: inherit
 
   build_qt_cmake:
@@ -52,6 +54,7 @@ jobs:
       artifactPrefixName: "PCSX2-windows-Qt-x64-cmake-msvc"
       configuration: CMake
       buildSystem: cmake
+      ccacheSize: "1500M"
     secrets: inherit
 
   build_qt_clang_sse4:
