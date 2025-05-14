@@ -132,7 +132,7 @@ jobs:
         shell: cmd
         run: |
           call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -G Ninja
+          cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -G Ninja
 
       - name: Build PCSX2
         shell: cmd
@@ -142,7 +142,7 @@ jobs:
             cmake --build build --config Release || exit /b
             cmake --install build --config Release || exit /b
           ) else (
-            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}"
+            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /p:PCSX2DisablePrecompiledHeader=true
           )
 
       - name: Run Tests

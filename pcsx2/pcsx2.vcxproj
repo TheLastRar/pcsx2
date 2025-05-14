@@ -59,9 +59,10 @@
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='ARM64'">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\vixl\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\demangler\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\ccc\src</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)!='true'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)=='true'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="$(PCSX2DisablePrecompiledHeader)!='true'">PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
-      <ForcedIncludeFiles>PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>C4_NO_DEBUG_BREAK;ST_NO_EXCEPTION_HANDLING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'!='ARM64'">ENABLE_RAINTEGRATION;ENABLE_OPENGL;ENABLE_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">XBYAK_NO_EXCEPTION;ZYCORE_STATIC_BUILD;ZYDIS_STATIC_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -321,7 +322,7 @@
     <ClCompile Include="Mdec.cpp" />
     <ClCompile Include="Patch.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="%(PrecompiledHeader)=='Use'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ps2\Iop\PsxBios.cpp" />
     <ClCompile Include="ps2\pgif.cpp" />
