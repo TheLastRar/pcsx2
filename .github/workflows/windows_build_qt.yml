@@ -44,6 +44,10 @@ on:
         required: false
         type: boolean
         default: false
+      ccacheSize:
+        required: false
+        type: string
+        default: "500M"
 
 jobs:
   build_windows_qt:
@@ -53,6 +57,11 @@ jobs:
     timeout-minutes: 90
     env:
       POWERSHELL_TELEMETRY_OPTOUT: 1
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: true
+      CCACHE_COMPRESSLEVEL: 9
+      CCACHE_MAXSIZE: ${{ inputs.ccacheSize }}
 
     steps:
       - name: Checkout Repository
@@ -103,6 +112,27 @@ jobs:
           PR_SHA: ${{ github.event.pull_request.head.sha }}
         run: ./.github/workflows/scripts/common/name-artifacts.sh
 
+      # -- SETUP CCACHE - https://cristianadam.eu/20200113/speeding-up-c-plus-plus-github-actions-using-ccache/
+      - name: Install ccache
+        shell: pwsh
+        run: |
+          winget install ccache --accept-source-agreements --accept-package-agreements --disable-interactivity
+          # Manually add path for later steps, as we can't restart the shell/action like winget wants
+          "C:\Users\runneradmin\AppData\Local\Microsoft\WinGet\Links" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: pwsh
+        run: |
+            "timestamp=$(Get-Date -Format 'yyyy-MM-dd-HH;mm;ss')" >> $env:GITHUB_OUTPUT
+
+      - name: ccache cache files
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ${{ inputs.os }} ${{ inputs.platform }} ${{ inputs.configuration == 'CMake' && ( inputs.cmakeFlags == '' && 'CMake' || format('CMake {0}', inputs.cmakeFlags) ) || inputs.configuration }} ccache ${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: ${{ inputs.os }} ${{ inputs.platform }} ${{ inputs.configuration == 'CMake' && ( inputs.cmakeFlags == '' && 'CMake' || format('CMake {0}', inputs.cmakeFlags) ) || inputs.configuration }} ccache
+
       - name: Setup msbuild
         if: inputs.configuration != 'CMake'
         uses: microsoft/setup-msbuild@v2
@@ -132,18 +162,21 @@ jobs:
         shell: cmd
         run: |
           call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -G Ninja
+          cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -G Ninja
 
       - name: Build PCSX2
         shell: cmd
         run: |
+          ccache -p || exit /b
+          ccache -z || exit /b
           if "${{ inputs.configuration }}"=="CMake" (
             call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
             cmake --build build --config Release || exit /b
             cmake --install build --config Release || exit /b
           ) else (
-            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /p:PCSX2DisablePrecompiledHeader=true
+            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /p:PCSX2DisablePrecompiledHeader=true /p:PCSX2ClToolLauncher=ccache || exit /b
           )
+          ccache -s --verbose || exit /b
 
       - name: Run Tests
         if: inputs.configuration == 'CMake'
