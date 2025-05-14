@@ -59,6 +59,7 @@
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='ARM64'">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\vixl\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\demangler\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\ccc\src</AdditionalIncludeDirectories>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)!='true'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)=='true'">NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles Condition="$(PCSX2DisablePrecompiledHeader)!='true'">PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
@@ -320,7 +321,7 @@
     <ClCompile Include="Mdec.cpp" />
     <ClCompile Include="Patch.cpp" />
     <ClCompile Include="PrecompiledHeader.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="%(PrecompiledHeader)=='Use'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ps2\Iop\PsxBios.cpp" />
     <ClCompile Include="ps2\pgif.cpp" />
