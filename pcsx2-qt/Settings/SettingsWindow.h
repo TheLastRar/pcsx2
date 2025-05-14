@@ -13,6 +13,8 @@
 #include <array>
 #include <memory>
 
+#include "common/Pcsx2Defs.h"
+
 class QWheelEvent;
 
 class INISettingsInterface;
