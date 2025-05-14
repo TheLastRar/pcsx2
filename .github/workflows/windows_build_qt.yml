@@ -174,7 +174,7 @@ jobs:
             cmake --build build --config Release || exit /b
             cmake --install build --config Release || exit /b
           ) else (
-            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /p:PCSX2DisablePrecompiledHeader=true /p:PCSX2ClToolLauncher=ccache || exit /b
+            msbuild "PCSX2_qt.sln" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /p:PreferredToolArchitecture=x64 /p:PCSX2DisablePrecompiledHeader=true /p:PCSX2ClToolLauncher=ccache || exit /b
           )
           ccache -s --verbose || exit /b
 
