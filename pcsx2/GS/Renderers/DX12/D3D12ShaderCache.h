@@ -10,6 +10,7 @@
 
 #include <cstdio>
 #include <d3d12.h>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>

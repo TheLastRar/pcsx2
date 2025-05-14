@@ -14,6 +14,10 @@
 #include <optional>
 #include <string>
 
+#include "common/Pcsx2Defs.h"
+
+class SettingsWindow;
+
 struct AvailableMcdInfo;
 
 class MemoryCardListWidget final : public QTreeWidget
