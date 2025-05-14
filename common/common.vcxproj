@@ -36,8 +36,9 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\fast_float\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\fmt\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\jpgd</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <ForcedIncludeFiles>PrecompiledHeader.h</ForcedIncludeFiles>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)!='true'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="$(PCSX2DisablePrecompiledHeader)=='true'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="$(PCSX2DisablePrecompiledHeader)!='true'">PrecompiledHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
