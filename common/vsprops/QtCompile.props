@@ -88,7 +88,7 @@
       <Output TaskParameter="OutOfDateSources" ItemName="OutOfDateQtUi"/>
     </GetOutOfDateItems>
 
-    <CustomBuild Condition="'@(OutOfDateQtUi)'!=''"
+    <ParallelCustomBuild Condition="'@(OutOfDateQtUi)'!=''"
       Sources="@(OutOfDateQtUi)" />
   </Target>
 
@@ -101,13 +101,37 @@
   </PropertyGroup>
   <Target Name="QtMoc"
     BeforeTargets="ClCompile"
-    Condition="'@(QtMoc)'!=''"
-    Inputs="%(QtMoc.Identity);$(QtHostBinDir)moc.exe"
-    Outputs="$(QtToolOutDir)%(QtMoc.RelativeDir)moc_%(QtMoc.Filename).cpp">
-    <Message Text="moc %(QtMoc.Filename) $(QtToolOutDir)%(QtMoc.RelativeDir)moc_%(QtMoc.Filename).cpp" Importance="High" />
+    Condition="'@(QtMoc)'!=''">
     <Error Condition="!$(QtDirValid)" Text="Qt directory non-existent (download/extract the zip)" />
-    <MakeDir Directories="$(QtToolOutDir)%(QtMoc.RelativeDir)" />
-    <Exec Command="&quot;$(QtHostBinDir)moc.exe&quot; &quot;%(QtMoc.FullPath)&quot; -o &quot;$(QtToolOutDir)%(QtMoc.RelativeDir)moc_%(QtMoc.Filename).cpp&quot; -f%(QtMoc.Filename)%(QtMoc.Extension) $(MocDefines) $(MocIncludes)" />
+
+    <!--Setup metadata for following tasks-->
+    <ItemGroup>
+      <QtMoc>
+        <Message>moc %(Filename)</Message>
+        <Command>
+            "$(QtHostBinDir)moc.exe" "%(FullPath)" -o "$(QtToolOutDir)%(QtMoc.RelativeDir)moc_%(QtMoc.Filename).cpp" -f%(QtMoc.Filename)%(QtMoc.Extension) $(MocDefines) $(MocIncludes)
+        </Command>
+        <Outputs>$(QtToolOutDir)%(QtMoc.RelativeDir)moc_%(QtMoc.Filename).cpp</Outputs>
+            <!--We don't know what headers moc will use, so just put the tool itself as a cludge-->
+        <AdditionalDependencies>$(QtHostBinDir)moc.exe</AdditionalDependencies>
+      </QtMoc>
+    </ItemGroup>
+
+    <!--Partial incremental builds don't seem to allow ParallelCustomBuild to run in parallel-->
+    <!--Use tflogs instead to list out of date files for incremental building-->
+    <GetOutOfDateItems Sources="@(QtMoc)"
+      OutputsMetadataName="Outputs"
+      CommandMetadataName="Command"
+      DependenciesMetadataName="AdditionalDependencies"
+      TLogDirectory="$(TLogLocation)"
+      TLogNamePrefix="QtMoc">
+      <Output TaskParameter="OutOfDateSources" ItemName="OutOfDateQtMoc"/>
+    </GetOutOfDateItems>
+
+    <MakeDir Directories="$(QtToolOutDir)%(OutOfDateQtMoc.RelativeDir)" />
+
+    <ParallelCustomBuild Condition="'@(OutOfDateQtMoc)'!=''"
+      Sources="@(OutOfDateQtMoc)" />
   </Target>
 
   <ItemGroup>
