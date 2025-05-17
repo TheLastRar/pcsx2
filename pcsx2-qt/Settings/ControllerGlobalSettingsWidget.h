@@ -64,8 +64,13 @@ public:
 	ControllerMouseSettingsDialog(QWidget* parent, ControllerSettingsWindow* dialog);
 	~ControllerMouseSettingsDialog();
 
+protected:
+	bool event(QEvent* event) override;
+
 private:
 	Ui::ControllerMouseSettingsDialog m_ui;
+
+	QPixmap getIconPixmap() const;
 };
 
 class ControllerMappingSettingsDialog : public QDialog
@@ -76,6 +81,11 @@ public:
 	ControllerMappingSettingsDialog(ControllerSettingsWindow* parent);
 	~ControllerMappingSettingsDialog();
 
+protected:
+	bool event(QEvent* event) override;
+
 private:
 	Ui::ControllerMappingSettingsDialog m_ui;
+
+	QPixmap getIconPixmap() const;
 };

@@ -11,7 +11,7 @@ CoverDownloadDialog::CoverDownloadDialog(QWidget* parent /*= nullptr*/)
 	: QDialog(parent)
 {
 	m_ui.setupUi(this);
-	m_ui.coverIcon->setPixmap(QIcon::fromTheme("artboard-2-line").pixmap(32));
+	m_ui.coverIcon->setPixmap(getIconPixmap());
 	updateEnabled();
 
 	connect(m_ui.start, &QPushButton::clicked, this, &CoverDownloadDialog::onStartClicked);
@@ -24,9 +24,26 @@ CoverDownloadDialog::~CoverDownloadDialog()
 	pxAssert(!m_thread);
 }
 
+QPixmap CoverDownloadDialog::getIconPixmap() const
+{
+	return QIcon::fromTheme("artboard-2-line").pixmap(QSize(32, 32), devicePixelRatioF());
+}
+
 void CoverDownloadDialog::closeEvent(QCloseEvent* ev)
 {
 	cancelThread();
+}
+
+bool CoverDownloadDialog::event(QEvent* event)
+{
+	if (event->type() == QEvent::DevicePixelRatioChange)
+	{
+		m_ui.coverIcon->setPixmap(getIconPixmap());
+		QDialog::event(event);
+		return true;
+	}
+
+	return QDialog::event(event);
 }
 
 void CoverDownloadDialog::onDownloadStatus(const QString& text)

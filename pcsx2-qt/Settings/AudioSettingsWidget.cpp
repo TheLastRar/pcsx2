@@ -18,6 +18,30 @@
 #include <algorithm>
 #include <bit>
 
+class AudioExpansionSettingsDialogDpiFilter : QObject
+{
+public:
+	AudioExpansionSettingsDialogDpiFilter(QDialog* dlg, std::function<void(QDialog* dlg)> updateIconPixmap)
+		: m_dlg{dlg}
+		, m_updateIconPixmap{updateIconPixmap}
+	{
+		dlg->installEventFilter(this);
+	}
+
+protected:
+	bool eventFilter(QObject* object, QEvent* event) override
+	{
+		if (object == m_dlg && event->type() == QEvent::DevicePixelRatioChange)
+			m_updateIconPixmap(m_dlg);
+		// Don't block the event
+		return false;
+	}
+
+private:
+	QDialog* m_dlg;
+	std::function<void(QDialog* dlg)> m_updateIconPixmap;
+};
+
 AudioSettingsWidget::AudioSettingsWidget(SettingsWindow* dialog, QWidget* parent)
 	: QWidget(parent)
 	, m_dialog(dialog)
@@ -342,7 +366,10 @@ void AudioSettingsWidget::onExpansionSettingsClicked()
 	QDialog dlg(QtUtils::GetRootWidget(this));
 	Ui::AudioExpansionSettingsDialog dlgui;
 	dlgui.setupUi(&dlg);
-	dlgui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("volume-up-line")).pixmap(32, 32));
+	std::function<void(QDialog*)> updateIconPixmap =
+		[&dlgui](QDialog* dlg){ dlgui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("volume-up-line")).pixmap(QSize(32, 32), dlg->devicePixelRatioF())); };
+	updateIconPixmap(&dlg);
+	AudioExpansionSettingsDialogDpiFilter dlgef(&dlg, std::move(updateIconPixmap));
 
 	SettingsInterface* sif = m_dialog->getSettingsInterface();
 	SettingWidgetBinder::BindWidgetToIntSetting(sif, dlgui.blockSize, "SPU2/Output", "ExpandBlockSize",
@@ -431,7 +458,10 @@ void AudioSettingsWidget::onStretchSettingsClicked()
 	QDialog dlg(QtUtils::GetRootWidget(this));
 	Ui::AudioStretchSettingsDialog dlgui;
 	dlgui.setupUi(&dlg);
-	dlgui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("volume-up-line")).pixmap(32, 32));
+	std::function<void(QDialog*)> updateIconPixmap =
+		[&dlgui](QDialog* dlg) { dlgui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("volume-up-line")).pixmap(QSize(32, 32), dlg->devicePixelRatioF())); };
+	updateIconPixmap(&dlg);
+	AudioExpansionSettingsDialogDpiFilter dlgef(&dlg, std::move(updateIconPixmap));
 
 	SettingsInterface* sif = m_dialog->getSettingsInterface();
 	SettingWidgetBinder::BindWidgetToIntSetting(sif, dlgui.sequenceLength, "SPU2/Output", "StretchSequenceLengthMS",

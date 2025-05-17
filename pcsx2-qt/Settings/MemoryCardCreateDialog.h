@@ -21,7 +21,11 @@ private Q_SLOTS:
 	void nameTextChanged();
 	void createCard();
 
+protected:
+	bool event(QEvent* event) override;
+
 private:
+	QPixmap getIconPixmap() const;
 	void setType(MemoryCardType type, MemoryCardFileType fileType);
 	void restoreDefaults();
 	void updateState();

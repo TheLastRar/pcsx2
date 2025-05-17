@@ -16,7 +16,7 @@ MemoryCardCreateDialog::MemoryCardCreateDialog(QWidget* parent /* = nullptr */)
 	: QDialog(parent)
 {
 	m_ui.setupUi(this);
-	m_ui.icon->setPixmap(QIcon::fromTheme("memcard-line").pixmap(m_ui.icon->width()));
+	m_ui.icon->setPixmap(getIconPixmap());
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -46,6 +46,23 @@ MemoryCardCreateDialog::MemoryCardCreateDialog(QWidget* parent /* = nullptr */)
 #endif
 
 	updateState();
+}
+
+QPixmap MemoryCardCreateDialog::getIconPixmap() const
+{
+	return QIcon::fromTheme("memcard-line").pixmap(QSize(m_ui.icon->width(), m_ui.icon->width()), devicePixelRatioF());
+}
+
+bool MemoryCardCreateDialog::event(QEvent* event)
+{
+	if (event->type() == QEvent::DevicePixelRatioChange)
+	{
+		m_ui.icon->setPixmap(getIconPixmap());
+		QDialog::event(event);
+		return true;
+	}
+
+	return QDialog::event(event);
 }
 
 MemoryCardCreateDialog::~MemoryCardCreateDialog() = default;

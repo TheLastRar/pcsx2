@@ -15,7 +15,7 @@ AchievementLoginDialog::AchievementLoginDialog(QWidget* parent, Achievements::Lo
 	, m_reason(reason)
 {
 	m_ui.setupUi(this);
-	m_ui.loginIcon->setPixmap(QIcon::fromTheme("login-box-line").pixmap(32));
+	m_ui.loginIcon->setPixmap(getIconPixmap());
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	// Adjust text if needed based on reason.
@@ -33,6 +33,11 @@ AchievementLoginDialog::AchievementLoginDialog(QWidget* parent, Achievements::Lo
 }
 
 AchievementLoginDialog::~AchievementLoginDialog() = default;
+
+QPixmap AchievementLoginDialog::getIconPixmap() const
+{
+	return QIcon::fromTheme("login-box-line").pixmap(QSize(32, 32), devicePixelRatioF());
+}
 
 void AchievementLoginDialog::loginClicked()
 {
@@ -120,6 +125,18 @@ void AchievementLoginDialog::processLoginResult(bool result, const QString& mess
 	}
 
 	done(0);
+}
+
+bool AchievementLoginDialog::event(QEvent* event)
+{
+	if (event->type() == QEvent::DevicePixelRatioChange)
+	{
+		m_ui.loginIcon->setPixmap(getIconPixmap());
+		QDialog::event(event);
+		return true;
+	}
+
+	return QWidget::event(event);
 }
 
 void AchievementLoginDialog::connectUi()

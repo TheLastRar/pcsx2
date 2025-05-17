@@ -24,7 +24,11 @@ private Q_SLOTS:
 	void cancelClicked();
 	void processLoginResult(bool result, const QString& message);
 
+protected:
+	bool event(QEvent* event) override;
+
 private:
+	QPixmap getIconPixmap() const;
 	void connectUi();
 	void enableUI(bool enabled);
 	bool canEnableLoginButton() const;

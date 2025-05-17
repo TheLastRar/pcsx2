@@ -24,6 +24,7 @@ Q_SIGNALS:
 
 protected:
 	void closeEvent(QCloseEvent* ev);
+	bool event(QEvent* event) override;
 
 private Q_SLOTS:
 	void onDownloadStatus(const QString& text);
@@ -48,6 +49,7 @@ private:
 		bool m_use_serials;
 	};
 
+	QPixmap getIconPixmap() const;
 	void startThread();
 	void cancelThread();
 

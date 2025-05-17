@@ -170,7 +170,7 @@ ControllerMouseSettingsDialog::ControllerMouseSettingsDialog(QWidget* parent, Co
 
 	SettingsInterface* sif = dialog->getProfileSettingsInterface();
 
-	m_ui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("mouse-line")).pixmap(32, 32));
+	m_ui.icon->setPixmap(getIconPixmap());
 
 	ControllerSettingWidgetBinder::BindWidgetToInputProfileFloat(sif, m_ui.pointerXSpeedSlider, "Pad", "PointerXSpeed", 40.0f);
 	ControllerSettingWidgetBinder::BindWidgetToInputProfileFloat(sif, m_ui.pointerYSpeedSlider, "Pad", "PointerYSpeed", 40.0f);
@@ -193,6 +193,23 @@ ControllerMouseSettingsDialog::ControllerMouseSettingsDialog(QWidget* parent, Co
 	connect(m_ui.buttonBox->button(QDialogButtonBox::Close), &QPushButton::clicked, this, &QDialog::accept);
 }
 
+bool ControllerMouseSettingsDialog::event(QEvent* event)
+{
+	if (event->type() == QEvent::DevicePixelRatioChange)
+	{
+		m_ui.icon->setPixmap(getIconPixmap());
+		QDialog::event(event);
+		return true;
+	}
+
+	return QDialog::event(event);
+}
+
+QPixmap ControllerMouseSettingsDialog::getIconPixmap() const
+{
+	return QIcon::fromTheme(QStringLiteral("mouse-line")).pixmap(QSize(32, 32), devicePixelRatioF());
+}
+
 ControllerMouseSettingsDialog::~ControllerMouseSettingsDialog() = default;
 
 ControllerMappingSettingsDialog::ControllerMappingSettingsDialog(ControllerSettingsWindow* parent)
@@ -202,11 +219,28 @@ ControllerMappingSettingsDialog::ControllerMappingSettingsDialog(ControllerSetti
 
 	SettingsInterface* sif = parent->getProfileSettingsInterface();
 
-	m_ui.icon->setPixmap(QIcon::fromTheme(QStringLiteral("settings-3-line")).pixmap(32, 32));
+	m_ui.icon->setPixmap(getIconPixmap());
 
 	ControllerSettingWidgetBinder::BindWidgetToInputProfileBool(sif, m_ui.ignoreInversion, "InputSources", "IgnoreInversion", false);
 
 	connect(m_ui.buttonBox->button(QDialogButtonBox::Close), &QPushButton::clicked, this, &QDialog::accept);
+}
+
+bool ControllerMappingSettingsDialog::event(QEvent* event)
+{
+	if (event->type() == QEvent::DevicePixelRatioChange)
+	{
+		m_ui.icon->setPixmap(getIconPixmap());
+		QDialog::event(event);
+		return true;
+	}
+
+	return QDialog::event(event);
+}
+
+QPixmap ControllerMappingSettingsDialog::getIconPixmap() const
+{
+	return QIcon::fromTheme(QStringLiteral("settings-3-line")).pixmap(QSize(32, 32), devicePixelRatioF());
 }
 
 ControllerMappingSettingsDialog::~ControllerMappingSettingsDialog() = default;
