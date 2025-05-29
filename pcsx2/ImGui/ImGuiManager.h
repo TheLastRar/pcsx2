@@ -51,18 +51,19 @@ namespace ImGuiManager
 	float GetGlobalScale();
 
 	/// Returns the standard font for external drawing.
-	std::pair<ImFont*, float> GetStandardFont();
+	ImFont* GetStandardFont();
 
 	/// Returns the fixed-width font for external drawing.
-	std::pair<ImFont*, float> GetFixedFont();
+	ImFont* GetFixedFont();
 
-	/// Returns the medium font for external drawing, scaled by ImGuiFullscreen.
-	/// This font is allocated on demand.
-	std::pair<ImFont*, float> GetMediumFont();
+	// Returns the standard font size for external drawing.
+	float GetFontSizeStandard();
 
-	/// Returns the large font for external drawing, scaled by ImGuiFullscreen.
-	/// This font is allocated on demand.
-	std::pair<ImFont*, float> GetLargeFont();
+	// Returns the medium font size for external drawing, matching the size used by ImGuiFullscreen.
+	float GetFontSizeMedium();
+
+	// Returns the large font size for external drawing, matching the size used by ImGuiFullscreen.
+	float GetFontSizeLarge();
 
 	/// Returns true if imgui wants to intercept text input.
 	bool WantsTextInput();

@@ -644,7 +644,7 @@ bool ImGuiFullscreen::UpdateLayoutScale()
 
 void ImGuiFullscreen::UpdateFontScale()
 {
-	g_standard_font.second = std::ceil(15.0f * ImGuiManager::GetGlobalScale());
+	g_standard_font.second = ImGuiManager::GetFontSizeStandard();
 	g_medium_font.second = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_MEDIUM_FONT_SIZE);
 	g_large_font.second = ImGuiFullscreen::LayoutScale(ImGuiFullscreen::LAYOUT_LARGE_FONT_SIZE);
 }
