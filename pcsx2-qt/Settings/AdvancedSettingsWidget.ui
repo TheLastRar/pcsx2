@@ -180,9 +180,9 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
          <item row="0" column="1">
-          <widget class="QCheckBox" name="eeSoftMulDiv">
+          <widget class="QCheckBox" name="eeSoftMul">
            <property name="text">
-            <string>Multiplication/Division</string>
+            <string>Multiplication</string>
            </property>
           </widget>
          </item>
@@ -194,9 +194,9 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QCheckBox" name="eeSoftSqrt">
+          <widget class="QCheckBox" name="eeSoftDivSqrt">
            <property name="text">
-            <string>Square Root</string>
+            <string>Division/Square Root</string>
            </property>
           </widget>
          </item>
@@ -250,9 +250,9 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_8">
          <item row="0" column="1">
-          <widget class="QCheckBox" name="vu1SoftMulDiv">
+          <widget class="QCheckBox" name="vu1SoftMul">
            <property name="text">
-            <string>Multiplication/Division</string>
+            <string>Multiplication</string>
            </property>
           </widget>
          </item>
@@ -264,9 +264,9 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QCheckBox" name="vu1SoftSqrt">
+          <widget class="QCheckBox" name="vu1SoftDivSqrt">
            <property name="text">
-            <string>Float Square Root</string>
+            <string>Division/Square Root</string>
            </property>
           </widget>
          </item>
@@ -280,9 +280,9 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="1">
-          <widget class="QCheckBox" name="vu0SoftMulDiv">
+          <widget class="QCheckBox" name="vu0SoftMul">
            <property name="text">
-            <string>Multiplication/Division</string>
+            <string>Multiplication</string>
            </property>
           </widget>
          </item>
@@ -294,9 +294,9 @@
           </widget>
          </item>
          <item row="1" column="0">
-          <widget class="QCheckBox" name="vu0SoftSqrt">
+          <widget class="QCheckBox" name="vu0SoftDivSqrt">
            <property name="text">
-            <string>Square Root</string>
+            <string>Division/Square Root</string>
            </property>
           </widget>
          </item>

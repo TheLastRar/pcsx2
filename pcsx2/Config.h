@@ -12,6 +12,7 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <utility>
 
 // Macro used for removing some of the redtape involved in defining bitfield/union helpers.
 //
@@ -1481,13 +1482,13 @@ namespace EmuFolders
 #define CHECK_VU_UNDERFLOW(vunum) (((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0Underflow : EmuConfig.Cpu.Recompiler.vu1Underflow)
 
 #define SOFT_FLOAT_ADDSUB 0x1
-#define SOFT_FLOAT_MULDIV 0x2
-#define SOFT_FLOAT_SQRT 0x4
+#define SOFT_FLOAT_MUL 0x2
+#define SOFT_FLOAT_DIVSQRT 0x4
 
 #define CHECK_VU_SOFT_ADDSUB(vunum) ((((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat) & SOFT_FLOAT_ADDSUB)
-#define CHECK_VU_SOFT_MULDIV(vunum) ((((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat) & SOFT_FLOAT_MULDIV)
-#define CHECK_VU_SOFT_SQRT(vunum) ((((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat) & SOFT_FLOAT_SQRT)
-#define CHECK_VU_SOFT_ANY(vunum) (((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat)
+#define CHECK_VU_SOFT_MUL(vunum) ((((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat) & SOFT_FLOAT_MUL)
+#define CHECK_VU_SOFT_DIVSQRT(vunum) ((((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat) & SOFT_FLOAT_DIVSQRT)
+#define CHECK_VU_SOFT(vunum) (((vunum) == 0) ? EmuConfig.Cpu.Recompiler.vu0SoftFloat : EmuConfig.Cpu.Recompiler.vu1SoftFloat)
 
 #define CHECK_FPU_OVERFLOW (EmuConfig.Cpu.Recompiler.fpuOverflow)
 #define CHECK_FPU_EXTRA_OVERFLOW (EmuConfig.Cpu.Recompiler.fpuExtraOverflow) // If enabled, Operands are checked for infinities before being used in the FPU recs
@@ -1495,9 +1496,9 @@ namespace EmuFolders
 #define CHECK_FPU_FULL (EmuConfig.Cpu.Recompiler.fpuFullMode)
 
 #define CHECK_FPU_SOFT_ADDSUB (EmuConfig.Cpu.Recompiler.fpuSoftFloat & SOFT_FLOAT_ADDSUB)
-#define CHECK_FPU_SOFT_MULDIV (EmuConfig.Cpu.Recompiler.fpuSoftFloat & SOFT_FLOAT_MULDIV)
-#define CHECK_FPU_SOFT_SQRT (EmuConfig.Cpu.Recompiler.fpuSoftFloat & SOFT_FLOAT_SQRT)
-#define CHECK_FPU_SOFT_ANY (EmuConfig.Cpu.Recompiler.fpuSoftFloat)
+#define CHECK_FPU_SOFT_MUL (EmuConfig.Cpu.Recompiler.fpuSoftFloat & SOFT_FLOAT_MUL)
+#define CHECK_FPU_SOFT_DIVSQRT (EmuConfig.Cpu.Recompiler.fpuSoftFloat & SOFT_FLOAT_DIVSQRT)
+#define CHECK_FPU_SOFT (EmuConfig.Cpu.Recompiler.fpuSoftFloat)
 
 //------------ EE Recompiler defines - Comment to disable a recompiler ---------------
 
