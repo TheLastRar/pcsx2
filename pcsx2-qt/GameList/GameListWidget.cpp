@@ -686,6 +686,7 @@ bool GameListWidget::event(QEvent* event)
 	if (event->type() == QEvent::DevicePixelRatioChange)
 	{
 		m_model->setDevicePixelRatio(devicePixelRatioF());
+		setCustomBackground(true);
 		QWidget::event(event);
 		return true;
 	}
