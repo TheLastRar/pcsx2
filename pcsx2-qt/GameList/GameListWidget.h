@@ -8,6 +8,7 @@
 
 #include "pcsx2/GameList.h"
 
+#include <QtGui/QMovie>
 #include <QtWidgets/QListView>
 #include <QtWidgets/QTableView>
 
@@ -119,5 +120,5 @@ private:
 
 	GameListRefreshThread* m_refresh_thread = nullptr;
 
-	QImage m_background_image;
+	QMovie* m_background_movie = nullptr;
 };

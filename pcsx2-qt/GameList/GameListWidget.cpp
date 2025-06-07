@@ -354,30 +354,43 @@ void GameListWidget::setCustomBackground(bool reload)
 
 	if (reload)
 	{
-		m_background_image = QImage();
-		if (!path.empty() && m_background_image.load(path.c_str()))
-			m_background_image.setDevicePixelRatio(devicePixelRatio());
+		if (m_background_movie != nullptr)
+		{
+			delete m_background_movie;
+			m_background_movie = nullptr;
+		}
+
+		if (!path.empty())
+		{
+			QMovie* new_movie = new QMovie(path.c_str());
+			if (new_movie->isValid())
+				m_background_movie = new_movie;
+			else
+				delete new_movie;
+		}
 	}
 
-	if (m_background_image.isNull() || path.empty())
+	if (m_background_movie == nullptr || path.empty())
 	{
 		m_ui.stack->setPalette(QApplication::palette());
 		m_table_view->setAlternatingRowColors(true);
 		return;
 	}
 
-	int widget_width = m_ui.stack->width();
-	int widget_height = m_ui.stack->height();
+	connect(m_background_movie, &QMovie::frameChanged, this, [this](int frame) {
+		QImage img = m_background_movie->currentImage();
+		img.setDevicePixelRatio(devicePixelRatioF());
+		const int widget_width = m_ui.stack->width();
+		const int widget_height = m_ui.stack->height();
+		resizeAndPadImage(&img, widget_width, widget_height, false);
 
-	if (widget_width != m_ui.stack->width() || widget_height != m_ui.stack->height())
-		return;
+		QPalette new_palette(m_ui.stack->palette());
+		new_palette.setBrush(QPalette::Base, QPixmap::fromImage(img));
+		m_ui.stack->setPalette(new_palette);
+	});
 
-	resizeAndPadImage(&m_background_image, widget_width, widget_height, false);
-
+	m_background_movie->start();
 	m_table_view->setAlternatingRowColors(false);
-	QPalette new_palette(m_ui.stack->palette());
-	new_palette.setBrush(QPalette::Base, QPixmap::fromImage(m_background_image));
-	m_ui.stack->setPalette(new_palette);
 }
 
 bool GameListWidget::isShowingGameList() const
@@ -568,7 +581,7 @@ void GameListWidget::refreshGridCovers()
 void GameListWidget::onViewSetGameListBackgroundTriggered()
 {
 	const QString path = QDir::toNativeSeparators(
-		QFileDialog::getOpenFileName(this, tr("Select Background Image"), QString(), tr("Supported Image Types (*.jpg *.jpeg *.png *.webp)")));
+		QFileDialog::getOpenFileName(this, tr("Select Background Image"), QString(), tr("Supported Image Types (*.jpg *.jpeg *.png *.gif *.webp)")));
 	if (path.isEmpty())
 		return;
 
