@@ -62,6 +62,7 @@ jobs:
       CCACHE_COMPRESS: true
       CCACHE_COMPRESSLEVEL: 9
       CCACHE_MAXSIZE: ${{ inputs.ccacheSize }}
+      CCACHE_LOGFILE: ${{ github.workspace }}/bin/cclog.txt
 
     steps:
       - name: Checkout Repository
