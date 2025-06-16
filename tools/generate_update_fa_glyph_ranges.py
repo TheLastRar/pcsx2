@@ -75,15 +75,15 @@ with open(pf_file, "r") as f:
         u8_encodings_pf[match[1]] = decode_encoding(match[2])
 
 # PF also uses the Unicode private area, check for conflicts with FA
-cf_tokens_all = []
+cf_tokens_all = {}
 for pf_token in u8_encodings_pf.keys():
     for fa_token in u8_encodings_fa.keys():
         if u8_encodings_pf[pf_token] == u8_encodings_fa[fa_token]:
-            cf_tokens_all.append(pf_token)
+            cf_tokens_all[pf_token] = fa_token
 
 cf_tokens_used = []
 for token in pf_tokens:
-    if token in u8_encodings_fa:
+    if token in cf_tokens_all:
         cf_tokens_used.append(token)
 
 print("{} font conflicts found, of which we use {} of them.".format(len(cf_tokens_all), len(cf_tokens_used)))
