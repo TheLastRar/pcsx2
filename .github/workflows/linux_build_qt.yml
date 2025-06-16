@@ -68,6 +68,9 @@ jobs:
         if: ${{ inputs.fetchTags }}
         run: git fetch --tags --no-recurse-submodules
 
+      - name: Update Base Translation
+        run: ./.github/workflows/scripts/common/update_base_translation.sh
+
       - name: Add stable release identifier file
         if: ${{ inputs.stableBuild == true || inputs.stableBuild == 'true' }}
         shell: bash
