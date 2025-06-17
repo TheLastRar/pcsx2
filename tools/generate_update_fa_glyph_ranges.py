@@ -82,16 +82,26 @@ with open(fa_yml_file, "r") as f:
         if not ('solid' in icons[icon]['styles']):
             continue
 
+        # Currently, the define always points to the Unicode field
+        # however, that may not always be the case, so always check
         icon_define = "ICON_FA_" + str.upper(icon).replace( '-', '_' )
+        u8_encoding = decode_unicode(icons[icon]['unicode'])
+        if not (u8_encodings_fa[icon_define] == u8_encode):
+            u8_encodings_fa_aliased[icons[icon]['unicode']] = u8_encoding
         # handle aliased codepoints
         if ('aliases' in icons[icon]) and ('unicodes' in icons[icon]['aliases']):
             for aliase_type in icons[icon]['aliases']['unicodes']:
                 for codepoint in icons[icon]['aliases']['unicodes'][aliase_type]:
                     if codepoint in u8_encodings_fa_aliased:
                         continue
+
+                    u8_encoding = decode_unicode(codepoint)
+                    if u8_encodings_fa[icon_define] == u8_encode:
+                        continue
+
                     utf32 = int(codepoint, 16)
                     if utf32 >= 0xe000 and utf32 <= 0xf8ff:
-                        u8_encodings_fa_aliased[codepoint] = decode_unicode(codepoint)
+                        u8_encodings_fa_aliased[codepoint] = u8_encoding
 
 u8_encodings_pf = {}
 with open(pf_file, "r") as f:
