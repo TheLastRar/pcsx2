@@ -64,7 +64,7 @@ static constexpr u32 HTTP_POLL_INTERVAL = 10;
 #endif
 
 #define LATEST_RELEASE_URL "https://api.pcsx2.net/v1/%1Releases?pageSize=1"
-#define CHANGES_URL "https://api.github.com/repos/PCSX2/pcsx2/compare/%1...%2"
+#define CHANGES_URL "https://api.github.com/repos/PCSX2/pcsx2/compare/%1...%2?page=%3"
 
 // Available release channels.
 static const char* UPDATE_TAGS[] = {"stable", "nightly"};
@@ -373,11 +373,13 @@ void AutoUpdaterDialog::queueGetChanges()
 	if (!isSupported() || !ensureHttpReady())
 		return;
 
-	m_http->CreateRequest(QStringLiteral(CHANGES_URL).arg(BuildVersion::GitHash).arg(m_latest_version).toStdString(),
-		std::bind(&AutoUpdaterDialog::getChangesComplete, this, std::placeholders::_1, std::placeholders::_3));
+	m_http->CreateRequest(QStringLiteral(CHANGES_URL).arg(BuildVersion::GitHash).arg(m_latest_version).arg(1).toStdString(),
+		[this](s32 status_code, const std::string&, std::vector<u8> data) {
+			AutoUpdaterDialog::getChangesComplete(status_code, data, 1);
+		});
 }
 
-void AutoUpdaterDialog::getChangesComplete(s32 status_code, std::vector<u8> data)
+void AutoUpdaterDialog::getChangesComplete(s32 status_code, std::vector<u8> data, s32 page, QJsonArray commits)
 {
 	if (!isSupported())
 	{
@@ -393,10 +395,28 @@ void AutoUpdaterDialog::getChangesComplete(s32 status_code, std::vector<u8> data
 		{
 			const QJsonObject doc_object(doc.object());
 
+			const QJsonArray commits_page(doc_object["commits"].toArray());
+			for (const QJsonValue& commit : commits_page)
+				commits.append(commit);
+
+			// Check if we have all commits
+			// The intended method is to check for a next link in the header
+			// but HTTPDownloader does not provide us with those
+			const int total_commits(doc_object["total_commits"].toInt());
+			if (total_commits > commits.count())
+			{
+				// Request next page
+				page += 1;
+				m_http->CreateRequest(QStringLiteral(CHANGES_URL).arg(BuildVersion::GitHash).arg(m_latest_version).arg(page).toStdString(),
+					[this, page, commits](s32 status_code, const std::string&, std::vector<u8> data) {
+						AutoUpdaterDialog::getChangesComplete(status_code, data, page, commits);
+					});
+				return;
+			}
+
 			QString changes_html = tr("<h2>Changes:</h2>");
 			changes_html += QStringLiteral("<ul>");
 
-			const QJsonArray commits(doc_object["commits"].toArray());
 			bool update_will_break_save_states = false;
 			bool update_increases_settings_version = false;
 

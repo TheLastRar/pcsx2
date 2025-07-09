@@ -11,6 +11,7 @@
 #include <string>
 
 #include <QtCore/QDateTime>
+#include <QtCore/QJsonArray>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 #include <QtWidgets/QDialog>
@@ -56,7 +57,7 @@ private:
 	void getLatestReleaseComplete(s32 status_code, std::vector<u8> data);
 
 	void queueGetChanges();
-	void getChangesComplete(s32 status_code, std::vector<u8> data);
+	void getChangesComplete(s32 status_code, std::vector<u8> data, s32 page, QJsonArray commits = {});
 
 	bool processUpdate(const std::vector<u8>& data, QProgressDialog& progress);
 #if defined(_WIN32)
