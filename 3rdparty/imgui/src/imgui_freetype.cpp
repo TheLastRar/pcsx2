@@ -56,6 +56,7 @@
 #ifdef  IMGUI_ENABLE_FREETYPE_LUNASVG
 #include FT_OTSVG_H             // <freetype/otsvg.h>
 #include <lunasvg.h>
+#include <plutosvg-ft.h>
 #endif
 #ifdef  IMGUI_ENABLE_FREETYPE_PLUTOSVG
 #include <plutosvg.h>
@@ -637,17 +638,21 @@ struct LunasvgPortState
 	lunasvg::Box extents;
 	lunasvg::Element element;
 	ImGuiLunasvgPortEntries entries;
+	FT_Pointer pluto_state;
 };
 
 static FT_Error ImGuiLunasvgPortInit(FT_Pointer* _state)
 {
     *_state = IM_NEW(LunasvgPortState)();
+	plutosvg_ft_init(&reinterpret_cast<LunasvgPortState*>(_state)->pluto_state);
+
     return FT_Err_Ok;
 }
 
 static void ImGuiLunasvgPortFree(FT_Pointer* _state)
 {
     IM_DELETE(*(LunasvgPortState**)_state);
+	plutosvg_ft_free(&reinterpret_cast<LunasvgPortState*>(_state)->pluto_state);
 }
 
 static FT_Error ImGuiLunasvgPortRender(FT_GlyphSlot slot, FT_Pointer* _state)
@@ -664,6 +669,10 @@ static FT_Error ImGuiLunasvgPortRender(FT_GlyphSlot slot, FT_Pointer* _state)
 	slot->bitmap.pixel_mode = FT_PIXEL_MODE_BGRA;
 	slot->bitmap.num_grays = 256;
 	slot->format = FT_GLYPH_FORMAT_BITMAP;
+
+    // Skip the render
+    //plutosvg_ft_render
+
 	return FT_Err_Ok;
 }
 
@@ -740,6 +749,8 @@ static void ImGuiLunasvgGetPlutoSize(lunasvg::Document* document, float& width, 
 
 static FT_Error ImGuiLunasvgPortPresetSlot(FT_GlyphSlot slot, FT_Bool cache, FT_Pointer* _state)
 {
+	FT_GlyphSlotRec_ pluto_slot = *slot;
+
 	FT_SVG_Document ft_document = (FT_SVG_Document)slot->other;
 	FT_Size_Metrics& ft_metrics = ft_document->metrics;
 
@@ -824,6 +835,8 @@ static FT_Error ImGuiLunasvgPortPresetSlot(FT_GlyphSlot slot, FT_Bool cache, FT_
 		state->matrix = matrix;
 		state->extents = extents;
 	}
+
+    plutosvg_ft_preset_slot(&pluto_slot, cache, &reinterpret_cast<LunasvgPortState*>(_state)->pluto_state);
 
 	return FT_Err_Ok;
 }

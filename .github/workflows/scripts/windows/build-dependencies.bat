@@ -2,10 +2,10 @@
 setlocal enabledelayedexpansion
 
 echo Setting environment...
-if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" (
-  call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
-  call "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+if exist "D:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" (
+  call "D:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+) else if exist "D:\Program Files%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
+  call "D:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 ) else (
   echo Visual Studio 2022 not found.
   goto error
@@ -55,6 +55,7 @@ set ZSTD=1.5.7
 set KDDOCKWIDGETS=2.2.3
 set PLUTOVG=0.0.13
 set LUNASVG=3.2.1
+set PLUTOSVG=0.0.6
 
 set SHADERC=2024.1
 set SHADERC_GLSLANG=142052fa30f9eca191aa9dcf65359fcaed09eeec
@@ -78,6 +79,7 @@ call :downloadfile "zstd-%ZSTD%.zip" "https://github.com/facebook/zstd/archive/r
 call :downloadfile "KDDockWidgets-%KDDOCKWIDGETS%.zip" "https://github.com/KDAB/KDDockWidgets/archive/v%KDDOCKWIDGETS%.zip" 1ba8e5b48f3b4d47d2de7121529d448532200fa36d9ed21f93909f6eb03f61cb || goto error
 call :downloadfile "plutovg-%PLUTOVG%.zip" "https://github.com/sammycage/plutovg/archive/v%PLUTOVG%.zip" e313baaa7c934503ef601c909661a84e5b795dfa12f0354721cac7a9c27be47e || goto error
 call :downloadfile "lunasvg-%LUNASVG%.zip" "https://github.com/sammycage/lunasvg/archive/v%LUNASVG%.zip" 238a7fe27a1d5c02e0d85940ba377929110661c1c6683cf126869f139d9400f5 || goto error
+call :downloadfile "plutosvg-%PLUTOSVG%.zip" "https://github.com/sammycage/plutosvg/archive/v%PLUTOSVG%.zip" 24826a70d0b168a66eb16ec9d7eeeba0d4ca9d4babc1199889d374918008426e || goto error
 
 call :downloadfile "shaderc-%SHADERC%.zip" "https://github.com/google/shaderc/archive/refs/tags/v%SHADERC%.zip" 6c9f42ed6bf42750f5369b089909abfdcf0101488b4a1f41116d5159d00af8e7 || goto error
 call :downloadfile "shaderc-glslang-%SHADERC_GLSLANG%.zip" "https://github.com/KhronosGroup/glslang/archive/%SHADERC_GLSLANG%.zip" 03ad8a6fa987af4653d0cfe6bdaed41bcf617f1366a151fb1574da75950cd3e8 || goto error
@@ -92,179 +94,179 @@ if %DEBUG%==1 (
 
 set FORCEPDB=-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/DEBUG"
 
-echo Building Zlib...
-rmdir /S /Q "zlib-%ZLIB%"
-%SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
-cd "zlib-%ZLIB%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building libpng...
-rmdir /S /Q "lpng%LIBPNG%"
-%SEVENZIP% x "lpng%LIBPNG%.zip" || goto error
-cd "lpng%LIBPNG%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DBUILD_SHARED_LIBS=ON -DPNG_TESTS=OFF -DPNG_STATIC=OFF -DPNG_SHARED=ON -DPNG_TOOLS=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building libjpegturbo...
-rmdir /S /Q "libjpeg-turbo-%LIBJPEGTURBO%"
-tar -xf "libjpeg-turbo-%LIBJPEGTURBO%.tar.gz" || goto error
-cd "libjpeg-turbo-%LIBJPEGTURBO%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building LZ4...
-rmdir /S /Q "lz4"
-%SEVENZIP% x "lz4-%LZ4%.zip" || goto error
-rename "lz4-%LZ4%" "lz4" || goto error
-cd "lz4" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DLZ4_BUILD_CLI=OFF -DLZ4_BUILD_LEGACY_LZ4C=OFF -DCMAKE_C_FLAGS="/wd4711 /wd5045" -B build-dir -G Ninja build/cmake || goto error
-cmake --build build-dir --parallel || goto error
-ninja -C build-dir install || goto error
-cd ..
-
-echo Building FreeType without HarfBuzz...
-rmdir /S /Q "freetype-%FREETYPE%"
-tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
-cd "freetype-%FREETYPE%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_DISABLE_HARFBUZZ=TRUE -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building HarfBuzz...
-rmdir /S /Q "harfbuzz-%HARFBUZZ%"
-%SEVENZIP% x "-x^!harfbuzz-%HARFBUZZ%\README" "harfbuzz-%HARFBUZZ%.zip" || goto error
-cd "harfbuzz-%HARFBUZZ%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DHB_BUILD_UTILS=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building FreeType with HarfBuzz...
-rmdir /S /Q "freetype-%FREETYPE%"
-tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
-cd "freetype-%FREETYPE%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_REQUIRE_HARFBUZZ=TRUE -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building Zstandard...
-rmdir /S /Q "zstd-%ZSTD%"
-%SEVENZIP% x "-x^!zstd-%ZSTD%\tests\cli-tests\bin" "zstd-%ZSTD%.zip" || goto error
-cd "zstd-%ZSTD%"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZSTD_BUILD_SHARED=ON -DZSTD_BUILD_STATIC=OFF -DZSTD_BUILD_PROGRAMS=OFF -B build -G Ninja build/cmake
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building WebP...
-rmdir /S /Q "libwebp-%WEBP%"
-tar -xf "libwebp-%WEBP%.tar.gz" || goto error
-cd "libwebp-%WEBP%" || goto error
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DWEBP_BUILD_ANIM_UTILS=OFF -DWEBP_BUILD_CWEBP=OFF -DWEBP_BUILD_DWEBP=OFF -DWEBP_BUILD_GIF2WEBP=OFF -DWEBP_BUILD_IMG2WEBP=OFF -DWEBP_BUILD_VWEBP=OFF -DWEBP_BUILD_WEBPINFO=OFF -DWEBP_BUILD_WEBPMUX=OFF -DWEBP_BUILD_EXTRAS=OFF -DBUILD_SHARED_LIBS=ON -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building SDL...
-rmdir /S /Q "%SDL%"
-%SEVENZIP% x "%SDL%.zip" || goto error
-cd "%SDL%" || goto error
-cmake -B build -DCMAKE_BUILD_TYPE=Release %FORCEPDB% -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DSDL_SHARED=ON -DSDL_STATIC=OFF -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-copy build\SDL3.pdb "%INSTALLDIR%\bin" || goto error
-cd .. || goto error
-
-if %DEBUG%==1 (
-  set QTBUILDSPEC=-DCMAKE_CONFIGURATION_TYPES="Release;Debug" -G "Ninja Multi-Config"
-) else (
-  set QTBUILDSPEC=-DCMAKE_BUILD_TYPE=Release -G Ninja
-)
-
-echo Building Qt base...
-rmdir /S /Q "qtbase-everywhere-src-%QT%"
-%SEVENZIP% x "qtbase-everywhere-src-%QT%.zip" || goto error
-cd "qtbase-everywhere-src-%QT%" || goto error
-
-rem Disable the PCRE2 JIT, it doesn't properly verify AVX2 support.
-%PATCH% -p1 < "%SCRIPTDIR%\qtbase-disable-pcre2-jit.patch" || goto error
-
-rem Hackfix settings icon stretching
-%PATCH% -p1 < "%SCRIPTDIR%\qtbase-fix-icon-stretch.patch" || goto error
-
-cmake -B build -DFEATURE_sql=OFF -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" %FORCEPDB% -DINPUT_gui=yes -DINPUT_widgets=yes -DINPUT_ssl=yes -DINPUT_openssl=no -DINPUT_schannel=yes -DFEATURE_system_png=ON -DFEATURE_system_jpeg=ON -DFEATURE_system_zlib=ON -DFEATURE_system_freetype=ON -DFEATURE_system_harfbuzz=ON %QTBUILDSPEC% || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
-
-echo Building Qt SVG...
-rmdir /S /Q "qtsvg-everywhere-src-%QT%"
-%SEVENZIP% x "qtsvg-everywhere-src-%QT%.zip" || goto error
-cd "qtsvg-everywhere-src-%QT%" || goto error
-mkdir build || goto error
-cd build || goto error
-call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" || goto error
-cmake --build . --parallel || goto error
-ninja install || goto error
-cd ..\.. || goto error
-
-echo Building Qt Image Formats...
-rmdir /S /Q "qtimageformats-everywhere-src-%QT%"
-%SEVENZIP% x "qtimageformats-everywhere-src-%QT%.zip" || goto error
-cd "qtimageformats-everywhere-src-%QT%" || goto error
-mkdir build || goto error
-cd build || goto error
-call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DFEATURE_system_webp=ON || goto error
-cmake --build . --parallel || goto error
-ninja install || goto error
-cd ..\.. || goto error
-
-echo Building Qt Tools...
-rmdir /S /Q "qtimageformats-everywhere-src-%QT%"
-%SEVENZIP% x "qttools-everywhere-src-%QT%.zip" || goto error
-cd "qttools-everywhere-src-%QT%" || goto error
-mkdir build || goto error
-cd build || goto error
-call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DFEATURE_assistant=OFF -DFEATURE_clang=OFF -DFEATURE_designer=ON -DFEATURE_kmap2qmap=OFF -DFEATURE_pixeltool=OFF -DFEATURE_pkg_config=OFF -DFEATURE_qev=OFF -DFEATURE_qtattributionsscanner=OFF -DFEATURE_qtdiag=OFF -DFEATURE_qtplugininfo=OFF || goto error
-cmake --build . --parallel || goto error
-ninja install || goto error
-cd ..\.. || goto error
-
-echo Building Qt Translations...
-rmdir /S /Q "qttranslations-everywhere-src-%QT%"
-%SEVENZIP% x "qttranslations-everywhere-src-%QT%.zip" || goto error
-cd "qttranslations-everywhere-src-%QT%" || goto error
-mkdir build || goto error
-cd build || goto error
-call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% || goto error
-cmake --build . --parallel || goto error
-ninja install || goto error
-cd ..\.. || goto error
-
-echo "Building KDDockWidgets..."
-rmdir /S /Q "KDDockWidgets-%KDDOCKWIDGETS%"
-%SEVENZIP% x "KDDockWidgets-%KDDOCKWIDGETS%.zip" || goto error
-cd "KDDockWidgets-%KDDOCKWIDGETS%" || goto error
-%PATCH% -p1 < "%SCRIPTDIR%\..\common\kddockwidgets-dodgy-include.patch" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DKDDockWidgets_QT6=true -DKDDockWidgets_EXAMPLES=false -DKDDockWidgets_FRONTENDS=qtwidgets -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
+rem echo Building Zlib...
+rem rmdir /S /Q "zlib-%ZLIB%"
+rem %SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
+rem cd "zlib-%ZLIB%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building libpng...
+rem rmdir /S /Q "lpng%LIBPNG%"
+rem %SEVENZIP% x "lpng%LIBPNG%.zip" || goto error
+rem cd "lpng%LIBPNG%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DBUILD_SHARED_LIBS=ON -DPNG_TESTS=OFF -DPNG_STATIC=OFF -DPNG_SHARED=ON -DPNG_TOOLS=OFF -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building libjpegturbo...
+rem rmdir /S /Q "libjpeg-turbo-%LIBJPEGTURBO%"
+rem tar -xf "libjpeg-turbo-%LIBJPEGTURBO%.tar.gz" || goto error
+rem cd "libjpeg-turbo-%LIBJPEGTURBO%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=OFF -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building LZ4...
+rem rmdir /S /Q "lz4"
+rem %SEVENZIP% x "lz4-%LZ4%.zip" || goto error
+rem rename "lz4-%LZ4%" "lz4" || goto error
+rem cd "lz4" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DLZ4_BUILD_CLI=OFF -DLZ4_BUILD_LEGACY_LZ4C=OFF -DCMAKE_C_FLAGS="/wd4711 /wd5045" -B build-dir -G Ninja build/cmake || goto error
+rem cmake --build build-dir --parallel || goto error
+rem ninja -C build-dir install || goto error
+rem cd ..
+rem 
+rem echo Building FreeType without HarfBuzz...
+rem rmdir /S /Q "freetype-%FREETYPE%"
+rem tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
+rem cd "freetype-%FREETYPE%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_DISABLE_HARFBUZZ=TRUE -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building HarfBuzz...
+rem rmdir /S /Q "harfbuzz-%HARFBUZZ%"
+rem %SEVENZIP% x "-x^!harfbuzz-%HARFBUZZ%\README" "harfbuzz-%HARFBUZZ%.zip" || goto error
+rem cd "harfbuzz-%HARFBUZZ%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DHB_BUILD_UTILS=OFF -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building FreeType with HarfBuzz...
+rem rmdir /S /Q "freetype-%FREETYPE%"
+rem tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
+rem cd "freetype-%FREETYPE%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_REQUIRE_HARFBUZZ=TRUE -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building Zstandard...
+rem rmdir /S /Q "zstd-%ZSTD%"
+rem %SEVENZIP% x "-x^!zstd-%ZSTD%\tests\cli-tests\bin" "zstd-%ZSTD%.zip" || goto error
+rem cd "zstd-%ZSTD%"
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZSTD_BUILD_SHARED=ON -DZSTD_BUILD_STATIC=OFF -DZSTD_BUILD_PROGRAMS=OFF -B build -G Ninja build/cmake
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building WebP...
+rem rmdir /S /Q "libwebp-%WEBP%"
+rem tar -xf "libwebp-%WEBP%.tar.gz" || goto error
+rem cd "libwebp-%WEBP%" || goto error
+rem cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DWEBP_BUILD_ANIM_UTILS=OFF -DWEBP_BUILD_CWEBP=OFF -DWEBP_BUILD_DWEBP=OFF -DWEBP_BUILD_GIF2WEBP=OFF -DWEBP_BUILD_IMG2WEBP=OFF -DWEBP_BUILD_VWEBP=OFF -DWEBP_BUILD_WEBPINFO=OFF -DWEBP_BUILD_WEBPMUX=OFF -DWEBP_BUILD_EXTRAS=OFF -DBUILD_SHARED_LIBS=ON -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building SDL...
+rem rmdir /S /Q "%SDL%"
+rem %SEVENZIP% x "%SDL%.zip" || goto error
+rem cd "%SDL%" || goto error
+rem cmake -B build -DCMAKE_BUILD_TYPE=Release %FORCEPDB% -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DSDL_SHARED=ON -DSDL_STATIC=OFF -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem copy build\SDL3.pdb "%INSTALLDIR%\bin" || goto error
+rem cd .. || goto error
+rem 
+rem if %DEBUG%==1 (
+rem   set QTBUILDSPEC=-DCMAKE_CONFIGURATION_TYPES="Release;Debug" -G "Ninja Multi-Config"
+rem ) else (
+rem   set QTBUILDSPEC=-DCMAKE_BUILD_TYPE=Release -G Ninja
+rem )
+rem 
+rem echo Building Qt base...
+rem rmdir /S /Q "qtbase-everywhere-src-%QT%"
+rem %SEVENZIP% x "qtbase-everywhere-src-%QT%.zip" || goto error
+rem cd "qtbase-everywhere-src-%QT%" || goto error
+rem 
+rem rem Disable the PCRE2 JIT, it doesn't properly verify AVX2 support.
+rem %PATCH% -p1 < "%SCRIPTDIR%\qtbase-disable-pcre2-jit.patch" || goto error
+rem 
+rem rem Hackfix settings icon stretching
+rem %PATCH% -p1 < "%SCRIPTDIR%\qtbase-fix-icon-stretch.patch" || goto error
+rem 
+rem cmake -B build -DFEATURE_sql=OFF -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" %FORCEPDB% -DINPUT_gui=yes -DINPUT_widgets=yes -DINPUT_ssl=yes -DINPUT_openssl=no -DINPUT_schannel=yes -DFEATURE_system_png=ON -DFEATURE_system_jpeg=ON -DFEATURE_system_zlib=ON -DFEATURE_system_freetype=ON -DFEATURE_system_harfbuzz=ON %QTBUILDSPEC% || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
+rem 
+rem echo Building Qt SVG...
+rem rmdir /S /Q "qtsvg-everywhere-src-%QT%"
+rem %SEVENZIP% x "qtsvg-everywhere-src-%QT%.zip" || goto error
+rem cd "qtsvg-everywhere-src-%QT%" || goto error
+rem mkdir build || goto error
+rem cd build || goto error
+rem call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" || goto error
+rem cmake --build . --parallel || goto error
+rem ninja install || goto error
+rem cd ..\.. || goto error
+rem 
+rem echo Building Qt Image Formats...
+rem rmdir /S /Q "qtimageformats-everywhere-src-%QT%"
+rem %SEVENZIP% x "qtimageformats-everywhere-src-%QT%.zip" || goto error
+rem cd "qtimageformats-everywhere-src-%QT%" || goto error
+rem mkdir build || goto error
+rem cd build || goto error
+rem call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DFEATURE_system_webp=ON || goto error
+rem cmake --build . --parallel || goto error
+rem ninja install || goto error
+rem cd ..\.. || goto error
+rem 
+rem echo Building Qt Tools...
+rem rmdir /S /Q "qtimageformats-everywhere-src-%QT%"
+rem %SEVENZIP% x "qttools-everywhere-src-%QT%.zip" || goto error
+rem cd "qttools-everywhere-src-%QT%" || goto error
+rem mkdir build || goto error
+rem cd build || goto error
+rem call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% -DFEATURE_assistant=OFF -DFEATURE_clang=OFF -DFEATURE_designer=ON -DFEATURE_kmap2qmap=OFF -DFEATURE_pixeltool=OFF -DFEATURE_pkg_config=OFF -DFEATURE_qev=OFF -DFEATURE_qtattributionsscanner=OFF -DFEATURE_qtdiag=OFF -DFEATURE_qtplugininfo=OFF || goto error
+rem cmake --build . --parallel || goto error
+rem ninja install || goto error
+rem cd ..\.. || goto error
+rem 
+rem echo Building Qt Translations...
+rem rmdir /S /Q "qttranslations-everywhere-src-%QT%"
+rem %SEVENZIP% x "qttranslations-everywhere-src-%QT%.zip" || goto error
+rem cd "qttranslations-everywhere-src-%QT%" || goto error
+rem mkdir build || goto error
+rem cd build || goto error
+rem call "%INSTALLDIR%\bin\qt-configure-module.bat" .. -- %FORCEPDB% || goto error
+rem cmake --build . --parallel || goto error
+rem ninja install || goto error
+rem cd ..\.. || goto error
+rem 
+rem echo "Building KDDockWidgets..."
+rem rmdir /S /Q "KDDockWidgets-%KDDOCKWIDGETS%"
+rem %SEVENZIP% x "KDDockWidgets-%KDDOCKWIDGETS%.zip" || goto error
+rem cd "KDDockWidgets-%KDDOCKWIDGETS%" || goto error
+rem %PATCH% -p1 < "%SCRIPTDIR%\..\common\kddockwidgets-dodgy-include.patch" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DKDDockWidgets_QT6=true -DKDDockWidgets_EXAMPLES=false -DKDDockWidgets_FRONTENDS=qtwidgets -B build -G Ninja || goto error
+rem cmake --build build --parallel || goto error
+rem ninja -C build install || goto error
+rem cd .. || goto error
 
 echo "Building PlutoVG..."
 rmdir /S /Q "plutovg-%PLUTOVG%"
 %SEVENZIP% x "plutovg-%PLUTOVG%.zip" || goto error
 cd "plutovg-%PLUTOVG%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=OFF -DPLUTOVG_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DPLUTOVG_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
@@ -274,10 +276,16 @@ rmdir /S /Q "lunasvg-%LUNASVG%"
 %SEVENZIP% x "lunasvg-%LUNASVG%.zip" || goto error
 cd "lunasvg-%LUNASVG%" || goto error
 %PATCH% -p1 < "%SCRIPTDIR%\..\common\lunasvg-dll.patch" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DLUNASVG_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
+cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DLUNASVG_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
+
+echo "Building PlutoSVG..."
+rmdir /S /Q "plutosvg-%PLUTOSVG%"
+%SEVENZIP% x "plutosvg-%PLUTOSVG%.zip" || goto error
+cd "plutosvg-%PLUTOSVG%" || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DPLUTOSVG_ENABLE_FREETYPE=ON -DPLUTOSVG_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
 
 echo Building shaderc...
 rmdir /S /Q "shaderc-%SHADERC%"
