@@ -160,7 +160,7 @@ jobs:
 
       - name: Run Tests
         working-directory: ./build
-        run: ninja -j1 unittests
+        run: TYSAN_OPTIONS=print_stacktrace=1 ninja -j1 unittests
 
       - name: Package AppImage
         if: inputs.buildAppImage == true
