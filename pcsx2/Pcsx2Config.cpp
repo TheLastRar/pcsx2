@@ -1270,6 +1270,11 @@ const char* Pcsx2Config::DEV9Options::DnsModeNames[] = {
 	"Internal",
 	nullptr};
 
+const char* Pcsx2Config::DEV9Options::PortModeNames[] = {
+	"UDP",
+	"TCP",
+	nullptr};
+
 Pcsx2Config::DEV9Options::DEV9Options()
 {
 	HddFile = "DEV9hdd.raw";
@@ -1321,7 +1326,10 @@ void Pcsx2Config::DEV9Options::LoadSave(SettingsWrapper& wrap)
 	}
 
 	if (wrap.IsLoading())
+	{
 		EthHosts.clear();
+		OpenPorts.clear();
+	}
 
 	int hostCount = static_cast<int>(EthHosts.size());
 	{
@@ -1359,6 +1367,31 @@ void Pcsx2Config::DEV9Options::LoadSave(SettingsWrapper& wrap)
 		}
 	}
 
+	int portCount = static_cast<int>(OpenPorts.size());
+	{
+		SettingsWrapSection("DEV9/Eth/Ports");
+		SettingsWrapEntry(LanMode);
+		SettingsWrapEntryEx(portCount, "Count");
+	}
+
+	for (int i = 0; i < portCount; i++)
+	{
+		std::string section = "DEV9/Eth/Ports/Port" + std::to_string(i);
+		SettingsWrapSection(section.c_str());
+
+		PortEntry entry;
+		if (wrap.IsSaving())
+			entry = OpenPorts[i];
+
+		SettingsWrapEntryEx(entry.Port, "Port");
+		SettingsWrapEntryEx(entry.Desc, "Desc");
+		SettingsWrapEnumEx(entry.Protocol, "Protocol", PortModeNames);
+		SettingsWrapEntryEx(entry.Enabled, "Enabled");
+
+		if (wrap.IsLoading())
+			OpenPorts.push_back(entry);
+	}
+
 	{
 		SettingsWrapSection("DEV9/Hdd");
 		SettingsWrapEntry(HddEnable);
@@ -1392,6 +1425,8 @@ bool Pcsx2Config::DEV9Options::operator==(const DEV9Options& right) const
 
 		   OpEqu(EthHosts) &&
 
+		   OpEqu(OpenPorts) &&
+
 		   OpEqu(HddEnable) &&
 		   OpEqu(HddFile);
 }
@@ -1417,6 +1452,19 @@ bool Pcsx2Config::DEV9Options::HostEntry::operator==(const HostEntry& right) con
 }
 
 bool Pcsx2Config::DEV9Options::HostEntry::operator!=(const HostEntry& right) const
+{
+	return !this->operator==(right);
+}
+
+bool Pcsx2Config::DEV9Options::PortEntry::operator==(const PortEntry& right) const
+{
+	return OpEqu(Port) &&
+		   OpEqu(Desc) &&
+		   OpEqu(Protocol) &&
+		   OpEqu(Enabled);
+}
+
+bool Pcsx2Config::DEV9Options::PortEntry::operator!=(const PortEntry& right) const
 {
 	return !this->operator==(right);
 }

@@ -101,15 +101,19 @@ std::vector<AdapterEntry> SocketAdapter::GetAdapters()
 
 AdapterOptions SocketAdapter::GetAdapterOptions()
 {
-	return (AdapterOptions::DHCP_ForcedOn | AdapterOptions::DHCP_OverrideIP | AdapterOptions::DHCP_OverideSubnet | AdapterOptions::DHCP_OverideGateway);
+	return (AdapterOptions::DHCP_ForcedOn | AdapterOptions::DHCP_OverrideIP | AdapterOptions::DHCP_OverideSubnet | AdapterOptions::DHCP_OverideGateway | AdapterOptions::HasPortForwarding);
 }
 
 SocketAdapter::SocketAdapter()
 {
+	sendThreadId = std::this_thread::get_id();
+
 	bool foundAdapter;
 
 	AdapterUtils::Adapter adapter;
 	AdapterUtils::AdapterBuffer buffer;
+
+	IP_Address ps2IP{{{internalIP.bytes[0], internalIP.bytes[1], internalIP.bytes[2], 100}}};
 
 	if (strcmp(EmuConfig.DEV9.EthDevice.c_str(), "Auto") != 0)
 	{
@@ -123,7 +127,11 @@ SocketAdapter::SocketAdapter()
 
 		std::optional<IP_Address> adIP = AdapterUtils::GetAdapterIP(&adapter);
 		if (adIP.has_value())
+		{
 			adapterIP = adIP.value();
+			if (EmuConfig.DEV9.LanMode)
+				ps2IP = adIP.value();
+		}
 		else
 		{
 			Console.Error("DEV9: Socket: Failed To Get Adapter IP");
@@ -140,16 +148,80 @@ SocketAdapter::SocketAdapter()
 			Console.Error("DEV9: Socket: Auto Selection Failed, Check You Connection or Manually Specify Adapter");
 			return;
 		}
+
+		if (EmuConfig.DEV9.LanMode)
+		{
+			std::optional<IP_Address> adIP = AdapterUtils::GetAdapterIP(&adapter);
+			if (adIP.has_value())
+				ps2IP = adIP.value();
+		}
 	}
 
 	//For DHCP, we need to override some settings
 	//DNS settings as per direct adapters
 
-	const IP_Address ps2IP{{{internalIP.bytes[0], internalIP.bytes[1], internalIP.bytes[2], 100}}};
 	const IP_Address subnet{{{255, 255, 255, 0}}};
 	const IP_Address gateway = internalIP;
 
 	InitInternalServer(&adapter, true, ps2IP, subnet, gateway);
+
+	for (const Pcsx2Config::DEV9Options::PortEntry& entry : EmuConfig.DEV9.OpenPorts)
+	{
+		if (!entry.Enabled)
+			continue;
+
+		ConnectionKey Key{};
+		Key.ps2Port = entry.Port;
+		Key.srvPort = entry.Port;
+
+		BaseSession* s = nullptr;
+
+		switch (entry.Protocol)
+		{
+			case Pcsx2Config::DEV9Options::PortMode::UDP:
+			{
+				Key.protocol = static_cast<u8>(IP_Type::UDP);
+
+				BaseSession* fSession;
+				if (fixedUDPPorts.TryGetValue(entry.Port, &fSession))
+					continue;
+
+				ConnectionKey fKey{};
+				fKey.protocol = static_cast<u8>(IP_Type::UDP);
+				fKey.ps2Port = entry.Port;
+				fKey.srvPort = 0;
+
+				UDP_FixedPort* fPort = new UDP_FixedPort(fKey, adapterIP, entry.Port);
+				//TODO, dispose of failed connections here rather than waiting for next send
+				fPort->AddConnectionClosedHandler([&](BaseSession* session) { HandleFixedPortClosed(session); });
+
+				fPort->destIP = {};
+				fPort->sourceIP = dhcpServer.ps2IP;
+
+				connections.Add(fKey, fPort);
+				fixedUDPPorts.Add(entry.Port, fPort);
+
+				fPort->Init();
+
+				s = fPort->NewListenSession(Key);
+				if (s == nullptr)
+				{
+					Console.Error("DEV9: Socket: Failed to Create Open Port from FixedPort");
+					continue;
+				}
+
+				break;
+			}
+			case Pcsx2Config::DEV9Options::PortMode::TCP:
+			default:
+				continue;
+		}
+
+		s->AddConnectionClosedHandler([&](BaseSession* session) { HandleConnectionClosed(session); });
+		s->destIP = dhcpServer.broadcastIP;
+		s->sourceIP = dhcpServer.ps2IP;
+		connections.Add(Key, s);
+	}
 
 	std::optional<MAC_Address> adMAC = AdapterUtils::GetAdapterMAC(&adapter);
 	if (adMAC.has_value())
@@ -180,8 +252,6 @@ SocketAdapter::SocketAdapter()
 	else
 		wsa_init = true;
 #endif
-
-	sendThreadId = std::this_thread::get_id();
 
 	initialized = true;
 }
@@ -369,6 +439,12 @@ void SocketAdapter::reloadSettings()
 		pxAssert(false);
 		ReloadInternalServer(nullptr, true, ps2IP, subnet, gateway);
 	}
+
+	/* 
+	 * TODO
+	 * Need to remove disabled ServerSessions
+	 * Then add new enabled ServerSessions
+	 */
 }
 
 bool SocketAdapter::SendIP(IP_Packet* ipPkt)
