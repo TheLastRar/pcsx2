@@ -22,11 +22,10 @@ namespace ImGuiManager
 		std::span<const u8> data;
 		std::span<const u32> exclude_ranges;
 		const char* face_name;
-		bool is_emoji_font;
 	};
 
 	/// Sets a list of fonts to use.
-	void SetFonts(std::vector<FontInfo> info);
+	void SetFonts(std::vector<FontInfo> info, FontInfo emoji_info);
 
 	/// Initializes ImGui, creates fonts, etc.
 	bool Initialize();

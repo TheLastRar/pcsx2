@@ -81,6 +81,7 @@ static ImFont* s_standard_font;
 static ImFont* s_fixed_font;
 
 static std::vector<ImGuiManager::FontInfo> s_font_info;
+static ImGuiManager::FontInfo s_emoji_font_info;
 static std::vector<u8> s_fixed_font_data;
 static std::vector<u8> s_icon_fa_font_data;
 static std::vector<u8> s_icon_pf_font_data;
@@ -108,9 +109,10 @@ static bool s_scale_changed = false;
 
 static std::array<ImGuiManager::SoftwareCursor, InputManager::MAX_SOFTWARE_CURSORS> s_software_cursors = {};
 
-void ImGuiManager::SetFonts(std::vector<FontInfo> info)
+void ImGuiManager::SetFonts(std::vector<FontInfo> info, FontInfo emoji_info)
 {
 	s_font_info = std::move(info);
+	s_emoji_font_info = std::move(emoji_info);
 	if (ImGui::GetCurrentContext())
 	{
 		ImGui::EndFrame();
@@ -506,8 +508,6 @@ ImFont* ImGuiManager::AddTextFont()
 	ImFont* res = nullptr;
 	for (const FontInfo& info : s_font_info)
 	{
-		if (info.is_emoji_font)
-			continue;
 		if (info.exclude_ranges.empty())
 		{
 			cfg.GlyphExcludeRanges = range_exclude_icons;
@@ -634,14 +634,9 @@ bool ImGuiManager::AddEmojiFont()
 		cfg.FontLoaderFlags |= ImGuiFreeTypeLoaderFlags_LoadColor;
 		cfg.FontDataOwnedByAtlas = false;
 
-		for (const FontInfo& info : s_font_info)
-		{
-			if (!info.is_emoji_font)
-				continue;
-			cfg.FontNo = GetFontIndex(info);
-			if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<u8*>(info.data.data()), static_cast<int>(info.data.size()), FONT_BASE_SIZE, &cfg, nullptr))
-				return false;
-		}
+		cfg.FontNo = GetFontIndex(s_emoji_font_info);
+		if (!ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<u8*>(s_emoji_font_info.data.data()), static_cast<int>(s_emoji_font_info.data.size()), FONT_BASE_SIZE, &cfg, nullptr))
+			return false;
 	}
 	return true;
 }

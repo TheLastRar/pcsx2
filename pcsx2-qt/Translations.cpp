@@ -294,7 +294,6 @@ enum class FontScript : u8
 	ChineseSimplified,
 	ChineseTraditional,
 	Devanagari,
-	Emoji,
 	Hebrew,
 	Japanese,
 	Korean,
@@ -336,13 +335,6 @@ namespace FontNames
 		{nullptr, "Kohinoor Devanagari"},
 		{nullptr, "Noto Sans Devanagari"},
 	};
-	static constexpr FontLoadInfo Emoji[] = {
-		{"NotoColorEmoji-Regular.ttf"},
-		{"Seguiemj.ttf"},
-		// {nullptr, "Apple Color Emoji"}, // Freetype can't properly render Apple Color Emoji.
-		{nullptr, "Noto Color Emoji"},
-		{nullptr, "Noto Emoji"},
-	};
 	static constexpr FontLoadInfo Hebrew[] = {
 		{"NotoSansHebrew-Regular.ttf"},
 		{"Segoeui.ttf"},
@@ -366,9 +358,16 @@ namespace FontNames
 		// We ship this with PCSX2 so no fallbacks are needed
 		{"Roboto-Regular.ttf"},
 	};
+	static constexpr FontLoadInfo Emoji[] = {
+		{"NotoColorEmoji-Regular.ttf"},
+		{"Seguiemj.ttf"},
+		// {nullptr, "Apple Color Emoji"}, // Freetype can't properly render Apple Color Emoji.
+		{nullptr, "Noto Color Emoji"},
+		{nullptr, "Noto Emoji"},
+	};
 } // namespace FontNames
 
-static constexpr std::span<const FontLoadInfo> GetFontNames(FontScript script)
+static constexpr std::span<const FontLoadInfo> GetTextFontNames(FontScript script)
 {
 	switch (script)
 	{
@@ -377,7 +376,6 @@ static constexpr std::span<const FontLoadInfo> GetFontNames(FontScript script)
 		CASE(ChineseSimplified);
 		CASE(ChineseTraditional);
 		CASE(Devanagari);
-		CASE(Emoji);
 		CASE(Hebrew);
 		CASE(Japanese);
 		CASE(Korean);
@@ -386,10 +384,10 @@ static constexpr std::span<const FontLoadInfo> GetFontNames(FontScript script)
 	}
 }
 
-static constexpr std::array<std::span<const FontLoadInfo>, NumFontScripts> g_font_load_info = [] {
+static constexpr std::array<std::span<const FontLoadInfo>, NumFontScripts> g_text_font_load_info = [] {
 	std::array<std::span<const FontLoadInfo>, NumFontScripts> res = {};
 	for (size_t i = 0; i < NumFontScripts; i++)
-		res[i] = GetFontNames(static_cast<FontScript>(i));
+		res[i] = GetTextFontNames(static_cast<FontScript>(i));
 	return res;
 }();
 
@@ -400,7 +398,8 @@ struct FontData
 	operator bool() const { return !data.empty(); }
 };
 
-static FontData s_font_data[NumFontScripts];
+static FontData s_text_font_data[NumFontScripts];
+static FontData s_emoji_font_data;
 
 static SmallString GetFontPath(const char* name)
 {
@@ -499,28 +498,31 @@ static bool ValidateFont(const FontLoadInfo& info, std::span<const u8> data)
 	return true;
 }
 
-static void TryLoadFonts(FontSearchContext* ctx)
+static void TryLoadFont(FontSearchContext* ctx, std::span<const FontLoadInfo> font_load_info, FontData& font_data)
 {
-	for (size_t i = 0; i < NumFontScripts; i++)
-	{
-		if (!s_font_data[i].data.empty())
-			continue;
+	if (!font_data.data.empty())
+		return;
 
-		for (const FontLoadInfo& info : g_font_load_info[i])
+	for (const FontLoadInfo& info : font_load_info)
+	{
+		if (std::span<const u8> data = TryLoadFont(ctx, info); !data.empty())
 		{
-			if (std::span<const u8> data = TryLoadFont(ctx, info); !data.empty())
+			if (!ValidateFont(info, data))
 			{
-				if (!ValidateFont(info, data))
-				{
-					FileSystem::UnmapFile(data);
-					continue;
-				}
-				s_font_data[i].data = data;
-				s_font_data[i].face_name = info.face_name;
-				break;
+				FileSystem::UnmapFile(data);
+				continue;
 			}
+			font_data.data = data;
+			font_data.face_name = info.face_name;
+			break;
 		}
 	}
+}
+
+static void TryLoadFonts(FontSearchContext* ctx, std::span<const std::span<const FontLoadInfo>> font_load_info, std::span<FontData> font_data)
+{
+	for (size_t i = 0; i < font_load_info.size(); i++)
+		TryLoadFont(ctx, font_load_info[i], font_data[i]);
 }
 
 static FontScript GetSecondaryScript(FontScript primary)
@@ -541,7 +543,6 @@ static constexpr FontScript g_fallback_list[] = {
 	FontScript::Devanagari,
 	FontScript::Arabic,
 	FontScript::Hebrew,
-	FontScript::Emoji,
 };
 
 static bool HasCenteredElipsis(FontScript script)
@@ -558,14 +559,16 @@ static bool HasCenteredElipsis(FontScript script)
 	}
 }
 
-static void DownloadFontIfMissing(FontSearchContext* ctx, QWidget* dialog_parent, FontScript script)
+static void DownloadFontIfMissing(FontSearchContext* ctx, std::span<const FontLoadInfo> font_info, FontData& font_data, QWidget* dialog_parent)
 {
-	if (s_font_data[static_cast<size_t>(script)])
+	if (font_data)
 		return;
-	const char* name = g_font_load_info[static_cast<size_t>(script)][0].file_name; // Downloadable font is always first
+
+	// Downloadable font is always first
+	const char* name = font_info[0].file_name;
 	std::string path = Path::Combine(EmuFolders::UserResources, GetFontPath(name));
 	if (QtHost::DownloadMissingFont(dialog_parent, name, path))
-		TryLoadFonts(ctx);
+		TryLoadFont(ctx, font_info, font_data);
 }
 
 void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::string_view language)
@@ -574,24 +577,27 @@ void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::s
 	FontScript scriptSecondary = GetSecondaryScript(scriptPrimary);
 	FontSearchContext ctx = nullptr;
 
-	TryLoadFonts(&ctx);
+	TryLoadFonts(&ctx, g_text_font_load_info, s_text_font_data);
+	TryLoadFont(&ctx, FontNames::Emoji, s_emoji_font_data);
 
-	DownloadFontIfMissing(&ctx, dialog_parent, scriptPrimary);
-	DownloadFontIfMissing(&ctx, dialog_parent, FontScript::Emoji);
+	DownloadFontIfMissing(&ctx,
+		g_text_font_load_info[static_cast<size_t>(scriptPrimary)],
+		s_text_font_data[static_cast<size_t>(scriptPrimary)],
+		dialog_parent);
+	DownloadFontIfMissing(&ctx, FontNames::Emoji, s_emoji_font_data, dialog_parent);
 
 	FontSearchContextDestroy(ctx);
 
-	std::vector<ImGuiManager::FontInfo> fonts;
-	fonts.reserve(std::size(g_fallback_list));
+	std::vector<ImGuiManager::FontInfo> text_fonts;
+	text_fonts.reserve(std::size(g_fallback_list));
 
-	auto AddFont = [&fonts](FontScript script) -> ImGuiManager::FontInfo* {
-		const FontData& font = s_font_data[static_cast<size_t>(script)];
+	auto AddFont = [&text_fonts](FontScript script) -> ImGuiManager::FontInfo* {
+		const FontData& font = s_text_font_data[static_cast<size_t>(script)];
 		if (!font)
 			return nullptr;
-		ImGuiManager::FontInfo& res = fonts.emplace_back();
+		ImGuiManager::FontInfo& res = text_fonts.emplace_back();
 		res.data = font.data;
 		res.face_name = font.face_name;
-		res.is_emoji_font = script == FontScript::Emoji;
 		return &res;
 	};
 
@@ -614,19 +620,21 @@ void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::s
 			AddFont(script);
 	}
 
+	ImGuiManager::FontInfo emoji_font{s_emoji_font_data.data, {}, s_emoji_font_data.face_name};
+
 	// Called on UI thread, so we need to do this on the CPU/GS thread if it's active.
 	if (g_emu_thread)
 	{
-		Host::RunOnCPUThread([fonts = std::move(fonts)]() mutable {
+		Host::RunOnCPUThread([fonts = std::move(text_fonts), emojis = std::move(emoji_font)]() mutable {
 			if (MTGS::IsOpen())
 			{
-				MTGS::RunOnGSThread([fonts = std::move(fonts)]() mutable {
-					ImGuiManager::SetFonts(std::move(fonts));
+				MTGS::RunOnGSThread([fonts = std::move(fonts), emojis = std::move(emojis)]() mutable {
+					ImGuiManager::SetFonts(std::move(fonts), std::move(emojis));
 				});
 			}
 			else
 			{
-				ImGuiManager::SetFonts(std::move(fonts));
+				ImGuiManager::SetFonts(std::move(fonts), std::move(emojis));
 			}
 
 			Host::ClearTranslationCache();
@@ -635,7 +643,7 @@ void QtHost::UpdateGlyphRangesAndClearCache(QWidget* dialog_parent, const std::s
 	else
 	{
 		// Startup, safe to set directly.
-		ImGuiManager::SetFonts(std::move(fonts));
+		ImGuiManager::SetFonts(std::move(text_fonts), std::move(emoji_font));
 		Host::ClearTranslationCache();
 	}
 }
