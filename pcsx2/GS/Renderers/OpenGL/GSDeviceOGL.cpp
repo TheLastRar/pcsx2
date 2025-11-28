@@ -744,6 +744,8 @@ bool GSDeviceOGL::CheckFeatures()
 	m_features.prefer_new_textures = false;
 	m_features.stencil_buffer = true;
 	m_features.test_and_sample_depth = m_features.texture_barrier;
+	m_features.depth_feedback = m_features.test_and_sample_depth ? GSDevice::DepthFeedbackSupport::Depth :
+	                                                               GSDevice::DepthFeedbackSupport::None;
 
 	if (GLAD_GL_ARB_shader_storage_buffer_object)
 	{
@@ -1398,6 +1400,9 @@ std::string GSDeviceOGL::GetPSSource(const PSSelector& sel)
 		+ fmt::format("#define PS_SCANMSK {}\n", sel.scanmsk)
 		+ fmt::format("#define PS_NO_COLOR {}\n", sel.no_color)
 		+ fmt::format("#define PS_NO_COLOR1 {}\n", sel.no_color1)
+		+ fmt::format("#define PS_ZTST {}\n", sel.ztst)
+		+ fmt::format("#define PS_COLOR_FEEDBACK {}\n", sel.color_feedback)
+		+ fmt::format("#define PS_DEPTH_FEEDBACK {}\n", sel.depth_feedback)
 	;
 
 	std::string src = GenGlslHeader("ps_main", GL_FRAGMENT_SHADER, macro);
@@ -2538,6 +2543,8 @@ void GSDeviceOGL::RenderHW(GSHWDrawConfig& config)
 		PSSetShaderResource(1, config.pal);
 	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier))
 		PSSetShaderResource(2, colclip_rt ? colclip_rt : config.rt);
+	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier) && config.ps.IsFeedbackLoopDepth())
+		PSSetShaderResource(4, config.ds);
 
 	SetupSampler(config.sampler);
 
@@ -2567,7 +2574,7 @@ void GSDeviceOGL::RenderHW(GSHWDrawConfig& config)
 	// On Nvidia, 2 seems to not pick up the data written by 1 unless we add a second barrier.
 	// Pretty sure GL is supposed to guarantee that the blend unit is coherent with previous pixel write out, so calling this a bug.
 	if (m_bugs.broken_blend_coherency)
-		rt_hazard_barrier |= (psel.ps.IsFeedbackLoop() || psel.ps.blend_c == 1) && GLState::rt == config.rt;
+		rt_hazard_barrier |= (psel.ps.IsFeedbackLoopRT() || psel.ps.blend_c == 1) && GLState::rt == config.rt;
 	if (config.require_one_barrier || !m_features.texture_barrier)
 		rt_hazard_barrier = false; // Already in place or not available
 
@@ -2764,7 +2771,7 @@ void GSDeviceOGL::SendHWDraw(const GSHWDrawConfig& config, bool one_barrier, boo
 	}
 
 #ifdef PCSX2_DEVBUILD
-	if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
+	if ((one_barrier || full_barrier) && !(config.ps.IsFeedbackLoopRT() || config.ps.IsFeedbackLoopDepth())) [[unlikely]]
 		Console.Warning("OpenGL: Possible unnecessary barrier detected.");
 #endif
 
