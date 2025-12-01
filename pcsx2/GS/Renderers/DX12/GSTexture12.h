@@ -19,6 +19,23 @@ namespace D3D12MA
 class GSTexture12 final : public GSTexture
 {
 public:
+	enum class Layout : u32
+	{
+		Undefined,
+		RenderTarget,
+		DepthStencilWrite,
+		DepthStencilRead,
+		PixelShaderResource,
+		OtherShaderResource,
+		UnorderedAccessView,
+		CopySrc,
+		CopyDst,
+		CopySelf,
+		PresentSrc,
+		FeedbackLoopRT,
+		Count
+	};
+
 	~GSTexture12() override;
 
 	static std::unique_ptr<GSTexture12> Create(Type type, Format format, int width, int height, int levels,
@@ -26,12 +43,12 @@ public:
 		DXGI_FORMAT uav_format);
 	static std::unique_ptr<GSTexture12> Adopt(wil::com_ptr_nothrow<ID3D12Resource> resource, Type type, Format format,
 		int width, int height, int levels, DXGI_FORMAT dxgi_format, DXGI_FORMAT srv_format, DXGI_FORMAT rtv_format,
-		DXGI_FORMAT dsv_format, DXGI_FORMAT uav_format, D3D12_RESOURCE_STATES resource_state);
+		DXGI_FORMAT dsv_format, DXGI_FORMAT uav_format, Layout layout);
 
 	__fi const D3D12DescriptorHandle& GetSRVDescriptor() const { return m_srv_descriptor; }
 	__fi const D3D12DescriptorHandle& GetWriteDescriptor() const { return m_write_descriptor; }
 	__fi const D3D12DescriptorHandle& GetUAVDescriptor() const { return m_uav_descriptor; }
-	__fi D3D12_RESOURCE_STATES GetResourceState() const { return m_resource_state; }
+	__fi Layout GetResourceLayout() const { return m_layout; }
 	__fi DXGI_FORMAT GetDXGIFormat() const { return m_dxgi_format; }
 	__fi ID3D12Resource* GetResource() const { return m_resource.get(); }
 
@@ -46,15 +63,14 @@ public:
 	void SetDebugName(std::string_view name) override;
 #endif
 
-	void TransitionToState(D3D12_RESOURCE_STATES state);
+	void TransitionToLayout(Layout layout);
 	void CommitClear();
-	void CommitClear(ID3D12GraphicsCommandList* cmdlist);
+	void CommitClear(ID3D12GraphicsCommandList7* cmdlist);
 
 	void Destroy(bool defer = true);
 
-	void TransitionToState(ID3D12GraphicsCommandList* cmdlist, D3D12_RESOURCE_STATES state);
-	void TransitionSubresourceToState(ID3D12GraphicsCommandList* cmdlist, int level, D3D12_RESOURCE_STATES before_state,
-		D3D12_RESOURCE_STATES after_state) const;
+	void TransitionToLayout(ID3D12GraphicsCommandList7* cmdlist, Layout layout);
+	void TransitionSubresourceToLayout(ID3D12GraphicsCommandList7* cmdlist, int level, Layout before_layout, Layout after_layout) const;
 
 	// Call when the texture is bound to the pipeline, or read from in a copy.
 	__fi void SetUseFenceCounter(u64 val) { m_use_fence_counter = val; }
@@ -70,7 +86,7 @@ private:
 	GSTexture12(Type type, Format format, int width, int height, int levels, DXGI_FORMAT dxgi_format,
 		wil::com_ptr_nothrow<ID3D12Resource> resource, wil::com_ptr_nothrow<D3D12MA::Allocation> allocation,
 		const D3D12DescriptorHandle& srv_descriptor, const D3D12DescriptorHandle& write_descriptor,
-		const D3D12DescriptorHandle& uav_descriptor, WriteDescriptorType wdtype, D3D12_RESOURCE_STATES resource_state);
+		const D3D12DescriptorHandle& uav_descriptor, WriteDescriptorType wdtype, Layout resource_state);
 
 	static bool CreateSRVDescriptor(
 		ID3D12Resource* resource, u32 levels, DXGI_FORMAT format, D3D12DescriptorHandle* dh);
@@ -78,7 +94,7 @@ private:
 	static bool CreateDSVDescriptor(ID3D12Resource* resource, DXGI_FORMAT format, D3D12DescriptorHandle* dh);
 	static bool CreateUAVDescriptor(ID3D12Resource* resource, DXGI_FORMAT format, D3D12DescriptorHandle* dh);
 
-	ID3D12GraphicsCommandList* GetCommandBufferForUpdate();
+	ID3D12GraphicsCommandList7* GetCommandBufferForUpdate();
 	ID3D12Resource* AllocateUploadStagingBuffer(const void* data, u32 pitch, u32 upload_pitch, u32 height) const;
 	void CopyTextureDataForUpload(void* dst, const void* src, u32 pitch, u32 upload_pitch, u32 height) const;
 
@@ -91,7 +107,7 @@ private:
 	WriteDescriptorType m_write_descriptor_type = WriteDescriptorType::None;
 
 	DXGI_FORMAT m_dxgi_format = DXGI_FORMAT_UNKNOWN;
-	D3D12_RESOURCE_STATES m_resource_state = D3D12_RESOURCE_STATE_COMMON;
+	Layout m_layout = Layout::Undefined;
 
 	// Contains the fence counter when the texture was last used.
 	// When this matches the current fence counter, the texture was used this command buffer.

@@ -396,7 +396,7 @@ void GSDevice12::MoveToNextCommandList()
 	m_allocator->SetCurrentFrameIndex(static_cast<UINT>(m_current_fence_value));
 }
 
-ID3D12GraphicsCommandList4* GSDevice12::GetInitCommandList()
+ID3D12GraphicsCommandList7* GSDevice12::GetInitCommandList()
 {
 	CommandListResources& res = m_command_lists[m_current_command_list];
 	if (!res.init_command_list_used)
@@ -905,11 +905,11 @@ bool GSDevice12::CreateSwapChain()
 	// Render a frame as soon as possible to clear out whatever was previously being displayed.
 	EndRenderPass();
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
-	ID3D12GraphicsCommandList4* cmdlist = GetCommandList();
+	ID3D12GraphicsCommandList7* cmdlist = GetCommandList();
 	m_current_swap_chain_buffer = ((m_current_swap_chain_buffer + 1) % static_cast<u32>(m_swap_chain_buffers.size()));
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	swap_chain_buf->TransitionToLayout(cmdlist, GSTexture12::Layout::RenderTarget);
 	cmdlist->ClearRenderTargetView(swap_chain_buf->GetWriteDescriptor(), s_present_clear_color.data(), 0, nullptr);
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_PRESENT);
+	swap_chain_buf->TransitionToLayout(cmdlist, GSTexture12::Layout::PresentSrc);
 	ExecuteCommandList(false);
 	m_swap_chain->Present(0, m_using_allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
 	return true;
@@ -936,7 +936,7 @@ bool GSDevice12::CreateSwapChainRTV()
 		std::unique_ptr<GSTexture12> tex = GSTexture12::Adopt(std::move(backbuffer), GSTexture::Type::RenderTarget,
 			GSTexture::Format::Color, swap_chain_desc.BufferDesc.Width, swap_chain_desc.BufferDesc.Height, 1,
 			swap_chain_desc.BufferDesc.Format, DXGI_FORMAT_UNKNOWN, swap_chain_desc.BufferDesc.Format,
-			DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN, D3D12_RESOURCE_STATE_COMMON);
+			DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN, GSTexture12::Layout::Undefined);
 		if (!tex)
 		{
 			m_swap_chain_buffers.clear();
@@ -1108,8 +1108,8 @@ GSDevice::PresentResult GSDevice12::BeginPresent(bool frame_skip)
 
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
 
-	ID3D12GraphicsCommandList* cmdlist = GetCommandList();
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	ID3D12GraphicsCommandList7* cmdlist = GetCommandList();
+	swap_chain_buf->TransitionToLayout(cmdlist, GSTexture12::Layout::RenderTarget);
 	cmdlist->ClearRenderTargetView(swap_chain_buf->GetWriteDescriptor(), s_present_clear_color.data(), 0, nullptr);
 	cmdlist->OMSetRenderTargets(1, &swap_chain_buf->GetWriteDescriptor().cpu_handle, FALSE, nullptr);
 	g_perfmon.Put(GSPerfMon::RenderPasses, 1);
@@ -1130,7 +1130,7 @@ void GSDevice12::EndPresent()
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
 	m_current_swap_chain_buffer = ((m_current_swap_chain_buffer + 1) % static_cast<u32>(m_swap_chain_buffers.size()));
 
-	swap_chain_buf->TransitionToState(GetCommandList(), D3D12_RESOURCE_STATE_PRESENT);
+	swap_chain_buf->TransitionToLayout(GetCommandList(), GSTexture12::Layout::PresentSrc);
 	if (!ExecuteCommandList(WaitType::None))
 	{
 		m_device_lost = true;
@@ -1364,13 +1364,13 @@ void GSDevice12::CopyRect(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r,
 
 			if (dTex12->GetType() != GSTexture::Type::DepthStencil)
 			{
-				dTex12->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+				dTex12->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 				GetCommandList()->ClearRenderTargetView(
 					dTex12->GetWriteDescriptor(), sTex12->GetUNormClearColor().v, 0, nullptr);
 			}
 			else
 			{
-				dTex12->TransitionToState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+				dTex12->TransitionToLayout(GSTexture12::Layout::DepthStencilWrite);
 				GetCommandList()->ClearDepthStencilView(
 					dTex12->GetWriteDescriptor(), D3D12_CLEAR_FLAG_DEPTH, sTex12->GetClearDepth(), 0, 0, nullptr);
 			}
@@ -1391,12 +1391,12 @@ void GSDevice12::CopyRect(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r,
 
 	EndRenderPass();
 
-	sTex12->TransitionToState(D3D12_RESOURCE_STATE_COPY_SOURCE);
+	sTex12->TransitionToLayout((dTex12 == sTex12) ? GSTexture12::Layout::CopySelf : GSTexture12::Layout::CopySrc);
 	sTex12->SetUseFenceCounter(GetCurrentFenceValue());
 	if (m_tfx_textures[0] && sTex12->GetSRVDescriptor() == m_tfx_textures[0])
 		PSSetShaderResource(0, nullptr, false);
 
-	dTex12->TransitionToState(D3D12_RESOURCE_STATE_COPY_DEST);
+	dTex12->TransitionToLayout((dTex12 == sTex12) ? GSTexture12::Layout::CopySelf : GSTexture12::Layout::CopyDst);
 	dTex12->SetUseFenceCounter(GetCurrentFenceValue());
 
 	D3D12_TEXTURE_COPY_LOCATION srcloc;
@@ -1533,10 +1533,10 @@ void GSDevice12::DrawMultiStretchRects(
 	{
 		GSTexture12* const stex = static_cast<GSTexture12*>(rects[i].src);
 		stex->CommitClear();
-		if (stex->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+		if (stex->GetResourceLayout() != GSTexture12::Layout::PixelShaderResource)
 		{
 			EndRenderPass();
-			stex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			stex->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 		}
 	}
 
@@ -1662,11 +1662,11 @@ void GSDevice12::BeginRenderPassForStretchRect(
 void GSDevice12::DoStretchRect(GSTexture12* sTex, const GSVector4& sRect, GSTexture12* dTex, const GSVector4& dRect,
 	const ID3D12PipelineState* pipeline, bool linear, bool allow_discard)
 {
-	if (sTex->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+	if (sTex->GetResourceLayout() != GSTexture12::Layout::PixelShaderResource)
 	{
 		// can't transition in a render pass
 		EndRenderPass();
-		sTex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		sTex->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 	}
 
 	SetUtilityRootSignature();
@@ -1743,14 +1743,14 @@ void GSDevice12::DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, 
 	if (has_input_0)
 	{
 		static_cast<GSTexture12*>(sTex[0])->CommitClear();
-		static_cast<GSTexture12*>(sTex[0])->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		static_cast<GSTexture12*>(sTex[0])->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 	}
 	if (has_input_1)
 	{
 		static_cast<GSTexture12*>(sTex[1])->CommitClear();
-		static_cast<GSTexture12*>(sTex[1])->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		static_cast<GSTexture12*>(sTex[1])->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 	}
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+	static_cast<GSTexture12*>(dTex)->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 
 	// Upload constant to select YUV algo, but skip constant buffer update if we don't need it
 	if (feedback_write_2 || feedback_write_1 || sTex[0])
@@ -1803,7 +1803,7 @@ void GSDevice12::DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, 
 		if (sTex[0] == sTex[2])
 		{
 			// need a barrier here because of the render pass
-			static_cast<GSTexture12*>(sTex[2])->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			static_cast<GSTexture12*>(sTex[2])->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 		}
 	}
 
@@ -1850,13 +1850,12 @@ void GSDevice12::DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, 
 
 	// this texture is going to get used as an input, so make sure we don't read undefined data
 	static_cast<GSTexture12*>(dTex)->CommitClear();
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void GSDevice12::DoInterlace(GSTexture* sTex, const GSVector4& sRect, GSTexture* dTex, const GSVector4& dRect,
 	ShaderInterlace shader, bool linear, const InterlaceConstantBuffer& cb)
 {
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+	static_cast<GSTexture12*>(dTex)->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 
 	const GSVector4i rc = GSVector4i(dRect);
 	const GSVector4i dtex_rc = dTex->GetRect();
@@ -1872,7 +1871,7 @@ void GSDevice12::DoInterlace(GSTexture* sTex, const GSVector4& sRect, GSTexture*
 	EndRenderPass();
 
 	// this texture is going to get used as an input, so make sure we don't read undefined data
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	static_cast<GSTexture12*>(dTex)->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 }
 
 void GSDevice12::DoShadeBoost(GSTexture* sTex, GSTexture* dTex, const float params[4])
@@ -1891,7 +1890,7 @@ void GSDevice12::DoShadeBoost(GSTexture* sTex, GSTexture* dTex, const float para
 	DrawStretchRect(sRect, GSVector4(dRect), dTex->GetSize());
 	EndRenderPass();
 
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	static_cast<GSTexture12*>(dTex)->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 }
 
 void GSDevice12::DoFXAA(GSTexture* sTex, GSTexture* dTex)
@@ -1909,7 +1908,7 @@ void GSDevice12::DoFXAA(GSTexture* sTex, GSTexture* dTex)
 	DrawStretchRect(sRect, GSVector4(dRect), dTex->GetSize());
 	EndRenderPass();
 
-	static_cast<GSTexture12*>(dTex)->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	static_cast<GSTexture12*>(dTex)->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 }
 
 bool GSDevice12::CompileCASPipelines()
@@ -2073,7 +2072,7 @@ void GSDevice12::RenderImGui()
 			D3D12DescriptorHandle handle = m_null_texture->GetSRVDescriptor();
 			if (tex)
 			{
-				tex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				tex->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 				handle = tex->GetSRVDescriptor();
 			}
 
@@ -2120,10 +2119,10 @@ bool GSDevice12::DoCAS(
 		}
 	}
 
-	ID3D12GraphicsCommandList* const cmdlist = GetCommandList();
-	const D3D12_RESOURCE_STATES old_state = sTex12->GetResourceState();
-	sTex12->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-	dTex12->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	ID3D12GraphicsCommandList7* const cmdlist = GetCommandList();
+	const GSTexture12::Layout old_layout = sTex12->GetResourceLayout();
+	sTex12->TransitionToLayout(cmdlist, GSTexture12::Layout::OtherShaderResource);
+	dTex12->TransitionToLayout(cmdlist, GSTexture12::Layout::UnorderedAccessView);
 
 	cmdlist->SetComputeRootSignature(m_cas_root_signature.get());
 	cmdlist->SetComputeRoot32BitConstants(
@@ -2138,7 +2137,7 @@ bool GSDevice12::DoCAS(
 	const int dispatchY = (dTex->GetHeight() + (threadGroupWorkRegionDim - 1)) / threadGroupWorkRegionDim;
 	cmdlist->Dispatch(dispatchX, dispatchY, 1);
 
-	sTex12->TransitionToState(cmdlist, old_state);
+	sTex12->TransitionToLayout(cmdlist, old_layout);
 	return true;
 }
 
@@ -2215,9 +2214,9 @@ void GSDevice12::OMSetRenderTargets(GSTexture* rt, GSTexture* ds, const GSVector
 	if (!InRenderPass())
 	{
 		if (vkRt)
-			vkRt->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			vkRt->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 		if (vkDs)
-			vkDs->TransitionToState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			vkDs->TransitionToLayout(GSTexture12::Layout::DepthStencilWrite);
 	}
 
 	// This is used to set/initialize the framebuffer for tfx rendering.
@@ -2346,7 +2345,7 @@ bool GSDevice12::CreateNullTexture()
 	if (!m_null_texture)
 		return false;
 
-	m_null_texture->TransitionToState(GetCommandList(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	m_null_texture->TransitionToLayout(GetCommandList(), GSTexture12::Layout::PixelShaderResource);
 	D3D12::SetObjectName(m_null_texture->GetResource(), "Null texture");
 	return true;
 }
@@ -3215,14 +3214,14 @@ void GSDevice12::PSSetShaderResource(int i, GSTexture* sr, bool check_state)
 		GSTexture12* dtex = static_cast<GSTexture12*>(sr);
 		if (check_state)
 		{
-			if (dtex->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE && InRenderPass())
+			if (dtex->GetResourceLayout() != GSTexture12::Layout::PixelShaderResource && InRenderPass())
 			{
 				GL_INS("Ending render pass due to resource transition");
 				EndRenderPass();
 			}
 
 			dtex->CommitClear();
-			dtex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			dtex->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 		}
 		dtex->SetUseFenceCounter(GetCurrentFenceValue());
 		handle = dtex->GetSRVDescriptor();
@@ -3266,7 +3265,7 @@ void GSDevice12::SetUtilityTexture(GSTexture* dtex, const D3D12DescriptorHandle&
 	{
 		GSTexture12* d12tex = static_cast<GSTexture12*>(dtex);
 		d12tex->CommitClear();
-		d12tex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		d12tex->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 		d12tex->SetUseFenceCounter(GetCurrentFenceValue());
 		handle = d12tex->GetSRVDescriptor();
 	}
@@ -3366,13 +3365,13 @@ void GSDevice12::RenderTextureMipmap(
 	}
 
 	// *now* we don't have to worry about running out of anything.
-	ID3D12GraphicsCommandList* cmdlist = GetCommandList();
-	if (texture->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-		texture->TransitionSubresourceToState(
-			cmdlist, src_level, texture->GetResourceState(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	if (texture->GetResourceState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
-		texture->TransitionSubresourceToState(
-			cmdlist, dst_level, texture->GetResourceState(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+	ID3D12GraphicsCommandList7* cmdlist = GetCommandList();
+	if (texture->GetResourceLayout() != GSTexture12::Layout::PixelShaderResource)
+		texture->TransitionSubresourceToLayout(
+			cmdlist, src_level, texture->GetResourceLayout(), GSTexture12::Layout::PixelShaderResource);
+	if (texture->GetResourceLayout() != GSTexture12::Layout::RenderTarget)
+		texture->TransitionSubresourceToLayout(
+			cmdlist, dst_level, texture->GetResourceLayout(), GSTexture12::Layout::RenderTarget);
 
 	// We set the state directly here.
 	constexpr u32 MODIFIED_STATE = DIRTY_FLAG_VIEWPORT | DIRTY_FLAG_SCISSOR | DIRTY_FLAG_RENDER_TARGET;
@@ -3395,12 +3394,12 @@ void GSDevice12::RenderTextureMipmap(
 		GSVector4(0.0f, 0.0f, static_cast<float>(dst_width), static_cast<float>(dst_height)),
 		GSVector2i(dst_width, dst_height));
 
-	if (texture->GetResourceState() != D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-		texture->TransitionSubresourceToState(
-			cmdlist, src_level, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, texture->GetResourceState());
-	if (texture->GetResourceState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
-		texture->TransitionSubresourceToState(
-			cmdlist, dst_level, D3D12_RESOURCE_STATE_RENDER_TARGET, texture->GetResourceState());
+	if (texture->GetResourceLayout() != GSTexture12::Layout::PixelShaderResource)
+		texture->TransitionSubresourceToLayout(
+			cmdlist, src_level, GSTexture12::Layout::PixelShaderResource, texture->GetResourceLayout());
+	if (texture->GetResourceLayout() != GSTexture12::Layout::RenderTarget)
+		texture->TransitionSubresourceToLayout(
+			cmdlist, dst_level, GSTexture12::Layout::RenderTarget, texture->GetResourceLayout());
 
 	// Must destroy after current cmdlist.
 	DeferDescriptorDestruction(m_descriptor_heap_manager, &srv_handle);
@@ -3810,7 +3809,7 @@ GSTexture12* GSDevice12::SetupPrimitiveTrackingDATE(GSHWDrawConfig& config, Pipe
 	config.alpha_second_pass.ps.date = 3;
 
 	// and bind the image to the primitive sampler
-	image->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	image->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 	PSSetShaderResource(3, image, false);
 	return image;
 }
@@ -3846,7 +3845,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			GL_PUSH("Blit ColorClip back to RT");
 
 			EndRenderPass();
-			colclip_rt->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			colclip_rt->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 
 			draw_rt = static_cast<GSTexture12*>(config.rt);
 			OMSetRenderTargets(draw_rt, draw_ds, config.colclip_update_area);
@@ -3899,7 +3898,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		EndRenderPass();
 
 		// Transition dsv as read only.
-		draw_ds->TransitionToState(D3D12_RESOURCE_STATE_DEPTH_READ);
+		draw_ds->TransitionToLayout(GSTexture12::Layout::DepthStencilRead);
 	}
 
 	// Primitive ID tracking DATE setup.
@@ -3948,7 +3947,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			else if (draw_rt->GetState() == GSTexture::State::Dirty)
 			{
 				GL_PUSH_("ColorClip Render Target Setup");
-				draw_rt->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				draw_rt->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 			}
 
 			// we're not drawing to the RT, so we can use it as a source
@@ -4002,7 +4001,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			// Denormalize clear color for hw colclip.
 			clear_color *= GSVector4::cxpr(255.0f / 65535.0f, 255.0f / 65535.0f, 255.0f / 65535.0f, 1.0f);
 		}
-		BeginRenderPass(GetLoadOpForTexture(draw_rt),
+		BeginRenderPass(GetLoadOpForTexture(draw_rt), // FEEDBACK
 			draw_rt ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			GetLoadOpForTexture(draw_ds),
 			draw_ds ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
@@ -4084,7 +4083,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			GL_PUSH("Blit ColorClip back to RT");
 
 			EndRenderPass();
-			colclip_rt->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			colclip_rt->TransitionToLayout(GSTexture12::Layout::PixelShaderResource);
 
 			draw_rt = static_cast<GSTexture12*>(config.rt);
 			OMSetRenderTargets(draw_rt, draw_ds, config.colclip_update_area);
@@ -4121,7 +4120,7 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 			EndRenderPass();
 
 			CopyRect(draw_rt, draw_rt_clone, drawarea, drawarea.left, drawarea.top);
-			draw_rt->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			draw_rt->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 
 			if (one_barrier || full_barrier)
 				PSSetShaderResource(2, draw_rt_clone, true);

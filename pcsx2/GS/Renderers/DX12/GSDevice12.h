@@ -51,13 +51,13 @@ public:
 	u32 GetAdapterVendorID() const;
 
 	/// Returns the current command list, commands can be recorded directly.
-	ID3D12GraphicsCommandList4* GetCommandList() const
+	ID3D12GraphicsCommandList7* GetCommandList() const
 	{
 		return m_command_lists[m_current_command_list].command_lists[1].get();
 	}
 
 	/// Returns the init command list for uploading.
-	ID3D12GraphicsCommandList4* GetInitCommandList();
+	ID3D12GraphicsCommandList7* GetInitCommandList();
 
 	/// Returns the per-frame SRV/CBV/UAV allocator.
 	D3D12DescriptorAllocator& GetDescriptorAllocator()
@@ -134,7 +134,7 @@ private:
 	struct CommandListResources
 	{
 		std::array<ComPtr<ID3D12CommandAllocator>, 2> command_allocators;
-		std::array<ComPtr<ID3D12GraphicsCommandList4>, 2> command_lists;
+		std::array<ComPtr<ID3D12GraphicsCommandList7>, 2> command_lists;
 		D3D12DescriptorAllocator descriptor_allocator;
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
