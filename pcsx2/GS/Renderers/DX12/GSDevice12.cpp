@@ -203,6 +203,7 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 		{
 			if (IsDebuggerPresent())
 			{
+				info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 				info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
 				info_queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 			}
@@ -3985,9 +3986,14 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	{
 		// Requires a copy of the RT.
 		// Used as "bind rt" flag when texture barrier is unsupported for tex is fb.
-		draw_rt_clone = static_cast<GSTexture12*>(CreateTexture(rtsize.x, rtsize.y, 1, draw_rt->GetFormat(), true));
-		if (!draw_rt_clone)
-			Console.Warning("D3D12: Failed to allocate temp texture for RT copy.");
+		//draw_rt_clone = static_cast<GSTexture12*>(CreateTexture(rtsize.x, rtsize.y, 1, draw_rt->GetFormat(), true));
+		//if (!draw_rt_clone)
+		//	Console.Warning("D3D12: Failed to allocate temp texture for RT copy.");
+
+
+
+
+		draw_rt_clone = draw_rt;
 	}
 
 	OMSetRenderTargets(draw_rt, draw_ds, config.scissor);
@@ -4067,8 +4073,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		SendHWDraw(pipe, config, draw_rt_clone, draw_rt, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier, true);
 	}
 
-	if (draw_rt_clone)
-		Recycle(draw_rt_clone);
+	//if (draw_rt_clone)
+	//	Recycle(draw_rt_clone);
 
 	if (date_image)
 		Recycle(date_image);
@@ -4116,46 +4122,60 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
 			Console.Warning("D3D12: Possible unnecessary copy detected.");
 #endif
-		auto CopyAndBind = [&](GSVector4i drawarea) {
-			EndRenderPass();
+		if (one_barrier || full_barrier)
+			PSSetShaderResource(2, draw_rt_clone, false);
+		if (config.tex && config.tex == config.rt)
+			PSSetShaderResource(0, draw_rt_clone, false);
+		draw_rt->TransitionToLayout(GSTexture12::Layout::RenderTarget);
 
-			CopyRect(draw_rt, draw_rt_clone, drawarea, drawarea.left, drawarea.top);
-			draw_rt->TransitionToLayout(GSTexture12::Layout::RenderTarget);
-
-			if (one_barrier || full_barrier)
-				PSSetShaderResource(2, draw_rt_clone, true);
-			if (config.tex && config.tex == config.rt)
-				PSSetShaderResource(0, draw_rt_clone, true);
-		};
+		BindDrawPipeline(pipe);
 
 		if (m_features.multidraw_fb_copy && full_barrier)
 		{
+			pxAssert(config.drawlist && !config.drawlist->empty());
 			const u32 draw_list_size = static_cast<u32>(config.drawlist->size());
 			const u32 indices_per_prim = config.indices_per_prim;
 
-			pxAssert(config.drawlist && !config.drawlist->empty());
-			pxAssert(config.drawlist_bbox && static_cast<u32>(config.drawlist_bbox->size()) == draw_list_size);
+			GL_PUSH("Split the draw");
+			g_perfmon.Put(
+				GSPerfMon::Barriers, static_cast<u32>(draw_list_size) - static_cast<u32>(skip_first_barrier));
 
 			for (u32 n = 0, p = 0; n < draw_list_size; n++)
 			{
 				const u32 count = (*config.drawlist)[n] * indices_per_prim;
 
-				GSVector4i bbox = (*config.drawlist_bbox)[n].rintersect(config.drawarea);
-
 				// Copy only the part needed by the draw.
-				CopyAndBind(bbox);
-				if (BindDrawPipeline(pipe))
-					DrawIndexedPrimitive(p, count);
+				D3D12_GLOBAL_BARRIER barriers[]{
+					{D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE},
+					{D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET},
+				};
+
+				D3D12_BARRIER_GROUP group{D3D12_BARRIER_TYPE_GLOBAL, 2};
+				group.pGlobalBarriers = barriers;
+
+				GetCommandList()->Barrier(1, &group);
+				DrawIndexedPrimitive(p, count);
 				p += count;
 			}
 
 			return;
 		}
 
-
 		// Optimization: For alpha second pass we can reuse the copy snapshot from the first pass.
 		if (!skip_first_barrier)
-			CopyAndBind(config.drawarea);
+		{
+			g_perfmon.Put(GSPerfMon::Barriers, 1);
+
+			D3D12_GLOBAL_BARRIER barriers[]{
+				{D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_ACCESS_SHADER_RESOURCE, D3D12_BARRIER_ACCESS_SHADER_RESOURCE},
+				{D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_SYNC_DRAW, D3D12_BARRIER_ACCESS_RENDER_TARGET, D3D12_BARRIER_ACCESS_RENDER_TARGET},
+			};
+
+			D3D12_BARRIER_GROUP group{D3D12_BARRIER_TYPE_GLOBAL, 2};
+			group.pGlobalBarriers = barriers;
+
+			GetCommandList()->Barrier(1, &group);
+		}
 	}
 
 	if (BindDrawPipeline(pipe))

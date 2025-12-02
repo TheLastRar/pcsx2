@@ -43,7 +43,7 @@ public:
 	};
 
 	__fi IDXGIAdapter1* GetAdapter() const { return m_adapter.get(); }
-	__fi ID3D12Device* GetDevice() const { return m_device.get(); }
+	__fi ID3D12Device8* GetDevice() const { return m_device.get(); }
 	__fi ID3D12CommandQueue* GetCommandQueue() const { return m_command_queue.get(); }
 	__fi D3D12MA::Allocator* GetAllocator() const { return m_allocator.get(); }
 
@@ -152,7 +152,7 @@ private:
 	void DestroyPendingResources(CommandListResources& cmdlist);
 
 	ComPtr<IDXGIAdapter1> m_adapter;
-	ComPtr<ID3D12Device> m_device;
+	ComPtr<ID3D12Device8> m_device;
 	ComPtr<ID3D12CommandQueue> m_command_queue;
 	ComPtr<D3D12MA::Allocator> m_allocator;
 
