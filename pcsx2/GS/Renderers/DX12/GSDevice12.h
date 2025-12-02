@@ -43,7 +43,7 @@ public:
 	};
 
 	__fi IDXGIAdapter1* GetAdapter() const { return m_adapter.get(); }
-	__fi ID3D12Device* GetDevice() const { return m_device.get(); }
+	__fi ID3D12Device8* GetDevice() const { return m_device.get(); }
 	__fi ID3D12CommandQueue* GetCommandQueue() const { return m_command_queue.get(); }
 	__fi D3D12MA::Allocator* GetAllocator() const { return m_allocator.get(); }
 
@@ -51,7 +51,7 @@ public:
 	u32 GetAdapterVendorID() const;
 
 	/// Returns the current command list, commands can be recorded directly.
-	ID3D12GraphicsCommandList4* GetCommandList() const
+	ID3D12GraphicsCommandList7* GetCommandList() const
 	{
 		return m_command_lists[m_current_command_list].command_lists[1].get();
 	}
@@ -134,7 +134,7 @@ private:
 	struct CommandListResources
 	{
 		std::array<ComPtr<ID3D12CommandAllocator>, 2> command_allocators;
-		std::array<ComPtr<ID3D12GraphicsCommandList4>, 2> command_lists;
+		std::array<ComPtr<ID3D12GraphicsCommandList7>, 2> command_lists;
 		D3D12DescriptorAllocator descriptor_allocator;
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
@@ -152,7 +152,7 @@ private:
 	void DestroyPendingResources(CommandListResources& cmdlist);
 
 	ComPtr<IDXGIAdapter1> m_adapter;
-	ComPtr<ID3D12Device> m_device;
+	ComPtr<ID3D12Device8> m_device;
 	ComPtr<ID3D12CommandQueue> m_command_queue;
 	ComPtr<D3D12MA::Allocator> m_allocator;
 
@@ -456,7 +456,7 @@ public:
 	void IASetVertexBuffer(const void* vertex, size_t stride, size_t count);
 	void IASetIndexBuffer(const void* index, size_t count);
 
-	void PSSetShaderResource(int i, GSTexture* sr, bool check_state);
+	void PSSetShaderResource(int i, GSTexture* sr, bool check_state, bool feedback = false);
 	void PSSetSampler(GSHWDrawConfig::SamplerSelector sel);
 
 	void OMSetRenderTargets(GSTexture* rt, GSTexture* ds, const GSVector4i& scissor);
