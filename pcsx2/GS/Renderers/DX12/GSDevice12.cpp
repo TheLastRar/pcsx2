@@ -1258,10 +1258,6 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	bool ht = device_options.ResourceHeapTier >= D3D12_RESOURCE_HEAP_TIER_1;
 	pxAssert(ht);
 
-	D3D12_FEATURE_DATA_D3D12_OPTIONS12 device_options12 = {};
-	m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &device_options12, sizeof(device_options12));
-	bool eb = device_options12.EnhancedBarriersSupported;
-
 	return true;
 }
 
