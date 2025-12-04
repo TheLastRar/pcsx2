@@ -4127,7 +4127,8 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 			if (skip_first_barrier)
 			{
 				const u32 count = (*config.drawlist)[n] * indices_per_prim;
-				DrawIndexedPrimitive(p, count);
+				if (BindDrawPipeline(pipe))
+					DrawIndexedPrimitive(p, count);
 				p += count;
 				++n;
 			}
@@ -4136,10 +4137,11 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 			{
 				const u32 count = (*config.drawlist)[n] * indices_per_prim;
 
-				// Aliased resources needs a barrier, which needs to be outside the render pass.
 				EndRenderPass();
+				// Aliased resources needs a barrier
+				// Need to specify null for the after resource to get a stronger barrier
 				D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-				barrier.Aliasing = {draw_rt->GetResource(), draw_rt->GetFBLResource()};
+				barrier.Aliasing = {draw_rt->GetResource(), nullptr};
 				GetCommandList()->ResourceBarrier(1, &barrier);
 
 				if (BindDrawPipeline(pipe))
@@ -4154,10 +4156,11 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		{
 			g_perfmon.Put(GSPerfMon::Barriers, 1);
 
-			// Aliased resources needs a barrier, which needs to be outside the render pass.
 			EndRenderPass();
+			// Aliased resources needs a barrier
+			// Need to specify null for the after resource to get a stronger barrier
 			D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-			barrier.Aliasing = {draw_rt->GetResource(), draw_rt->GetFBLResource()};
+			barrier.Aliasing = {draw_rt->GetResource(), nullptr};
 			GetCommandList()->ResourceBarrier(1, &barrier);
 		}
 	}
