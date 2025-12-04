@@ -147,7 +147,8 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			// RT's tend to be larger, so we'll keep them committed for speed.
 			pxAssert(levels == 1);
 			allocationDesc.Flags |= D3D12MA::ALLOCATION_FLAG_COMMITTED;
-			allocationDesc.ExtraHeapFlags = D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES;
+			allocationDesc.ExtraHeapFlags = 
+				dev->GetResourceHeapTier() == D3D12_RESOURCE_HEAP_TIER_1 ? D3D12_HEAP_FLAG_DENY_BUFFERS | D3D12_HEAP_FLAG_DENY_NON_RT_DS_TEXTURES : D3D12_HEAP_FLAG_NONE;
 			desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 			optimized_clear_value.Format = rtv_format;
 			state = D3D12_RESOURCE_STATE_RENDER_TARGET;

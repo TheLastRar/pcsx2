@@ -1247,11 +1247,15 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_max_texture_size = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
 	BOOL allow_tearing_supported = false;
-	const HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
+	HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
 		DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing_supported, sizeof(allow_tearing_supported));
 	m_allow_tearing_supported = (SUCCEEDED(hr) && allow_tearing_supported == TRUE);
 
 	m_direct_feedback = isAMD;
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS dev_options{};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &dev_options, sizeof(dev_options));
+	m_resource_heap_tier = SUCCEEDED(hr) ? dev_options.ResourceHeapTier : D3D12_RESOURCE_HEAP_TIER_1;
 
 	return true;
 }
