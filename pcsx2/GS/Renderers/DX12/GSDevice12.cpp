@@ -1251,7 +1251,7 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing_supported, sizeof(allow_tearing_supported));
 	m_allow_tearing_supported = (SUCCEEDED(hr) && allow_tearing_supported == TRUE);
 
-	m_direct_feedback = isAMD;
+	m_direct_feedback = false;
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS dev_options{};
 	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &dev_options, sizeof(dev_options));
