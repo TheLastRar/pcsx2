@@ -1225,8 +1225,8 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 {
 	const bool isAMD = (vendor_id == 0x1002 || vendor_id == 0x1022);
 
-	m_features.texture_barrier = false;
-	m_features.multidraw_fb_copy = GSConfig.OverrideTextureBarriers != 0;
+	m_features.texture_barrier = GSConfig.OverrideTextureBarriers != 0;
+	m_features.multidraw_fb_copy = false;
 	m_features.broken_point_sampler = isAMD;
 	m_features.primitive_id = true;
 	m_features.prefer_new_textures = true;
@@ -3960,7 +3960,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			}
 
 			// we're not drawing to the RT, so we can use it as a source
-			if (config.require_one_barrier && !m_features.multidraw_fb_copy)
+			if (config.require_one_barrier && !m_features.texture_barrier)
 				PSSetShaderResource(2, draw_rt, true);
 		}
 
@@ -3990,19 +3990,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		m_pipeline_selector.ds = true;
 	}
 
-	if (draw_rt && (config.require_one_barrier || (config.require_full_barrier && m_features.multidraw_fb_copy) || (config.tex && config.tex == config.rt)))
-	{
-		// Requires a copy of the RT.
-		// Used as "bind rt" flag when texture barrier is unsupported for tex is fb.
-		//draw_rt_clone = static_cast<GSTexture12*>(CreateTexture(rtsize.x, rtsize.y, 1, draw_rt->GetFormat(), true));
-		//if (!draw_rt_clone)
-		//	Console.Warning("D3D12: Failed to allocate temp texture for RT copy.");
-
-
-
-
-		draw_rt_clone = draw_rt;
-	}
+	const bool feedback = draw_rt && (config.require_one_barrier || (config.require_full_barrier && m_features.texture_barrier) || (config.tex && config.tex == config.rt));
 
 	OMSetRenderTargets(draw_rt, draw_ds, config.scissor);
 
@@ -4049,7 +4037,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		UploadHWDrawVerticesAndIndices(config);
 
 	// now we can do the actual draw
-	SendHWDraw(pipe, config, draw_rt_clone, draw_rt, config.require_one_barrier, config.require_full_barrier, false);
+	SendHWDraw(pipe, config, draw_rt, feedback, config.require_one_barrier, config.require_full_barrier, false);
 
 	// blend second pass
 	if (config.blend_multi_pass.enable)
@@ -4078,11 +4066,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		pipe.cms = config.alpha_second_pass.colormask;
 		pipe.dss = config.alpha_second_pass.depth;
 		pipe.bs = config.blend;
-		SendHWDraw(pipe, config, draw_rt_clone, draw_rt, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier, false);
+		SendHWDraw(pipe, config, draw_rt, feedback, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier, false);
 	}
-
-	//if (draw_rt_clone)
-	//	Recycle(draw_rt_clone);
 
 	if (date_image)
 		Recycle(date_image);
@@ -4121,18 +4106,18 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	}
 }
 
-void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt_clone, GSTexture12* draw_rt, const bool one_barrier, const bool full_barrier, const bool skip_first_barrier)
+void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt, const bool feedback, const bool one_barrier, const bool full_barrier, const bool skip_first_barrier)
 {
-	if (draw_rt_clone)
+	if (feedback)
 	{
 #ifdef PCSX2_DEVBUILD
 		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
 			Console.Warning("D3D12: Possible unnecessary copy detected.");
 #endif
 		if (one_barrier || full_barrier)
-			PSSetShaderResource(2, draw_rt_clone, false, true);
+			PSSetShaderResource(2, draw_rt, false, true);
 		if (config.tex && config.tex == config.rt)
-			PSSetShaderResource(0, draw_rt_clone, false, true);
+			PSSetShaderResource(0, draw_rt, false, true);
 
 		if (full_barrier)
 		{
