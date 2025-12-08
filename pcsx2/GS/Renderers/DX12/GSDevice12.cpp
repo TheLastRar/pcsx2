@@ -33,6 +33,14 @@
 static u32 s_debug_scope_depth = 0;
 #endif
 
+extern "C" {
+__declspec(dllexport) extern const UINT D3D12SDKVersion = 618;
+}
+
+extern "C" {
+__declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\";
+}
+
 static bool IsDATMConvertShader(ShaderConvert i)
 {
 	return (i == ShaderConvert::DATM_0 || i == ShaderConvert::DATM_1 || i == ShaderConvert::DATM_0_RTA_CORRECTION || i == ShaderConvert::DATM_1_RTA_CORRECTION);
