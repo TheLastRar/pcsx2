@@ -1246,9 +1246,19 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_max_texture_size = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
 	BOOL allow_tearing_supported = false;
-	const HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
+	HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
 		DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing_supported, sizeof(allow_tearing_supported));
 	m_allow_tearing_supported = (SUCCEEDED(hr) && allow_tearing_supported == TRUE);
+
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS12 device_options12 = {};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &device_options12, sizeof(device_options12));
+	if (SUCCEEDED(hr))
+	{
+		Console.WriteLnFmt("D3D12: Enhanced Barriers: {}", device_options12.EnhancedBarriersSupported ? "Supported" : "Not Supported");
+	}
+	else
+		Console.WriteLnFmt("D3D12: Failed to check for Enhanced Barriers: 0x{:08x}", static_cast<unsigned long>(hr));
 
 	return true;
 }
