@@ -27,6 +27,7 @@
 #include <limits>
 #include <mutex>
 #include <sstream>
+#include <chrono>
 
 // Tweakables
 enum : u32
@@ -2251,7 +2252,16 @@ void GSDeviceVK::ResizeWindow(s32 new_window_width, s32 new_window_height, float
 	}
 
 	// make sure previous frames are presented
+	using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+	auto t1 = high_resolution_clock::now();
 	vkQueueWaitIdle(m_present_queue);
+	auto t2 = high_resolution_clock::now();
+
+	auto ms = duration_cast<milliseconds>(t2 - t1);
+	Console.WarningFmt("vkQueueWaitIdle took {}ms", ms.count());
 
 	if (!m_swap_chain->ResizeSwapChain(new_window_width, new_window_height, new_window_scale))
 	{

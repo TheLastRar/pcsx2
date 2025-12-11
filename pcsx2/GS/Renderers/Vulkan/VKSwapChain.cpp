@@ -17,6 +17,7 @@
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
 #include <X11/Xlib.h>
 #endif
+#include <chrono>
 
 static_assert(VKSwapChain::NUM_SEMAPHORES == (GSDeviceVK::NUM_COMMAND_BUFFERS + 1));
 
@@ -537,8 +538,21 @@ VkResult VKSwapChain::AcquireNextImage()
 	// Use a different semaphore for each image.
 	m_current_semaphore = (m_current_semaphore + 1) % static_cast<u32>(m_semaphores.size());
 
+	using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+	using namespace std::chrono_literals;
+
+	auto t1 = high_resolution_clock::now();
 	const VkResult res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
 		m_semaphores[m_current_semaphore].available_semaphore, VK_NULL_HANDLE, &m_current_image);
+	auto t2 = high_resolution_clock::now();
+
+	auto ms = duration_cast<milliseconds>(t2 - t1);
+	if (ms > 10ms)
+		Console.WarningFmt("vkAcquireNextImageKHR took too long {}ms", ms.count());
+
 	m_image_acquire_result = res;
 	return res;
 }
@@ -572,8 +586,23 @@ void VKSwapChain::ResetImageAcquireResult()
 
 bool VKSwapChain::ResizeSwapChain(u32 new_width, u32 new_height, float new_scale)
 {
+	using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+	using namespace std::chrono_literals;
+
+	auto t1 = high_resolution_clock::now();
 	ReleaseCurrentImage();
+	auto t2 = high_resolution_clock::now();
 	DestroySwapChainImages();
+	auto t3 = high_resolution_clock::now();
+
+	auto ms1 = duration_cast<milliseconds>(t2 - t1);
+	auto ms2 = duration_cast<milliseconds>(t3 - t2);
+
+	Console.WarningFmt("ReleaseCurrentImage took {}ms", ms1.count());
+	Console.WarningFmt("DestroySwapChainImages took {}ms", ms2.count());
 
 	if (new_width != 0 && new_height != 0)
 	{
@@ -583,11 +612,15 @@ bool VKSwapChain::ResizeSwapChain(u32 new_width, u32 new_height, float new_scale
 
 	m_window_info.surface_scale = new_scale;
 
+	t1 = high_resolution_clock::now();
 	if (!CreateSwapChain())
 	{
 		DestroySwapChain();
 		return false;
 	}
+	t2 = high_resolution_clock::now();
+	ms1 = duration_cast<milliseconds>(t2 - t1);
+	Console.WarningFmt("CreateSwapChain took {}ms", ms1.count());
 
 	return true;
 }
