@@ -1333,6 +1333,11 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 
 			return;
 		}
+		else if (res == VK_SUBOPTIMAL_KHR)
+		{
+			m_resize_requested = true;
+			return;
+		}
 
 		// Grab the next image as soon as possible, that way we spend less time blocked on the next
 		// submission. Don't care if it fails, we'll deal with that at the presentation call site.
@@ -2363,11 +2368,19 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 	}
 
 	VkResult res = m_resize_requested ? VK_ERROR_OUT_OF_DATE_KHR : m_swap_chain->AcquireNextImage();
-	if (res != VK_SUCCESS)
+	if (res == VK_SUBOPTIMAL_KHR)
+	{
+		// AMD seems to get stuck on the semaphore we use in vkAcquireNextImageKHR
+		// That is dispite us releasing the image with vkReleaseSwapchainImagesKHR
+		// NV dosn't return VK_SUBOPTIMAL_KHR here, so it never hit this path
+		// Lets present with this image and resize on the next frame.
+		m_resize_requested = true;
+	}
+	else if (res != VK_SUCCESS)
 	{
 		m_swap_chain->ReleaseCurrentImage();
 
-		if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
+		if (res == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			ResizeWindow(0, 0, m_window_info.surface_scale);
 			res = m_swap_chain->AcquireNextImage();
