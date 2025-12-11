@@ -2251,7 +2251,7 @@ void GSDeviceVK::ResizeWindow(s32 new_window_width, s32 new_window_height, float
 	}
 
 	// make sure previous frames are presented
-	WaitForGPUIdle();
+	vkQueueWaitIdle(m_present_queue);
 
 	if (!m_swap_chain->ResizeSwapChain(new_window_width, new_window_height, new_window_scale))
 	{
