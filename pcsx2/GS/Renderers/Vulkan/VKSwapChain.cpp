@@ -494,6 +494,7 @@ void VKSwapChain::DestroySwapChainImages()
 		it->Destroy(false);
 	}
 	m_images.clear();
+	/*
 	for (auto& it : m_semaphores)
 	{
 		if (it.rendering_finished_semaphore != VK_NULL_HANDLE)
@@ -502,7 +503,7 @@ void VKSwapChain::DestroySwapChainImages()
 			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.available_semaphore, nullptr);
 	}
 	m_semaphores = {};
-
+	*/
 	m_image_acquire_result.reset();
 }
 
