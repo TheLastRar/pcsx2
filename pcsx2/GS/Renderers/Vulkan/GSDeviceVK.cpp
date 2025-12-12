@@ -27,6 +27,7 @@
 #include <limits>
 #include <mutex>
 #include <sstream>
+#include <chrono>
 
 // Tweakables
 enum : u32
@@ -2198,7 +2199,7 @@ void GSDeviceVK::ResizeWindow(s32 new_window_width, s32 new_window_height, float
 		Console.Error("VK: Failed to resize swap chain. Next present will fail.");
 		return;
 	}
-
+	m_acquire_count = 0;
 	m_window_info = m_swap_chain->GetWindowInfo();
 }
 
@@ -2288,7 +2289,23 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 		return PresentResult::FrameSkipped;
 	}
 
-	VkResult res = m_swap_chain->AcquireNextImage();
+	VkResult res; 
+	if (m_acquire_count < 5)
+	{
+		using std::chrono::high_resolution_clock;
+		using std::chrono::duration_cast;
+		using std::chrono::duration;
+		using std::chrono::milliseconds;
+		auto t1 = high_resolution_clock::now();
+		res = m_swap_chain->AcquireNextImage();
+		auto t2 = high_resolution_clock::now();
+		auto ms = duration_cast<milliseconds>(t2 - t1);
+		Console.WarningFmt("AcquireNextImage {} took {}ms", m_acquire_count, ms.count());
+		m_acquire_count++;
+	}
+	else
+		res = m_swap_chain->AcquireNextImage();
+
 	if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 	{
 		LOG_VULKAN_ERROR(res, "vkAcquireNextImageKHR() failed: ");
