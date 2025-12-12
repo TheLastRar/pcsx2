@@ -1275,7 +1275,21 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 		// Grab the next image as soon as possible, that way we spend less time blocked on the next
 		// submission. Don't care if it fails, we'll deal with that at the presentation call site.
 		// Credit to dxvk for the idea.
-		//present_swap_chain->AcquireNextImage();
+		if (m_acquire_count < 5)
+		{
+			using std::chrono::duration;
+			using std::chrono::duration_cast;
+			using std::chrono::high_resolution_clock;
+			using std::chrono::milliseconds;
+			auto t1 = high_resolution_clock::now();
+			m_swap_chain->AcquireNextImage();
+			auto t2 = high_resolution_clock::now();
+			auto ms = duration_cast<milliseconds>(t2 - t1);
+			Console.WarningFmt("End AcquireNextImage {} took {}ms", m_acquire_count, ms.count());
+			m_acquire_count++;
+		}
+		else
+			m_swap_chain->AcquireNextImage();
 	}
 }
 
