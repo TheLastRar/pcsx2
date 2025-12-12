@@ -327,7 +327,7 @@ bool VKSwapChain::CreateSwapChain()
 	// Select number of images in swap chain, we prefer one buffer in the background to work on in triple-buffered mode.
 	// maxImageCount can be zero, in which case there isn't an upper limit on the number of buffers.
 	u32 image_count = std::clamp<u32>(
-		3, surface_capabilities.minImageCount,
+		(m_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) ? 3 : 2, surface_capabilities.minImageCount,
 		(surface_capabilities.maxImageCount == 0) ? std::numeric_limits<u32>::max() : surface_capabilities.maxImageCount);
 	DEV_LOG("Creating a swap chain with {} images in present mode {}", image_count, PresentModeToString(m_present_mode));
 
