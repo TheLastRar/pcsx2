@@ -415,17 +415,17 @@ bool VKSwapChain::CreateSwapChain()
 		Console.Error("Exclusive fullscreen control requested, but is not supported on this platform.");
 #endif
 
+	// Now destroy the old swap chain, since it's been recreated.
+	// We can do this immediately since all work should have been completed before calling resize.
+	if (old_swap_chain != VK_NULL_HANDLE)
+		vkDestroySwapchainKHR(GSDeviceVK::GetInstance()->GetDevice(), old_swap_chain, nullptr);
+
 	res = vkCreateSwapchainKHR(GSDeviceVK::GetInstance()->GetDevice(), &swap_chain_info, nullptr, &m_swap_chain);
 	if (res != VK_SUCCESS)
 	{
 		LOG_VULKAN_ERROR(res, "vkCreateSwapchainKHR failed: ");
 		return false;
 	}
-
-	// Now destroy the old swap chain, since it's been recreated.
-	// We can do this immediately since all work should have been completed before calling resize.
-	if (old_swap_chain != VK_NULL_HANDLE)
-		vkDestroySwapchainKHR(GSDeviceVK::GetInstance()->GetDevice(), old_swap_chain, nullptr);
 
 	m_window_info.surface_width = std::max(1u, size.width);
 	m_window_info.surface_height = std::max(1u, size.height);
