@@ -372,7 +372,7 @@ bool VKSwapChain::CreateSwapChain()
 	// Now we can actually create the swap chain
 	VkSwapchainCreateInfoKHR swap_chain_info = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, nullptr, 0, m_surface,
 		image_count, surface_format->format, surface_format->colorSpace, size, 1u, image_usage,
-		VK_SHARING_MODE_EXCLUSIVE, 0, nullptr, transform, alpha, m_present_mode, VK_TRUE, old_swap_chain};
+		VK_SHARING_MODE_EXCLUSIVE, 0, nullptr, transform, alpha, m_present_mode, VK_TRUE, VK_NULL_HANDLE};
 	std::array<uint32_t, 2> indices = {{
 		GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex(),
 		GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex(),
