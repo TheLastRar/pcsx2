@@ -1262,12 +1262,10 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 		present_swap_chain->ResetImageAcquireResult();
 
 		const VkResult res = vkQueuePresentKHR(m_present_queue, &present_info);
-		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
+		if (res != VK_SUCCESS)
 		{
 			// VK_ERROR_OUT_OF_DATE_KHR is not fatal, just means we need to recreate our swap chain.
-			if (res == VK_ERROR_OUT_OF_DATE_KHR)
-				ResizeWindow(0, 0, m_window_info.surface_scale);
-			else
+			if (res != VK_ERROR_OUT_OF_DATE_KHR && res != VK_SUBOPTIMAL_KHR)
 				LOG_VULKAN_ERROR(res, "vkQueuePresentKHR failed: ");
 
 			return;
@@ -1276,7 +1274,7 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 		// Grab the next image as soon as possible, that way we spend less time blocked on the next
 		// submission. Don't care if it fails, we'll deal with that at the presentation call site.
 		// Credit to dxvk for the idea.
-		present_swap_chain->AcquireNextImage();
+		//present_swap_chain->AcquireNextImage();
 	}
 }
 
@@ -2291,17 +2289,12 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 	}
 
 	VkResult res = m_swap_chain->AcquireNextImage();
-	if (res != VK_SUCCESS)
+	if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 	{
 		LOG_VULKAN_ERROR(res, "vkAcquireNextImageKHR() failed: ");
 		m_swap_chain->ReleaseCurrentImage();
 
-		if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-		{
-			ResizeWindow(0, 0, m_window_info.surface_scale);
-			res = m_swap_chain->AcquireNextImage();
-		}
-		else if (res == VK_ERROR_SURFACE_LOST_KHR)
+		if (res == VK_ERROR_SURFACE_LOST_KHR)
 		{
 			Console.Warning("VK: Surface lost, attempting to recreate");
 			if (!m_swap_chain->RecreateSurface(m_window_info))
