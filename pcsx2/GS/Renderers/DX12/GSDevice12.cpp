@@ -3844,6 +3844,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 	GSTexture12* colclip_rt = static_cast<GSTexture12*>(g_gs_device->GetColorClipTexture());
 	GSTexture12* draw_rt = static_cast<GSTexture12*>(config.rt);
+	GSTexture12* draw_rt_clone = nullptr;
 	GSTexture12* draw_ds = static_cast<GSTexture12*>(config.ds);
 
 	// Align the render area to 128x128, hopefully avoiding render pass restarts for small render area changes (e.g. Ratchet and Clank).
@@ -3998,7 +3999,24 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		m_pipeline_selector.ds = true;
 	}
 
-	const bool feedback = draw_rt && (config.require_one_barrier || (config.require_full_barrier && m_features.texture_barrier) || (config.tex && config.tex == config.rt));
+	const bool feedback = draw_rt && ((m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier)) || (config.tex && config.tex == config.rt));
+	if (draw_rt && config.require_one_barrier && !m_features.texture_barrier)
+	{
+		// requires a copy of the RT
+		draw_rt_clone = static_cast<GSTexture12*>(CreateTexture(rtsize.x, rtsize.y, 1, colclip_rt ? GSTexture::Format::ColorClip : GSTexture::Format::Color, true));
+		if (draw_rt_clone)
+		{
+			EndRenderPass();
+
+			GL_PUSH("D3D12: Copy RT to temp texture for fbmask {%d,%d %dx%d}", config.drawarea.left, config.drawarea.top,
+				config.drawarea.width(), config.drawarea.height());
+
+			CopyRect(draw_rt, draw_rt_clone, config.drawarea, config.drawarea.left, config.drawarea.top);
+			PSSetShaderResource(2, draw_rt_clone, true);
+		}
+		else
+			Console.Warning("D3D12: Failed to allocate temp texture for RT copy.");
+	}
 
 	OMSetRenderTargets(draw_rt, draw_ds, config.scissor);
 
@@ -4078,6 +4096,9 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		pipe.bs = config.blend;
 		SendHWDraw(pipe, config, draw_rt, feedback, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
 	}
+
+	if (draw_rt_clone)
+		Recycle(draw_rt_clone);
 
 	if (date_image)
 		Recycle(date_image);
