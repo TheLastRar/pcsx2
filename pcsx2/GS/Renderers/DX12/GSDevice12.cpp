@@ -3901,7 +3901,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	// bind textures before checking the render pass, in case we need to transition them
 	if (config.tex)
 	{
-		PSSetShaderResource(0, config.tex, config.tex != config.rt && config.tex != config.ds);
+		PSSetShaderResource(0, config.tex, config.tex != config.rt && config.tex != config.ds, config.tex == config.rt);
 		PSSetSampler(config.sampler);
 	}
 	if (config.pal)
@@ -4019,6 +4019,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	}
 
 	OMSetRenderTargets(draw_rt, draw_ds, config.scissor);
+	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier))
+		PSSetShaderResource(2, draw_rt, false, true);
 
 	// Begin render pass if new target or out of the area.
 	if (!m_in_render_pass)
@@ -4139,55 +4141,55 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt, const bool feedback, const bool one_barrier, const bool full_barrier)
 {
-	if (feedback)
+	if (!m_features.texture_barrier) [[unlikely]]
 	{
+		if (BindDrawPipeline(pipe))
+			DrawIndexedPrimitive();
+		return;
+	}
+
 #ifdef PCSX2_DEVBUILD
-		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
-			Console.Warning("D3D12: Possible unnecessary barrier detected.");
+	if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
+		Console.Warning("D3D12: Possible unnecessary barrier detected.");
 #endif
-		if (one_barrier || full_barrier)
-			PSSetShaderResource(2, draw_rt, false, true);
-		if (config.tex && config.tex == config.rt)
-			PSSetShaderResource(0, draw_rt, false, true);
 
-		if (full_barrier)
+	if (full_barrier)
+	{
+		pxAssert(config.drawlist && !config.drawlist->empty());
+		const u32 draw_list_size = static_cast<u32>(config.drawlist->size());
+		const u32 indices_per_prim = config.indices_per_prim;
+
+		GL_PUSH("Split the draw");
+		g_perfmon.Put(GSPerfMon::Barriers, draw_list_size);
+
+		for (u32 n = 0, p = 0; n < draw_list_size; n++)
 		{
-			pxAssert(config.drawlist && !config.drawlist->empty());
-			const u32 draw_list_size = static_cast<u32>(config.drawlist->size());
-			const u32 indices_per_prim = config.indices_per_prim;
-
-			GL_PUSH("Split the draw");
-			g_perfmon.Put(GSPerfMon::Barriers, draw_list_size);
-
-			for (u32 n = 0, p = 0; n < draw_list_size; n++)
-			{
-				const u32 count = (*config.drawlist)[n] * indices_per_prim;
-
-				EndRenderPass();
-				// Specify null for the after resource as both resources are used after the barrier.
-				// While this may also be true before the barrier, we only write using the main resource.
-				D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-				barrier.Aliasing = {draw_rt->GetResource(), nullptr};
-				GetCommandList()->ResourceBarrier(1, &barrier);
-
-				if (BindDrawPipeline(pipe))
-					DrawIndexedPrimitive(p, count);
-				p += count;
-			}
-
-			return;
-		}
-
-		if (one_barrier)
-		{
-			g_perfmon.Put(GSPerfMon::Barriers, 1);
+			const u32 count = (*config.drawlist)[n] * indices_per_prim;
 
 			EndRenderPass();
 			// Specify null for the after resource as both resources are used after the barrier.
+			// While this may also be true before the barrier, we only write using the main resource.
 			D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
 			barrier.Aliasing = {draw_rt->GetResource(), nullptr};
 			GetCommandList()->ResourceBarrier(1, &barrier);
+
+			if (BindDrawPipeline(pipe))
+				DrawIndexedPrimitive(p, count);
+			p += count;
 		}
+
+		return;
+	}
+
+	if (one_barrier)
+	{
+		g_perfmon.Put(GSPerfMon::Barriers, 1);
+
+		EndRenderPass();
+		// Specify null for the after resource as both resources are used after the barrier.
+		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
+		barrier.Aliasing = {draw_rt->GetResource(), nullptr};
+		GetCommandList()->ResourceBarrier(1, &barrier);
 	}
 
 	if (BindDrawPipeline(pipe))
