@@ -2818,6 +2818,9 @@ void GSDevice12::DestroyResources()
 
 	m_shader_cache.Close();
 
+	for (CommandListResources& list : m_command_lists)
+		DestroyPendingResources(list);
+
 	m_descriptor_heap_manager.Free(&m_null_srv_descriptor);
 	m_timestamp_query_buffer.reset();
 	m_timestamp_query_allocation.reset();
