@@ -50,14 +50,21 @@ public:
 	/// Returns the PCI vendor ID of the device, if known.
 	u32 GetAdapterVendorID() const;
 
+	bool UseEnhancedBarriers() const { return m_enhanced_barriers; }
+
 	/// Returns the current command list, commands can be recorded directly.
 	ID3D12GraphicsCommandList4* GetCommandList() const
 	{
 		return m_command_lists[m_current_command_list].command_lists[1].get();
 	}
+	ID3D12GraphicsCommandList7* GetCommandList7() const
+	{
+		return m_command_lists[m_current_command_list].command_lists7[1].get();
+	}
 
 	/// Returns the init command list for uploading.
 	ID3D12GraphicsCommandList4* GetInitCommandList();
+	ID3D12GraphicsCommandList7* GetInitCommandList7();
 
 	/// Returns the per-frame SRV/CBV/UAV allocator.
 	D3D12DescriptorAllocator& GetDescriptorAllocator()
@@ -135,6 +142,7 @@ private:
 	{
 		std::array<ComPtr<ID3D12CommandAllocator>, 2> command_allocators;
 		std::array<ComPtr<ID3D12GraphicsCommandList4>, 2> command_lists;
+		std::array<ComPtr<ID3D12GraphicsCommandList7>, 2> command_lists7;
 		D3D12DescriptorAllocator descriptor_allocator;
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
@@ -292,6 +300,7 @@ private:
 	bool m_allow_tearing_supported = false;
 	bool m_using_allow_tearing = false;
 	bool m_is_exclusive_fullscreen = false;
+	bool m_enhanced_barriers = true;
 	bool m_device_lost = false;
 
 	ComPtr<ID3D12RootSignature> m_tfx_root_signature;

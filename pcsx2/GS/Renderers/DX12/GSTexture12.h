@@ -21,6 +21,12 @@ class GSTexture12 final : public GSTexture
 public:
 	~GSTexture12() override;
 
+	union D3D12_RESOURCE_DESCU
+	{
+		D3D12_RESOURCE_DESC1 desc1;
+		D3D12_RESOURCE_DESC desc;
+	};
+
 	static std::unique_ptr<GSTexture12> Create(Type type, Format format, int width, int height, int levels,
 		DXGI_FORMAT dxgi_format, DXGI_FORMAT srv_format, DXGI_FORMAT rtv_format, DXGI_FORMAT dsv_format,
 		DXGI_FORMAT uav_format);
@@ -52,11 +58,15 @@ public:
 	void TransitionToState(D3D12_RESOURCE_STATES state);
 	void CommitClear();
 	void CommitClear(ID3D12GraphicsCommandList* cmdlist);
+	void CommitClearEB(ID3D12GraphicsCommandList7* cmdlist);
 
 	void Destroy(bool defer = true);
 
 	void TransitionToState(ID3D12GraphicsCommandList* cmdlist, D3D12_RESOURCE_STATES state);
+	void TransitionToStateEB(ID3D12GraphicsCommandList7* cmdlist, D3D12_RESOURCE_STATES state);
 	void TransitionSubresourceToState(ID3D12GraphicsCommandList* cmdlist, int level, D3D12_RESOURCE_STATES before_state,
+		D3D12_RESOURCE_STATES after_state) const;
+	void TransitionSubresourceToStateEB(ID3D12GraphicsCommandList7* cmdlist, int level, D3D12_RESOURCE_STATES before_state,
 		D3D12_RESOURCE_STATES after_state) const;
 
 	// Call when the texture is bound to the pipeline, or read from in a copy.
@@ -84,6 +94,7 @@ private:
 	static bool CreateUAVDescriptor(ID3D12Resource* resource, DXGI_FORMAT format, D3D12DescriptorHandle* dh);
 
 	ID3D12GraphicsCommandList* GetCommandBufferForUpdate();
+	ID3D12GraphicsCommandList7* GetCommand7BufferForUpdate();
 	ID3D12Resource* AllocateUploadStagingBuffer(const void* data, u32 pitch, u32 upload_pitch, u32 height) const;
 	void CopyTextureDataForUpload(void* dst, const void* src, u32 pitch, u32 upload_pitch, u32 height) const;
 

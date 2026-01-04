@@ -309,12 +309,30 @@ bool GSDevice12::CreateCommandLists()
 			if (FAILED(hr))
 				return false;
 
-			hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, res.command_allocators[i].get(),
-				nullptr, IID_PPV_ARGS(res.command_lists[i].put()));
+			if (m_enhanced_barriers)
+			{
+				hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, res.command_allocators[i].get(),
+					nullptr, IID_PPV_ARGS(res.command_lists7[i].put()));
+			}
+			else
+			{
+				hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, res.command_allocators[i].get(),
+					nullptr, IID_PPV_ARGS(res.command_lists[i].put()));
+			}
 			if (FAILED(hr))
 			{
 				Console.Error("D3D12: Failed to create command list: %08X", hr);
 				return false;
+			}
+
+			if (m_enhanced_barriers)
+			{
+				hr = res.command_lists7[i]->QueryInterface(res.command_lists[i].put());
+				if (FAILED(hr))
+				{
+					Console.Error("D3D12: Failed to create command list7: %08X", hr);
+					return false;
+				}
 			}
 
 			// Close the command lists, since the first thing we do is reset them.
@@ -413,6 +431,22 @@ ID3D12GraphicsCommandList4* GSDevice12::GetInitCommandList()
 	}
 
 	return res.command_lists[0].get();
+}
+
+ID3D12GraphicsCommandList7* GSDevice12::GetInitCommandList7()
+{
+	CommandListResources& res = m_command_lists[m_current_command_list];
+	if (!res.init_command_list_used)
+	{
+		[[maybe_unused]] HRESULT hr = res.command_allocators[0]->Reset();
+		pxAssertMsg(SUCCEEDED(hr), "Reset init command allocator failed");
+
+		res.command_lists[0]->Reset(res.command_allocators[0].get(), nullptr);
+		pxAssertMsg(SUCCEEDED(hr), "Reset init command list failed");
+		res.init_command_list_used = true;
+	}
+
+	return res.command_lists7[0].get();
 }
 
 bool GSDevice12::ExecuteCommandList(WaitType wait_for_completion)
@@ -909,10 +943,17 @@ bool GSDevice12::CreateSwapChain()
 	EndRenderPass();
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
 	ID3D12GraphicsCommandList4* cmdlist = GetCommandList();
+	ID3D12GraphicsCommandList7* cmdlist7 = GetCommandList7();
 	m_current_swap_chain_buffer = ((m_current_swap_chain_buffer + 1) % static_cast<u32>(m_swap_chain_buffers.size()));
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	if (m_enhanced_barriers)
+		swap_chain_buf->TransitionToStateEB(cmdlist7, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	else
+		swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	cmdlist->ClearRenderTargetView(swap_chain_buf->GetWriteDescriptor(), s_present_clear_color.data(), 0, nullptr);
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_PRESENT);
+	if (m_enhanced_barriers)
+		swap_chain_buf->TransitionToStateEB(cmdlist7, D3D12_RESOURCE_STATE_PRESENT);
+	else
+		swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_PRESENT);
 	ExecuteCommandList(false);
 	m_swap_chain->Present(0, m_using_allow_tearing ? DXGI_PRESENT_ALLOW_TEARING : 0);
 	return true;
@@ -1112,7 +1153,11 @@ GSDevice::PresentResult GSDevice12::BeginPresent(bool frame_skip)
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
 
 	ID3D12GraphicsCommandList* cmdlist = GetCommandList();
-	swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	ID3D12GraphicsCommandList7* cmdlist7 = GetCommandList7();
+	if (m_enhanced_barriers)
+		swap_chain_buf->TransitionToStateEB(cmdlist7, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	else
+		swap_chain_buf->TransitionToState(cmdlist, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	cmdlist->ClearRenderTargetView(swap_chain_buf->GetWriteDescriptor(), s_present_clear_color.data(), 0, nullptr);
 	cmdlist->OMSetRenderTargets(1, &swap_chain_buf->GetWriteDescriptor().cpu_handle, FALSE, nullptr);
 	g_perfmon.Put(GSPerfMon::RenderPasses, 1);
@@ -1133,7 +1178,7 @@ void GSDevice12::EndPresent()
 	GSTexture12* swap_chain_buf = m_swap_chain_buffers[m_current_swap_chain_buffer].get();
 	m_current_swap_chain_buffer = ((m_current_swap_chain_buffer + 1) % static_cast<u32>(m_swap_chain_buffers.size()));
 
-	swap_chain_buf->TransitionToState(GetCommandList(), D3D12_RESOURCE_STATE_PRESENT);
+	swap_chain_buf->TransitionToState(D3D12_RESOURCE_STATE_PRESENT);
 	if (!ExecuteCommandList(WaitType::None))
 	{
 		m_device_lost = true;
@@ -1249,9 +1294,23 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_max_texture_size = D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION;
 
 	BOOL allow_tearing_supported = false;
-	const HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
+	HRESULT hr = m_dxgi_factory->CheckFeatureSupport(
 		DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing_supported, sizeof(allow_tearing_supported));
 	m_allow_tearing_supported = (SUCCEEDED(hr) && allow_tearing_supported == TRUE);
+
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS12 device_options12 = {};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &device_options12, sizeof(device_options12));
+	if (SUCCEEDED(hr))
+	{
+		Console.WriteLnFmt("D3D12: Enhanced Barriers: {}", device_options12.EnhancedBarriersSupported ? "Supported" : "Not Supported");
+		m_enhanced_barriers = device_options12.EnhancedBarriersSupported;
+	}
+	else
+	{
+		Console.WriteLnFmt("D3D12: Failed to check for Enhanced Barriers: 0x{:08x}", static_cast<unsigned long>(hr));
+		m_enhanced_barriers = false;
+	}
 
 	return true;
 }
@@ -2350,7 +2409,7 @@ bool GSDevice12::CreateNullTexture()
 	if (!m_null_texture)
 		return false;
 
-	m_null_texture->TransitionToState(GetCommandList(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	m_null_texture->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	D3D12::SetObjectName(m_null_texture->GetResource(), "Null texture");
 	return true;
 }
@@ -3229,7 +3288,7 @@ void GSDevice12::PSSetShaderResource(int i, GSTexture* sr, bool check_state, boo
 			dtex->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		}
 		dtex->SetUseFenceCounter(GetCurrentFenceValue());
-		handle = feedback ? dtex->GetFBLDescriptor() : dtex->GetSRVDescriptor();
+		handle = (feedback && !m_enhanced_barriers) ? dtex->GetFBLDescriptor() : dtex->GetSRVDescriptor();
 	}
 	else
 	{
@@ -3868,10 +3927,23 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		g_perfmon.Put(GSPerfMon::Barriers, 1);
 
 		EndRenderPass();
-		// Specify null for the after resource as both resources are used after the barrier.
-		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-		barrier.Aliasing = {draw_rt->GetResource(), nullptr};
-		GetCommandList()->ResourceBarrier(1, &barrier);
+		if (m_enhanced_barriers)
+		{
+			// We can reuse the same resource
+			const D3D12_BARRIER_SYNC sync = D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING;
+			const D3D12_BARRIER_ACCESS access = D3D12_BARRIER_ACCESS_RENDER_TARGET | D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+			const D3D12_TEXTURE_BARRIER barrier = {sync, sync, access, access, D3D12_BARRIER_LAYOUT_COMMON, D3D12_BARRIER_LAYOUT_COMMON,
+				draw_rt->GetResource(), {D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, 0, 0, 0, 0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE};
+			const D3D12_BARRIER_GROUP group = {.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
+			GetCommandList7()->Barrier(1, &group);
+		}
+		else
+		{
+			// Specify null for the after resource as both resources are used after the barrier.
+			D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
+			barrier.Aliasing = {draw_rt->GetResource(), nullptr};
+			GetCommandList()->ResourceBarrier(1, &barrier);
+		}
 	}
 
 	// now blit the colclip texture back to the original target
@@ -4183,11 +4255,24 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 				const u32 count = (*config.drawlist)[n] * indices_per_prim;
 
 				EndRenderPass();
-				// Specify null for the after resource as both resources are used after the barrier.
-				// While this may also be true before the barrier, we only write using the main resource.
-				D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-				barrier.Aliasing = {draw_rt->GetResource(), nullptr};
-				GetCommandList()->ResourceBarrier(1, &barrier);
+				if (m_enhanced_barriers)
+				{
+					// We can reuse the same resource
+					const D3D12_BARRIER_SYNC sync = D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING;
+					const D3D12_BARRIER_ACCESS access = D3D12_BARRIER_ACCESS_RENDER_TARGET | D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+					const D3D12_TEXTURE_BARRIER barrier = {sync, sync, access, access, D3D12_BARRIER_LAYOUT_COMMON, D3D12_BARRIER_LAYOUT_COMMON,
+						draw_rt->GetResource(), {D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, 0, 0, 0, 0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE};
+					const D3D12_BARRIER_GROUP group = {.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
+					GetCommandList7()->Barrier(1, &group);
+				}
+				else
+				{
+					// Specify null for the after resource as both resources are used after the barrier.
+					// While this may also be true before the barrier, we only write using the main resource.
+					D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
+					barrier.Aliasing = {draw_rt->GetResource(), nullptr};
+					GetCommandList()->ResourceBarrier(1, &barrier);
+				}
 
 				if (BindDrawPipeline(pipe))
 					DrawIndexedPrimitive(p, count);
@@ -4202,10 +4287,24 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 			g_perfmon.Put(GSPerfMon::Barriers, 1);
 
 			EndRenderPass();
-			// Specify null for the after resource as both resources are used after the barrier.
-			D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
-			barrier.Aliasing = {draw_rt->GetResource(), nullptr};
-			GetCommandList()->ResourceBarrier(1, &barrier);
+			if (m_enhanced_barriers)
+			{
+				// We can reuse the same resource
+				const D3D12_BARRIER_SYNC sync = D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING;
+				const D3D12_BARRIER_ACCESS access = D3D12_BARRIER_ACCESS_RENDER_TARGET | D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
+				const D3D12_TEXTURE_BARRIER barrier = {sync, sync, access, access, D3D12_BARRIER_LAYOUT_COMMON, D3D12_BARRIER_LAYOUT_COMMON,
+					draw_rt->GetResource(), {D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, 0, 0, 0, 0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE};
+				const D3D12_BARRIER_GROUP group = {.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
+				GetCommandList7()->Barrier(1, &group);
+			}
+			else
+			{
+				// Specify null for the after resource as both resources are used after the barrier.
+				// While this may also be true before the barrier, we only write using the main resource.
+				D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
+				barrier.Aliasing = {draw_rt->GetResource(), nullptr};
+				GetCommandList()->ResourceBarrier(1, &barrier);
+			}
 		}
 	}
 
