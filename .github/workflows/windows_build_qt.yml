@@ -126,6 +126,11 @@ jobs:
           DEBUG: 0
         run: .github/workflows/scripts/windows/build-dependencies.bat
 
+      - name: Restore nuget packages
+        if: inputs.configuration != 'CMake'
+        shell: cmd
+        run: nuget restore
+
       - name: Generate CMake
         if: inputs.configuration == 'CMake'
         id: cmake
