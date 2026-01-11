@@ -853,15 +853,39 @@ void GSTexture12::SetDebugName(std::string_view name)
 
 #endif
 
-void GSTexture12::TransitionToState(D3D12_RESOURCE_STATES state)
+void GSTexture12::TransitionToState(D3D12_RESOURCE_STATES state, bool begin_split)
 {
-	TransitionToState(GSDevice12::GetInstance()->GetCommandList(), state);
+	TransitionToState(GSDevice12::GetInstance()->GetCommandList(), state, begin_split);
 }
 
-void GSTexture12::TransitionToState(const D3D12CommandList& cmdlist, D3D12_RESOURCE_STATES state)
+void GSTexture12::TransitionToState(const D3D12CommandList& cmdlist, D3D12_RESOURCE_STATES state, bool begin_split)
 {
 	if (m_resource_state == state)
 		return;
+
+	pxAssert(!m_split_barrier || !begin_split);
+	pxAssert(!m_split_barrier || (m_split_end_resource_state == state));
+
+	if (m_split_barrier)
+	{
+		if (m_split_end_resource_state != state)
+		{
+			pxAssert(false);
+			Console.WarningFmt("D3D12: Split barrier to wrong state, start 0x{:08x}, end 0x{:08x}", static_cast<uint>(m_split_end_resource_state), static_cast<uint>(state));
+			// Finish split barrier
+			TransitionToState(cmdlist, m_split_end_resource_state);
+			// Continue with transition to requested state.
+		}
+		else if (m_split_cmdlist != cmdlist.list4)
+		{
+			// Closing the command list seems to end the split barrier.
+			// A proper fix would be to track split barriers and end them on close.
+			m_split_barrier = false;
+			m_resource_state = state;
+			Console.Warning("D3D12: Split barrier across commandlist");
+			return;
+		}
+	}
 
 	// Read only depth requires special handling as we might want to write stencil.
 	// Also batch the transition barriers as per recommendation from docs.
@@ -893,6 +917,7 @@ void GSTexture12::TransitionToState(const D3D12CommandList& cmdlist, D3D12_RESOU
 			};
 			cmdlist.list4->ResourceBarrier(m_resource_state == D3D12_RESOURCE_STATE_DEPTH_WRITE ? 1 : 2, barriers);
 		}
+		begin_split = false;
 	}
 	else if (m_resource_state == (D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE))
 	{
@@ -922,21 +947,37 @@ void GSTexture12::TransitionToState(const D3D12CommandList& cmdlist, D3D12_RESOU
 			};
 			cmdlist.list4->ResourceBarrier(state == D3D12_RESOURCE_STATE_DEPTH_WRITE ? 1 : 2, barriers);
 		}
+		begin_split = false;
 	}
 	else
 	{
-		TransitionSubresourceToState(cmdlist, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, m_resource_state, state);
+		TransitionSubresourceToState(cmdlist, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, m_resource_state, state,
+			begin_split ? D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY : 
+			m_split_barrier ? D3D12_RESOURCE_BARRIER_FLAG_END_ONLY :
+			D3D12_RESOURCE_BARRIER_FLAG_NONE);
 	}
 
-	m_resource_state = state;
+	if (begin_split)
+	{
+		m_split_barrier = true;
+		m_split_end_resource_state = state;
+		m_split_cmdlist = cmdlist.list4.get();
+	}
+	else
+	{
+		m_split_barrier = false;
+		m_resource_state = state;
+	}
 }
 
 void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, int level,
-	D3D12_RESOURCE_STATES before_state, D3D12_RESOURCE_STATES after_state) const
+	D3D12_RESOURCE_STATES before_state, D3D12_RESOURCE_STATES after_state, D3D12_RESOURCE_BARRIER_FLAGS flags) const
 {
 	if (GSDevice12::GetInstance()->UseEnhancedBarriers())
 	{
-		const D3D12_TEXTURE_BARRIER barrier = {ConvertToSync(m_simultaneous_tex, before_state), ConvertToSync(m_simultaneous_tex, after_state),
+		const D3D12_TEXTURE_BARRIER barrier = {
+			flags == D3D12_RESOURCE_BARRIER_FLAG_END_ONLY ? D3D12_BARRIER_SYNC_SPLIT : ConvertToSync(m_simultaneous_tex, before_state),
+			flags == D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY ? D3D12_BARRIER_SYNC_SPLIT : ConvertToSync(m_simultaneous_tex, after_state),
 			ConvertToAccess(m_simultaneous_tex, before_state), ConvertToAccess(m_simultaneous_tex, after_state),
 			ConvertToLayout(m_simultaneous_tex, before_state), ConvertToLayout(m_simultaneous_tex, after_state),
 			m_resource.get(), {static_cast<u32>(level), 0, 0, 0, 0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE};
@@ -945,7 +986,7 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 	}
 	else
 	{
-		const D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE,
+		const D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, flags,
 			{{m_resource.get(), static_cast<u32>(level), before_state, after_state}}};
 		cmdlist.list4->ResourceBarrier(1, &barrier);
 	}

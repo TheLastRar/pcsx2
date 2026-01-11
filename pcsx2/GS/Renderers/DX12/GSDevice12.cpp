@@ -4260,6 +4260,9 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 		// Restore original scissor, not sure if needed since the render pass has already been started. But to be safe.
 		OMSetRenderTargets(draw_rt, draw_ds, config.scissor);
+
+		// Preempt transition to RT
+		static_cast<GSTexture12*>(config.rt)->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET, true);
 	}
 	// VB/IB upload, if we did DATE setup and it's not colclip hw this has already been done
 	SetPrimitiveTopology(s_primitive_topology_mapping[static_cast<u8>(config.topology)]);

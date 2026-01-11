@@ -51,15 +51,15 @@ public:
 	void SetDebugName(std::string_view name) override;
 #endif
 
-	void TransitionToState(D3D12_RESOURCE_STATES state);
+	void TransitionToState(D3D12_RESOURCE_STATES state, bool begin_split = false);
 	void CommitClear();
 	void CommitClear(const D3D12CommandList& cmdlist);
 
 	void Destroy(bool defer = true);
 
-	void TransitionToState(const D3D12CommandList&, D3D12_RESOURCE_STATES state);
+	void TransitionToState(const D3D12CommandList&, D3D12_RESOURCE_STATES state, bool begin_split = false);
 	void TransitionSubresourceToState(const D3D12CommandList& cmdlist, int level, D3D12_RESOURCE_STATES before_state,
-		D3D12_RESOURCE_STATES after_state) const;
+		D3D12_RESOURCE_STATES after_state, D3D12_RESOURCE_BARRIER_FLAGS flags = D3D12_RESOURCE_BARRIER_FLAG_NONE) const;
 
 	// Call when the texture is bound to the pipeline, or read from in a copy.
 	__fi void SetUseFenceCounter(u64 val) { m_use_fence_counter = val; }
@@ -102,6 +102,10 @@ private:
 
 	DXGI_FORMAT m_dxgi_format = DXGI_FORMAT_UNKNOWN;
 	D3D12_RESOURCE_STATES m_resource_state = D3D12_RESOURCE_STATE_COMMON;
+
+	bool m_split_barrier = false;
+	D3D12_RESOURCE_STATES m_split_end_resource_state = D3D12_RESOURCE_STATE_COMMON;
+	ID3D12CommandList* m_split_cmdlist = nullptr;
 
 	// With legacy barriers, an aliased resource is used as the feedback shader resource.
 	// With enhanced barriers, the layout is always COMMON, but can use the main resource for feedback.
