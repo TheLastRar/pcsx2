@@ -144,4 +144,4 @@ if [[ "${GIT_VERSION}" == "" ]]; then
 fi
 
 rm -f "$NAME.AppImage"
-$APPIMAGETOOL -v "$OUTDIR" "$NAME.AppImage"
+$APPIMAGETOOL -v -n "$OUTDIR" "$NAME.AppImage"
