@@ -13,11 +13,20 @@ if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Bu
 
 set SEVENZIP="C:\Program Files\7-Zip\7z.exe"
 set PATCH="C:\Program Files\Git\usr\bin\patch.exe"
+set BASH="C:\Program Files\Git\usr\bin\bash.exe"
+
+set "UNIX_TOOLS=C:\Program Files\Git\usr\bin\"
 
 if defined DEBUG (
   echo DEBUG=%DEBUG%
 ) else (
   set DEBUG=1
+)
+
+if defined BUILD_FFMPEG (
+  echo BUILD_FFMPEG=%BUILD_FFMPEG%
+) else (
+  set BUILD_FFMPEG=0
 )
 
 pushd %~dp0
@@ -40,16 +49,24 @@ set "PATH=%PATH%;%INSTALLDIR%\bin"
 
 cd "%BUILDDIR%"
 
+set FFMPEG=8.0
 set FREETYPE=2.14.1
 set HARFBUZZ=12.2.0
 set LIBJPEGTURBO=3.1.2
 set LIBPNG=1653
 set LIBPNGLONG=1.6.53
+set LIBOPUS=1.6.1
+set LIBVPL=2.16.0
+set LIBX264=0480cb05fa188d37ae87e8f4fd8f1aea3711f7ee
+set MESON=1.10.1
+set NVENC=11.1.5.3
+set PKGCONF=2.5.1
 set SDL=SDL3-3.4.0
 set QT=6.10.1
 set QTMINOR=6.10
 set QTAPNG=1.3.0
 set LZ4=1.10.0
+set VULKAN=1.4.328.1
 set WEBP=1.6.0
 set ZLIB=1.3.1
 set ZLIBSHORT=131
@@ -72,6 +89,14 @@ call :downloadfile "lpng%LIBPNG%-apng.patch.gz" https://download.sourceforge.net
 call :downloadfile "libjpeg-turbo-%LIBJPEGTURBO%.tar.gz" "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/%LIBJPEGTURBO%/libjpeg-turbo-%LIBJPEGTURBO%.tar.gz" 8f0012234b464ce50890c490f18194f913a7b1f4e6a03d6644179fa0f867d0cf || goto error
 call :downloadfile "libwebp-%WEBP%.tar.gz" "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-%WEBP%.tar.gz" e4ab7009bf0629fd11982d4c2aa83964cf244cffba7347ecd39019a9e38c4564 || goto error
 call :downloadfile "%SDL%.zip" "https://libsdl.org/release/%SDL%.zip" 9ac2debb493e0d3e13dbd2729fb91f4bfeb00a0f4dff5e04b73cc9bac276b38d || goto error
+call :downloadfile "vulkan-sdk-%VULKAN%.zip" "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-%VULKAN%.zip" 10eb0f4e22e08f4c6f8fdab77fd9162e4439625db6aff3ae1eb0e7ac67eb7c13 || goto error
+call :downloadfile "nv-codec-headers-%NVENC%.tar.gz" "https://github.com/FFmpeg/nv-codec-headers/releases/download/n%NVENC%/nv-codec-headers-%NVENC%.tar.gz" 2974b91062197e0527dffa3aadd8fe3bfa6681ae45f5ff9181bc0ca6479abd59 || goto error
+call :downloadfile "libvpl-%LIBVPL%.zip" "https://github.com/intel/libvpl/archive/v%LIBVPL%.zip" 0b2ee8da8b9ef07ed4b52bf9ddee05008ec999b7c3c41944d7a9f804631c398e || goto error
+call :downloadfile "opus-%LIBOPUS%.tar.gz" "https://downloads.xiph.org/releases/opus/opus-%LIBOPUS%.tar.gz" 6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1 || goto error
+call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" c42296f12db316a4515b9375a5df330f2e751ccdd4f608430d41d7d6210e4317 || goto error
+call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-%PKGCONF%.zip" c5b5f88a2ca2324dc5d857e35bb145e24290e326357ea94a86d47b8d7fa15477 || goto error
+call :downloadfile "x264-%LIBX264%.zip" "https://code.videolan.org/videolan/x264/-/archive/%LIBX264%.zip" 6c3e20611a983ba4e51d0b2fe135a8243a8879d529a1809244588a7b7cd283c0 || goto error
+call :downloadfile "ffmpeg-%FFMPEG%.tar.xz" "https://ffmpeg.org/releases/ffmpeg-%FFMPEG%.tar.xz" b2751fccb6cc4c77708113cd78b561059b6fa904b24162fa0be2d60273d27b8e || goto error
 call :downloadfile "qtbase-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtbase-everywhere-src-%QT%.zip" c43f471a808b07fc541528410e94ce89c6745bdc1d744492e19911d35fbf7d33 || goto error
 call :downloadfile "qtimageformats-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtimageformats-everywhere-src-%QT%.zip" 2d828d8c999fdd18167937c071781c22321c643b04a106c714411c2356cdb26d || goto error
 call :downloadfile "qtsvg-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtsvg-everywhere-src-%QT%.zip" ddd74a417d2397eb085d047a9b6ba52b76e748055817f728fe691f8456035d23 || goto error
@@ -98,6 +123,111 @@ if %DEBUG%==1 (
 )
 
 set FORCEPDB=-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_SHARED_LINKER_FLAGS_MINSIZEREL="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_MINSIZEREL="/DEBUG"
+
+if %BUILD_FFMPEG%==1 (
+  echo "Installing vulkan headers..."
+  rmdir /S /Q "Vulkan-Headers-vulkan-sdk-%VULKAN%"
+  %SEVENZIP% x "vulkan-sdk-%VULKAN%.zip" || goto error
+  cd "Vulkan-Headers-vulkan-sdk-%VULKAN%" || goto error
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -B build -G Ninja || goto error
+  ninja -C build install || goto error
+  cd ..
+
+  echo "Installing libvpl"
+  rmdir /S /Q "libvpl-%LIBVPL%"
+  %SEVENZIP% x "libvpl-%LIBVPL%.zip" || goto error
+  cd "libvpl-%LIBVPL%" || goto error
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=OFF -DINSTALL_EXAMPLES=OFF -DINSTALL_LIB=OFF -B build -G Ninja || goto error
+  cmake --build build --parallel || goto error
+  ninja -C build install || goto error
+  cd .. || goto error
+
+  echo "Installing libopus"
+  rmdir /S /Q "opus-%LIBOPUS%"
+  tar -xf "opus-%LIBOPUS%.tar.gz" || goto error
+  cd "opus-%LIBOPUS%" || goto error
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=OFF -B build -G Ninja || goto error
+  cmake --build build --parallel || goto error
+  ninja -C build install || goto error
+  cd .. || goto error
+
+  echo "Extracting meson"
+  rmdir /S /Q "meson-%MESON%"
+  tar xf "meson-%MESON%.tar.gz" || goto error
+  python "%BUILDDIR%\meson-%MESON%\meson.py" -v || goto error
+  set "MASON_PY=python %BUILDDIR%\meson-%MESON%\meson.py"
+  echo.
+
+  rem Alternatively we could grab pkg-config-lite from chocolatey or WinGet
+  echo "Installing pkgconf"
+  rmdir /S /Q "pkgconf-pkgconf-%PKGCONF%"
+  %SEVENZIP% x "pkgconf-pkgconf-%PKGCONF%.zip" || goto error
+  cd "pkgconf-pkgconf-%PKGCONF%" || goto error
+  !MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
+  !MASON_PY! compile -C build|| goto error
+  ninja -C build install || goto error
+  set "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1"
+  set "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1"
+  Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
+  cd .. || goto error
+
+  set "OLD_PATH=%PATH%"
+  set "PATH=%PATH%;%UNIX_TOOLS%"
+
+  echo "Installing nvenc headers..."
+  rmdir /S /Q "nv-codec-headers-%NVENC%"
+  tar xf "nv-codec-headers-%NVENC%.tar.gz" || goto error
+  make -C "nv-codec-headers-%NVENC%" PREFIX="%INSTALLDIR%" install || goto error
+  echo.
+
+  where nasm /q
+  set FOUND_NASM=0
+  if !ERRORLEVEL!==0 (
+    set FOUND_NASM=1
+  )
+
+  set CC=cl
+  set CXX=cl
+
+  echo "Installing libx264"
+  rmdir /S /Q "x264-%LIBX264%"
+  %SEVENZIP% x "x264-%LIBX264%.zip" || goto error
+  cd "x264-%LIBX264%" || goto error
+  if !FOUND_NASM!==0 (
+    set "LIBX264_NASM=--disable-asm"
+  )
+  %BASH% configure --prefix="%INSTALLDIR%" --disable-cli --enable-static --extra-cflags="-MD -w" !LIBX264_NASM! || goto error
+  make -j%NUMBER_OF_PROCESSORS% || goto error
+  make install || goto error
+  cd .. || goto error
+  echo.
+
+  echo "Installing FFmpeg..."
+  rmdir /S /Q "ffmpeg-%FFMPEG%"
+  tar xf "ffmpeg-%FFMPEG%.tar.xz" || goto error
+  cd "ffmpeg-%FFMPEG%"
+  %PATCH% -p1 < "%SCRIPTDIR%\ffmpeg.patch" || goto error
+  rem libvpl needs to have advapi32.lib & ole32.lib added as extra libs
+  rem For some reason QSV requires the hevc parser on windows
+  if not !FOUND_NASM!==1 (
+    set "FFMPEG_NASM=--disable-x86asm"
+  )
+  %BASH% configure --prefix="%INSTALLDIR%" --disable-all --disable-autodetect --disable-static --enable-shared --disable-debug ^
+    --toolchain=msvc --extra-cflags="-MD -Os" --extra-cxxflags="-MD -Os" --extra-libs="advapi32.lib ole32.lib" !FFMPEG_NASM! --pkg-config="%INSTALLDIR%\bin\pkgconf.exe" ^
+    --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale ^
+    --enable-gpl --enable-libx264 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl ^
+    --enable-d3d11va --enable-mediafoundation ^
+    --enable-encoder=ffv1,qtrle,libx264*,aac,flac,libopus,pcm_s16be,pcm_s16le,*_vulkan,*_qsv,*_nvenc,*_mf ^
+    --enable-parser=hevc ^
+    --enable-muxer=avi,matroska,mov,mp3,mp4,wav ^
+    --enable-protocol=file || goto error
+  make -j%NUMBER_OF_PROCESSORS% || goto error
+  make install || goto error
+  cd ..
+  echo.
+
+  set "PATH=!OLD_PATH!"
+)
 
 echo Building Zlib...
 rmdir /S /Q "zlib-%ZLIB%"
@@ -188,7 +318,7 @@ echo Building SDL...
 rmdir /S /Q "%SDL%"
 %SEVENZIP% x "%SDL%.zip" || goto error
 cd "%SDL%" || goto error
-cmake -B build -DCMAKE_BUILD_TYPE=Release %FORCEPDB% -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DSDL_SHARED=ON -DSDL_STATIC=OFF -G Ninja || goto error
+cmake -B build -DCMAKE_BUILD_TYPE=Release %FORCEPDB% -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DSDL_SHARED=ON -DSDL_STATIC=OFF -DSDL_TESTS=OFF -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 copy build\SDL3.pdb "%INSTALLDIR%\bin" || goto error
