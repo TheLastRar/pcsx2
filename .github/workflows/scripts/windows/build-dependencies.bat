@@ -64,9 +64,9 @@ set SHADERC_SPIRVHEADERS=b824a462d4256d720bebb40e78b9eb8f78bbb305
 set SHADERC_SPIRVTOOLS=971a7b6e8d7740035bbff089bbbf9f42951ecfd5
 
 echo "Check Tools Begin"
-echo which make
-echo which pkg-config
-echo which mason
+which make
+which pkg-config
+which mason
 echo "Check Tools End"
 
 
