@@ -1303,7 +1303,9 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 	if (spin_enabled && m_optional_extensions.vk_ext_calibrated_timestamps)
 		resources.submit_timestamp = GetCPUTimestamp();
 
-	uint32_t wait_bits = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	uint32_t wait_bits = m_present_queue_family_index != m_graphics_queue_family_index ?
+		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT :
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSemaphore semas[2];
 	VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
 	submit_info.commandBufferCount = resources.init_buffer_used ? 2u : 1u;
@@ -1348,6 +1350,32 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 
 	if (present_swap_chain)
 	{
+		if (m_present_queue_family_index != m_graphics_queue_family_index)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		/*
+
+		//vkCmdPipelineBarrier()
+
+
+
 		// vkQueuePresentKHR on NVidia dosn't seem to properly wait on the passed semaphore, causing artifacts.
 		// OBS capture with BPM encouters issues, but can apparently occur on the presented image aswell.
 		// Instead, wait on the RenderingFinished semaphore with vkQueueSubmit.
@@ -1371,6 +1399,19 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 		present_swap_chain->ResetImageAcquireResult();
 
 		res = vkQueuePresentKHR(m_present_queue, &present_info);
+		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
+		{
+			// VK_ERROR_OUT_OF_DATE_KHR is not fatal, just means we need to recreate our swap chain.
+			if (res == VK_ERROR_OUT_OF_DATE_KHR)
+				// Defer until next frame, otherwise resizing would invalidate swapchain before next present.
+				m_resize_requested = true;
+			else
+				LOG_VULKAN_ERROR(res, "vkQueuePresentKHR failed: ");
+
+			return;
+		}
+		*/
+		res = present_swap_chain->PresentCurrentImage();
 		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 		{
 			// VK_ERROR_OUT_OF_DATE_KHR is not fatal, just means we need to recreate our swap chain.
@@ -2441,7 +2482,6 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 
 	// Swap chain images start in undefined
 	GSTextureVK* swap_chain_texture = m_swap_chain->GetCurrentTexture();
-	swap_chain_texture->OverrideImageLayout(GSTextureVK::Layout::Undefined);
 	swap_chain_texture->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::ColorAttachment);
 
 	// Present render pass gets started out here, so we can't transition source textures in DoStretchRect
@@ -4595,6 +4635,8 @@ void GSDeviceVK::RenderBlankFrame()
 	vkCmdClearColorImage(
 		cmdbuffer, sctex->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &s_present_clear_color.color, 1, &srr);
 
+	// TODO: Fix queue transition to not require src layout of ColorAttachment
+	m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::ColorAttachment);
 	m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::PresentSrc);
 	SubmitCommandBuffer(m_swap_chain.get());
 	ActivateCommandBuffer((m_current_frame + 1) % NUM_COMMAND_BUFFERS);

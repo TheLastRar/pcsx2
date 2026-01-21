@@ -55,8 +55,13 @@ public:
 	__fi VmaAllocator GetAllocator() const { return m_allocator; }
 	__fi u32 GetGraphicsQueueFamilyIndex() const { return m_graphics_queue_family_index; }
 	__fi u32 GetPresentQueueFamilyIndex() const { return m_present_queue_family_index; }
+	__fi bool PresentNeedsQueueTransfer() const { return m_graphics_queue_family_index != m_present_queue_family_index; }
 	__fi const VkPhysicalDeviceProperties& GetDeviceProperties() const { return m_device_properties; }
 	__fi const OptionalExtensions& GetOptionalExtensions() const { return m_optional_extensions; }
+
+
+
+	__fi VkQueue GetPresentQueue() const { return m_present_queue; }
 
 	// The interaction between raster order attachment access and fbfetch is unclear.
 	__fi bool UseFeedbackLoopLayout() const
@@ -64,6 +69,8 @@ public:
 		return (m_optional_extensions.vk_ext_attachment_feedback_loop_layout &&
 				!m_optional_extensions.vk_ext_rasterization_order_attachment_access);
 	}
+
+
 
 	// Helpers for getting constants
 	__fi u32 GetBufferCopyOffsetAlignment() const

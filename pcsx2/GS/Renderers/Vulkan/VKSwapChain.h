@@ -50,11 +50,11 @@ public:
 	__fi GSTextureVK* GetCurrentTexture() { return m_images[m_current_image].get(); }
 	__fi VkSemaphore GetImageAvailableSemaphore() const
 	{
-		return m_semaphores[m_current_semaphore].available_semaphore;
+		return m_semaphores[m_current_semaphore].graphics_ready_semaphore;
 	}
 	__fi const VkSemaphore* GetImageAvailableSemaphorePtr() const
 	{
-		return &m_semaphores[m_current_semaphore].available_semaphore;
+		return &m_semaphores[m_current_semaphore].graphics_ready_semaphore;
 	}
 	__fi VkSemaphore GetRenderingFinishedSemaphore() const
 	{
@@ -84,6 +84,9 @@ public:
 	// Change vsync enabled state. This may fail as it causes a swapchain recreation.
 	bool SetPresentMode(VkPresentModeKHR present_mode);
 
+	VkResult PresentCurrentImage();
+
+
 private:
 	VKSwapChain(const WindowInfo& wi, VkSurfaceKHR surface, VkPresentModeKHR present_mode,
 		std::optional<bool> exclusive_fullscreen_control);
@@ -98,18 +101,29 @@ private:
 
 	struct ImageSemaphores
 	{
-		VkSemaphore available_semaphore;
+		VkSemaphore acquire_semaphore;
+		VkSemaphore graphics_ready_semaphore;
 		VkSemaphore rendering_finished_semaphore;
 		VkSemaphore present_ready_semaphore;
+	};
+
+	struct ImageCommandBuffers
+	{
+		VkCommandBuffer acquire_transfer_command_buffer;
+		VkCommandBuffer present_transfer_command_buffer;
 	};
 
 	WindowInfo m_window_info;
 
 	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 	VkSwapchainKHR m_swap_chain = VK_NULL_HANDLE;
+	VkCommandPool m_command_pool = VK_NULL_HANDLE;
 
 	std::vector<std::unique_ptr<GSTextureVK>> m_images;
+	std::vector<ImageCommandBuffers> m_command_buffers;
+
 	std::array<ImageSemaphores, NUM_SEMAPHORES> m_semaphores = {};
+	//std::array<ImageCommandBuffers, NUM_SEMAPHORES> m_command_buffers = {};
 
 	u32 m_current_image = 0;
 	u32 m_current_semaphore = 0;
