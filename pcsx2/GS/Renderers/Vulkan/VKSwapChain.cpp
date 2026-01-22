@@ -18,7 +18,7 @@
 #include <X11/Xlib.h>
 #endif
 
-static_assert(VKSwapChain::NUM_SEMAPHORES == (GSDeviceVK::NUM_COMMAND_BUFFERS + 1));
+static_assert(VKSwapChain::NUM_SEMAPHORES >= (GSDeviceVK::NUM_COMMAND_BUFFERS + 1));
 
 VKSwapChain::VKSwapChain(const WindowInfo& wi, VkSurfaceKHR surface, VkPresentModeKHR present_mode,
 	std::optional<bool> exclusive_fullscreen_control)
@@ -502,40 +502,13 @@ bool VKSwapChain::CreateSwapChain()
 				command_buffers[i * 2 + 1],
 			};
 
-			Vulkan::SetObjectName(GSDeviceVK::GetInstance()->GetDevice(), image_command_buffers.acquire_transfer_command_buffer,
-				"Swapchain Transfer Acquire Command Buffer %i", i);
+			//Vulkan::SetObjectName(GSDeviceVK::GetInstance()->GetDevice(), image_command_buffers.acquire_transfer_command_buffer,
+			//	"Swapchain Transfer Acquire Command Buffer %i", i);
 			Vulkan::SetObjectName(GSDeviceVK::GetInstance()->GetDevice(), image_command_buffers.present_transfer_command_buffer,
 				"Swapchain Transfer Present Command Buffer %i", i);
 
 			const VkCommandBufferBeginInfo begin_info = {
 				VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
-
-			// Record acquire transfer commands
-			res = vkBeginCommandBuffer(image_command_buffers.acquire_transfer_command_buffer, &begin_info);
-			if (res != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(res, "vkBeginCommandBuffer failed: ");
-				// TODO: cleanup
-				return false;
-			}
-
-			// Initiate transfer of image to graphics queue
-			// Assume graphics wants GSTextureVK::Layout::ColorAttachment
-			VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr,
-				0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-				GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex(), GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex(),
-				m_images[i]->GetImage(), {VK_IMAGE_ASPECT_COLOR_BIT, 0, static_cast<u32>(m_images[i]->GetMipmapLevels()), 0u, 1u}};
-
-			// dstStageMask is ignored for queue transfers
-			vkCmdPipelineBarrier(image_command_buffers.acquire_transfer_command_buffer, 
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
-				0, 0, nullptr, 0, nullptr, 1, &barrier);
-			res = vkEndCommandBuffer(image_command_buffers.acquire_transfer_command_buffer);
-			if (res != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(res, "vkEndCommandBuffer failed: ");
-				pxFailRel("Failed to end command buffer");
-			}
 
 			// Record present transfer commands
 			res = vkBeginCommandBuffer(image_command_buffers.present_transfer_command_buffer, &begin_info);
@@ -547,15 +520,14 @@ bool VKSwapChain::CreateSwapChain()
 			}
 
 			// Accept transfer of image from graphics queue
-			barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr,
+			const VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr,
 				0, 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 				GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex(), GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex(),
 				m_images[i]->GetImage(), {VK_IMAGE_ASPECT_COLOR_BIT, 0, static_cast<u32>(m_images[i]->GetMipmapLevels()), 0u, 1u}};
 
 			// srcStageMask is ignored
 			vkCmdPipelineBarrier(image_command_buffers.present_transfer_command_buffer, 
-				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
-				0, 0, nullptr, 0, nullptr, 1, &barrier);
+				VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 			res = vkEndCommandBuffer(image_command_buffers.present_transfer_command_buffer);
 			if (res != VK_SUCCESS)
 			{
@@ -586,12 +558,10 @@ bool VKSwapChain::CreateSwapChain()
 		}
 
 		res = vkCreateSemaphore(
-			GSDeviceVK::GetInstance()->GetDevice(), &semaphore_info, nullptr, &sema.graphics_ready_semaphore);
+			GSDeviceVK::GetInstance()->GetDevice(), &semaphore_info, nullptr, &sema.available_semaphore);
 		if (res != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(res, "vkCreateSemaphore failed: ");
-			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.acquire_semaphore, nullptr);
-			sema.acquire_semaphore = VK_NULL_HANDLE;
 			return false;
 		}
 
@@ -600,8 +570,8 @@ bool VKSwapChain::CreateSwapChain()
 		if (res != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(res, "vkCreateSemaphore failed: ");
-			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.acquire_semaphore, nullptr);
-			sema.acquire_semaphore = VK_NULL_HANDLE;
+			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.available_semaphore, nullptr);
+			sema.available_semaphore = VK_NULL_HANDLE;
 			return false;
 		}
 
@@ -611,60 +581,12 @@ bool VKSwapChain::CreateSwapChain()
 		{
 			LOG_VULKAN_ERROR(res, "vkCreateSemaphore failed: ");
 			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.rendering_finished_semaphore, nullptr);
-			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.acquire_semaphore, nullptr);
+			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), sema.available_semaphore, nullptr);
 			sema.rendering_finished_semaphore = VK_NULL_HANDLE;
-			sema.acquire_semaphore = VK_NULL_HANDLE;
+			sema.available_semaphore = VK_NULL_HANDLE;
 			return false;
 		}
 	}
-	/*
-	//m_current_fence = 0;
-	if (GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex() !=
-		GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex())
-	{
-		for (u32 i = 0; i < NUM_SEMAPHORES; i++)
-		{
-			ImageCommandBuffers& command_buffer = m_command_buffers[i];
-			VkDevice dev = GSDeviceVK::GetInstance()->GetDevice();
-
-			const VkCommandPoolCreateInfo pool_info = {
-				VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, nullptr, 0, GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex()};
-			res = vkCreateCommandPool(dev, &pool_info, nullptr, &command_buffer.command_pool);
-			if (res != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(res, "vkCreateCommandPool failed: ");
-				return false;
-			}
-			Vulkan::SetObjectName(dev, command_buffer.command_pool, "Present Command Pool %u", i);
-
-			VkCommandBufferAllocateInfo buffer_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr,
-				command_buffer.command_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-				static_cast<u32>(command_buffer.command_buffers.size())};
-
-			res = vkAllocateCommandBuffers(dev, &buffer_info, command_buffer.command_buffers.data());
-			if (res != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(res, "vkAllocateCommandBuffers failed: ");
-				return false;
-			}
-			for (u32 i2 = 0; i2 < command_buffer.command_buffers.size(); i2++)
-			{
-				Vulkan::SetObjectName(dev, command_buffer.command_buffers[i2], "Present %u %sCommand Buffer", i2,
-					(i2 == 0) ? "Acquire" : "Present");
-			}
-
-			VkFenceCreateInfo fence_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT};
-
-			res = vkCreateFence(dev, &fence_info, nullptr, &command_buffer.fence);
-			if (res != VK_SUCCESS)
-			{
-				LOG_VULKAN_ERROR(res, "vkCreateFence failed: ");
-				return false;
-			}
-			Vulkan::SetObjectName(dev, command_buffer.fence, "Present Fence %u", i);
-		}
-	}
-	*/
 
 	return true;
 }
@@ -678,14 +600,10 @@ void VKSwapChain::DestroySwapChainImages()
 	}
 	m_images.clear();
 
-
 	for (auto& it : m_command_buffers)
 	{
-		if (it.acquire_transfer_command_buffer != VK_NULL_HANDLE)
-		{
-			vkFreeCommandBuffers(GSDeviceVK::GetInstance()->GetDevice(), m_command_pool, 1, &it.acquire_transfer_command_buffer);
+		if (it.present_transfer_command_buffer != VK_NULL_HANDLE)
 			vkFreeCommandBuffers(GSDeviceVK::GetInstance()->GetDevice(), m_command_pool, 1, &it.present_transfer_command_buffer);
-		}
 	}
 	m_command_buffers.clear();
 
@@ -701,8 +619,8 @@ void VKSwapChain::DestroySwapChainImages()
 			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.present_ready_semaphore, nullptr);
 		if (it.rendering_finished_semaphore != VK_NULL_HANDLE)
 			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.rendering_finished_semaphore, nullptr);
-		if (it.graphics_ready_semaphore != VK_NULL_HANDLE)
-			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.graphics_ready_semaphore, nullptr);
+		if (it.available_semaphore != VK_NULL_HANDLE)
+			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.available_semaphore, nullptr);
 		if (it.acquire_semaphore != VK_NULL_HANDLE)
 			vkDestroySemaphore(GSDeviceVK::GetInstance()->GetDevice(), it.acquire_semaphore, nullptr);
 	}
@@ -744,37 +662,30 @@ VkResult VKSwapChain::AcquireNextImage()
 	// Use a different semaphore for each image.
 	m_current_semaphore = (m_current_semaphore + 1) % static_cast<u32>(m_semaphores.size());
 
-	VkResult res;
 	if (GSDeviceVK::GetInstance()->PresentNeedsQueueTransfer())
 	{
-		res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
+		const VkResult res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
 			m_semaphores[m_current_semaphore].acquire_semaphore, VK_NULL_HANDLE, &m_current_image);
 		m_image_acquire_result = res;
 
-		// TODO: Error check acquire
-
-		ImageCommandBuffers& command_buffer = m_command_buffers[m_current_image];
-		constexpr uint32_t wait_bits = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		// Present queue also has to wait I guess
+		constexpr uint32_t wait_bits = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 		const VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1u,
 			&m_semaphores[m_current_semaphore].acquire_semaphore,
-			&wait_bits, 1u, &command_buffer.acquire_transfer_command_buffer, 1u,
-			&m_semaphores[m_current_semaphore].graphics_ready_semaphore};
+			&wait_bits, 0u, nullptr, 1u, &m_semaphores[m_current_semaphore].available_semaphore};
 
-		res = vkQueueSubmit(GSDeviceVK::GetInstance()->GetPresentQueue(), 1, &submit_info, nullptr);
-		if (res != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(res, "vkQueueSubmit failed: ");
-			//return false;
-		}
+		vkQueueSubmit(GSDeviceVK::GetInstance()->GetPresentQueue(), 1, &submit_info, nullptr);
+
+		return res;
 	}
 	else
 	{
-		res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
-			m_semaphores[m_current_semaphore].graphics_ready_semaphore, VK_NULL_HANDLE, &m_current_image);
+		const VkResult res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
+			m_semaphores[m_current_semaphore].available_semaphore, VK_NULL_HANDLE, &m_current_image);
 		m_image_acquire_result = res;
-	}
 
-	return res;
+		return res;
+	}
 }
 
 void VKSwapChain::ReleaseCurrentImage()
@@ -928,6 +839,10 @@ VkResult VKSwapChain::PresentCurrentImage()
 		//   dstAccessMask == 0
 		//   dstStageMask == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 
+		// Wait on fence
+		VkResult res;//	= vkWaitForFences(GSDeviceVK::GetInstance()->GetDevice(), 1, &m_semaphores[m_current_semaphore].fence, VK_TRUE, UINT64_MAX);
+		//vkResetFences(GSDeviceVK::GetInstance()->GetDevice(), 1, &m_semaphores[m_current_semaphore].fence);
+
 		ImageCommandBuffers& command_buffer = m_command_buffers[m_current_image];
 		constexpr uint32_t wait_bits = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 		const VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1u,
@@ -935,7 +850,7 @@ VkResult VKSwapChain::PresentCurrentImage()
 			&wait_bits, 1u, &command_buffer.present_transfer_command_buffer, 1u,
 			&m_semaphores[m_current_semaphore].present_ready_semaphore};
 
-		VkResult res = vkQueueSubmit(GSDeviceVK::GetInstance()->GetPresentQueue(), 1, &submit_info, nullptr);
+		res = vkQueueSubmit(GSDeviceVK::GetInstance()->GetPresentQueue(), 1, &submit_info, nullptr); //m_semaphores[m_current_semaphore].fence);
 		if (res != VK_SUCCESS)
 		{
 			LOG_VULKAN_ERROR(res, "vkQueueSubmit failed: ");
@@ -950,6 +865,21 @@ VkResult VKSwapChain::PresentCurrentImage()
 		ResetImageAcquireResult();
 
 		res = vkQueuePresentKHR(GSDeviceVK::GetInstance()->GetPresentQueue(), &present_info);
+
+		static int c = 0;
+		c++;
+
+		if (c > 4)
+		{
+			//vkDeviceWaitIdle(GSDeviceVK::GetInstance()->GetDevice());
+			c = 0;
+		}
+		
+
+
+
+
+
 		/*
 		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 		{

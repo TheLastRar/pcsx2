@@ -636,21 +636,6 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 			srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			break;
 
-		case Layout::PresentSrc:
-			// Assumed by VKSwapChain::AcquireImage
-			pxAssert(new_layout == GSTextureVK::Layout::ColorAttachment);
-			// Swap chain images start in undefined.
-			barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			barrier.srcAccessMask = 0;
-			srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-			if (GSDeviceVK::GetInstance()->PresentNeedsQueueTransfer())
-			{
-				barrier.srcQueueFamilyIndex = GSDeviceVK::GetInstance()->GetPresentQueueFamilyIndex();
-				barrier.dstQueueFamilyIndex = GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex();
-			}
-			break;
-
 		case Layout::FeedbackLoop:
 			barrier.srcAccessMask = (aspect == VK_IMAGE_ASPECT_COLOR_BIT)
 			                      ? (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | GetFeedbackLoopInputAccessBits())

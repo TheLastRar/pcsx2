@@ -1236,6 +1236,12 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 {
 	FrameResources& resources = m_frame_resources[m_current_frame];
 
+	if (present_swap_chain)
+	{
+		m_swap_chain->GetCurrentTexture()->TransitionToLayout(resources.command_buffers[1], GSTextureVK::Layout::ColorAttachment);
+		m_swap_chain->GetCurrentTexture()->TransitionToLayout(resources.command_buffers[1], GSTextureVK::Layout::PresentSrc);
+	}
+
 	// End the current command buffer.
 	VkResult res;
 	if (resources.init_buffer_used)
@@ -1350,67 +1356,8 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 
 	if (present_swap_chain)
 	{
-		if (m_present_queue_family_index != m_graphics_queue_family_index)
+		//if (m_present_queue_family_index != m_graphics_queue_family_index)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-		/*
-
-		//vkCmdPipelineBarrier()
-
-
-
-		// vkQueuePresentKHR on NVidia dosn't seem to properly wait on the passed semaphore, causing artifacts.
-		// OBS capture with BPM encouters issues, but can apparently occur on the presented image aswell.
-		// Instead, wait on the RenderingFinished semaphore with vkQueueSubmit.
-		const uint32_t present_wait_bits = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-		const VkSubmitInfo submit_present_wait_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1,
-			present_swap_chain->GetRenderingFinishedSemaphorePtr(), &present_wait_bits, 0,
-			nullptr, 1, present_swap_chain->GetPresentReadySemaphorePtr()};
-
-		res = vkQueueSubmit(m_present_queue, 1, &submit_present_wait_info, nullptr);
-		if (res != VK_SUCCESS)
-		{
-			LOG_VULKAN_ERROR(res, "vkQueueSubmit failed: ");
-			m_last_submit_failed = true;
-			return;
-		}
-
-		const VkPresentInfoKHR present_info = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, nullptr, 1,
-			present_swap_chain->GetPresentReadySemaphorePtr(), 1, present_swap_chain->GetSwapChainPtr(),
-			present_swap_chain->GetCurrentImageIndexPtr(), nullptr};
-
-		present_swap_chain->ResetImageAcquireResult();
-
-		res = vkQueuePresentKHR(m_present_queue, &present_info);
-		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
-		{
-			// VK_ERROR_OUT_OF_DATE_KHR is not fatal, just means we need to recreate our swap chain.
-			if (res == VK_ERROR_OUT_OF_DATE_KHR)
-				// Defer until next frame, otherwise resizing would invalidate swapchain before next present.
-				m_resize_requested = true;
-			else
-				LOG_VULKAN_ERROR(res, "vkQueuePresentKHR failed: ");
-
-			return;
-		}
-		*/
 		res = present_swap_chain->PresentCurrentImage();
 		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 		{
@@ -2482,6 +2429,7 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 
 	// Swap chain images start in undefined
 	GSTextureVK* swap_chain_texture = m_swap_chain->GetCurrentTexture();
+	swap_chain_texture->OverrideImageLayout(GSTextureVK::Layout::Undefined);
 	swap_chain_texture->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::ColorAttachment);
 
 	// Present render pass gets started out here, so we can't transition source textures in DoStretchRect
@@ -2516,7 +2464,7 @@ void GSDeviceVK::EndPresent()
 
 	VkCommandBuffer cmdbuffer = GetCurrentCommandBuffer();
 	vkCmdEndRenderPass(cmdbuffer);
-	m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::PresentSrc);
+	//m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::PresentSrc);
 	g_perfmon.Put(GSPerfMon::RenderPasses, 1);
 
 	SubmitCommandBuffer(m_swap_chain.get());
@@ -4636,8 +4584,8 @@ void GSDeviceVK::RenderBlankFrame()
 		cmdbuffer, sctex->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &s_present_clear_color.color, 1, &srr);
 
 	// TODO: Fix queue transition to not require src layout of ColorAttachment
-	m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::ColorAttachment);
-	m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::PresentSrc);
+	//m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::ColorAttachment);
+	//m_swap_chain->GetCurrentTexture()->TransitionToLayout(cmdbuffer, GSTextureVK::Layout::PresentSrc);
 	SubmitCommandBuffer(m_swap_chain.get());
 	ActivateCommandBuffer((m_current_frame + 1) % NUM_COMMAND_BUFFERS);
 }

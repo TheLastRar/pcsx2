@@ -50,11 +50,11 @@ public:
 	__fi GSTextureVK* GetCurrentTexture() { return m_images[m_current_image].get(); }
 	__fi VkSemaphore GetImageAvailableSemaphore() const
 	{
-		return m_semaphores[m_current_semaphore].graphics_ready_semaphore;
+		return m_semaphores[m_current_semaphore].available_semaphore;
 	}
 	__fi const VkSemaphore* GetImageAvailableSemaphorePtr() const
 	{
-		return &m_semaphores[m_current_semaphore].graphics_ready_semaphore;
+		return &m_semaphores[m_current_semaphore].available_semaphore;
 	}
 	__fi VkSemaphore GetRenderingFinishedSemaphore() const
 	{
@@ -102,15 +102,15 @@ private:
 	struct ImageSemaphores
 	{
 		VkSemaphore acquire_semaphore;
-		VkSemaphore graphics_ready_semaphore;
+		VkSemaphore available_semaphore;
 		VkSemaphore rendering_finished_semaphore;
 		VkSemaphore present_ready_semaphore;
 	};
 
 	struct ImageCommandBuffers
 	{
-		VkCommandBuffer acquire_transfer_command_buffer;
 		VkCommandBuffer present_transfer_command_buffer;
+		VkCommandBuffer present_blank_transfer_command_buffer;
 	};
 
 	WindowInfo m_window_info;
@@ -123,7 +123,6 @@ private:
 	std::vector<ImageCommandBuffers> m_command_buffers;
 
 	std::array<ImageSemaphores, NUM_SEMAPHORES> m_semaphores = {};
-	//std::array<ImageCommandBuffers, NUM_SEMAPHORES> m_command_buffers = {};
 
 	u32 m_current_image = 0;
 	u32 m_current_semaphore = 0;
