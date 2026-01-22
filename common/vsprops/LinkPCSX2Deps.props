@@ -33,6 +33,9 @@
     <DepsDLLs Condition="Exists('$(DepsBinDir)avutil-60.dll')" Include="$(DepsBinDir)avutil-60.dll" />
     <DepsDLLs Condition="Exists('$(DepsBinDir)swresample-6.dll')" Include="$(DepsBinDir)swresample-6.dll" />
     <DepsDLLs Condition="Exists('$(DepsBinDir)swscale-9.dll')" Include="$(DepsBinDir)swscale-9.dll" />
+	<DepsDLLs Condition="Exists('$(DepsBinDir)va.dll')" Include="$(DepsBinDir)va.dll" />
+	<DepsDLLs Condition="Exists('$(DepsBinDir)va_win32.dll')" Include="$(DepsBinDir)va_win32.dll" />
+	<DepsDLLs Condition="Exists('$(DepsBinDir)vaon12_drv_video.dll')" Include="$(DepsBinDir)vaon12_drv_video.dll" />
   </ItemGroup>
   <ItemGroup>
     <AgilityDLLs Condition="Exists('$(DepsBinDir)D3D12\D3D12Core.dll')" Include="$(DepsBinDir)D3D12\D3D12Core.dll" />

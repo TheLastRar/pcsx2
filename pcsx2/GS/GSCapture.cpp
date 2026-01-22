@@ -20,6 +20,11 @@
 #include "common/StringUtil.h"
 #include "common/Threading.h"
 
+#ifdef _WIN32
+#include "GS/Renderers/DX12/GSDevice12.h"
+#include "common/FileSystem.h"
+#endif
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -468,7 +473,16 @@ bool GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float 
 		}
 
 		if (sw_pix_fmt == AV_PIX_FMT_VAAPI)
+		{
+#ifdef _WIN32
+			// VAAPI is implemented ontop of D3D12VA, which needs Agility SDK on Windows 10
+			GSDevice12::LoadAgilitySDK();
+
+			SetEnvironmentVariableW(L"LIBVA_DRIVER_NAME", L"vaon12");
+			SetEnvironmentVariableW(L"LIBVA_DRIVERS_PATH", FileSystem::GetWin32Path(Path::GetDirectory(FileSystem::GetProgramPath())).c_str());
+#endif
 			sw_pix_fmt = AV_PIX_FMT_NV12;
+		}
 
 		s_video_codec_context->pix_fmt = sw_pix_fmt;
 

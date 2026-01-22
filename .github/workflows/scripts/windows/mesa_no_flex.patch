@@ -1,0 +1,13 @@
+diff --git a/meson.build b/meson.build
+index 9b892065a4b..7b02a445d3a 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1871,7 +1871,7 @@ else
+ endif
+ 
+ yacc_is_bison = true
+-needs_flex_bison = with_any_opengl or with_freedreno_vk or with_intel_tools or with_gallium
++needs_flex_bison = with_any_opengl or with_freedreno_vk or with_intel_tools
+ 
+ if build_machine.system() == 'windows'
+   # Prefer the winflexbison versions, they're much easier to install and have

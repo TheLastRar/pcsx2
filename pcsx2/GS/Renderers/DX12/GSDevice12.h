@@ -163,8 +163,6 @@ private:
 		bool has_timestamp_query = false;
 	};
 
-	void LoadAgilitySDK();
-
 	bool CreateDevice(u32& vendor_id);
 	bool CreateDescriptorHeaps();
 	bool CreateCommandLists();
@@ -422,6 +420,8 @@ protected:
 public:
 	GSDevice12();
 	~GSDevice12() override;
+
+	static void LoadAgilitySDK();
 
 	__fi static GSDevice12* GetInstance() { return static_cast<GSDevice12*>(g_gs_device.get()); }
 
