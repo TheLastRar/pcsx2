@@ -64,6 +64,8 @@ set PKGCONF=2.5.1
 set AMF=1.5.0
 set LIBVPL=2.16.0
 set NVENC=13.0.19.0
+set LIBVA=2.23.0
+set MESA=25.3.3
 set LIBOPUS=1.6.1
 set LIBSVTAV1=3.1.2
 set LIBX264=b35605ace3ddf7c1a5d67a2eb553f034aef41d55
@@ -105,6 +107,8 @@ call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/p
 call :downloadfile "amf-headers-v%AMF%.tar.gz" "https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v%AMF%/AMF-headers-v%AMF%.tar.gz" d569647fa26f289affe81a206259fa92f819d06db1e80cc334559953e82a3f01 || goto error
 call :downloadfile "libvpl-%LIBVPL%.zip" "https://github.com/intel/libvpl/archive/v%LIBVPL%.zip" 0b2ee8da8b9ef07ed4b52bf9ddee05008ec999b7c3c41944d7a9f804631c398e || goto error
 call :downloadfile "nv-codec-headers-%NVENC%.tar.gz" "https://github.com/FFmpeg/nv-codec-headers/releases/download/n%NVENC%/nv-codec-headers-%NVENC%.tar.gz" 13da39edb3a40ed9713ae390ca89faa2f1202c9dda869ef306a8d4383e242bee || goto error
+call :downloadfile "libva-%LIBVA%.zip" "https://github.com/intel/libva/archive/2.23.0.zip" 308d05e26bf69eb783bb9ce6cf2225edd9cd17da53515adaac2442616381a4ba || goto error
+call :downloadfile "mesa-mesa-%MESA%.zip" "https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-%MESA%/mesa-mesa-%MESA%.zip" 185019b926c2bbcf124e00cdcf5c292fe2622c49a5dcecc18dd6293b4dce28d6 || goto error
 call :downloadfile "opus-%LIBOPUS%.tar.gz" "https://downloads.xiph.org/releases/opus/opus-%LIBOPUS%.tar.gz" 6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1 || goto error
 call :downloadfile "SVT-AV1-v%LIBSVTAV1%.zip" "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v%LIBSVTAV1%/SVT-AV1-v%LIBSVTAV1%.zip" 5a943b3c1c723b8d95a80dd4e2ebfac2bbd0513c9d79ca6936eafcebd8850a1e || goto error
 call :downloadfile "x264-%LIBX264%.zip" "https://code.videolan.org/videolan/x264/-/archive/%LIBX264%.zip" d95d059eff81cc565165cd058b66e208f0cc9874106a8fe94a811a66cf8a85a2 || goto error
@@ -136,6 +140,15 @@ if %DEBUG%==1 (
 )
 
 set FORCEPDB=-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_SHARED_LINKER_FLAGS_MINSIZEREL="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_MINSIZEREL="/DEBUG"
+
+echo Building Zlib...
+rmdir /S /Q "zlib-%ZLIB%"
+%SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
+cd "zlib-%ZLIB%" || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
+cmake --build build --parallel || goto error
+ninja -C build install || goto error
+cd .. || goto error
 
 if %BUILD_FFMPEG%==1 (
   if not "%INSTALLDIR%"=="%INSTALLDIR: =%" (
@@ -200,9 +213,39 @@ if %BUILD_FFMPEG%==1 (
   !MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
   !MASON_PY! compile -C build || goto error
   ninja -C build install || goto error
+  rem Meson uses PKG_CONFIG to locate pkg-config
+  rem FFmpeg, however, needs it passed in via `--pkg-config`
+  set "PKG_CONFIG=%INSTALLDIR%\bin\pkgconf.exe"
+  Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
   set PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
   set PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-  Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
+  cd .. || goto error
+
+  echo "Installing libva"
+  rmdir /S /Q "libva-%LIBVA%"
+  %SEVENZIP% x "libva-%LIBVA%.zip" || goto error
+  cd "libva-%LIBVA%" || goto error
+  !MASON_PY! setup --buildtype=minsize -Db_lto=true --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" build --backend=ninja || goto error
+  !MASON_PY! compile -C build || goto error
+  ninja -C build install || goto error
+  cd .. || goto error
+
+  echo "Installing mesa-va"
+  rmdir /S /Q "mesa-mesa-%MESA%"
+  %SEVENZIP% x "mesa-mesa-%MESA%.zip" ^
+     "-xr^!.clang-format" ^
+     "-x^!mesa-mesa-%MESA%\.*" ^
+     "-x^!mesa-mesa-%MESA%\bin\ci" ^
+     "-x^!mesa-mesa-%MESA%\include\android_stub" ^
+     "-x^!mesa-mesa-%MESA%\src\compiler\isaspec\README.rst" || goto error
+  cd "mesa-mesa-%MESA%" || goto error
+  %PATCH% -p1 < "%SCRIPTDIR%\mesa_no_flex.patch" || goto error
+  rem minsize causes ICE in MSVC
+  !MASON_PY! setup --buildtype=release -Db_lto=true --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Dmin-windows-version=10 -Dgallium-drivers=d3d12 ^
+    -Degl=disabled -Dgles1=disabled -Dgles2=disabled -Dopengl=false -Dgallium-d3d12-graphics=disabled ^
+    -Dgallium-va=enabled -Dvideo-codecs=h264enc,h265enc,av1enc build --backend=ninja || goto error
+  !MASON_PY! compile -C build || goto error
+  !MASON_PY! install --skip-subprojects -C build || goto error
   cd .. || goto error
 
   set "OLD_PATH=%PATH%"
@@ -256,7 +299,7 @@ if %BUILD_FFMPEG%==1 (
     --toolchain=msvc --extra-ldflags="-LTCG" --extra-libs="advapi32.lib ole32.lib" !FFMPEG_NASM! --pkg-config="%INSTALLDIR%\bin\pkgconf.exe" ^
     --extra-cflags="-MD -GL -I!VULKAN_INCLUDE!" --extra-cxxflags="-MD -GL -I!VULKAN_INCLUDE!" ^
     --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale ^
-    --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl --enable-amf ^
+    --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl --enable-amf --enable-vaapi ^
     --enable-d3d11va --enable-mediafoundation ^
     --enable-encoder=ffv1,qtrle,libx264*,libsvtav1,aac,flac,libopus,pcm_s16be,pcm_s16le ^
     --enable-encoder=h264_qsv,hevc_qsv,av1_qsv ^
@@ -264,6 +307,7 @@ if %BUILD_FFMPEG%==1 (
     --enable-encoder=h264_amf,hevc_amf,av1_amf ^
     --enable-encoder=h264_vulkan,hevc_vulkan,av1_vulkan ^
     --enable-encoder=h264_mf,hevc_mf,av1_mf ^
+    --enable-encoder=h264_vaapi,hevc_vaapi,av1_vaapi ^
     --enable-parser=hevc ^
     --enable-muxer=avi,matroska,mov,mp3,mp4,wav ^
     --enable-protocol=file || goto error
@@ -274,15 +318,6 @@ if %BUILD_FFMPEG%==1 (
 
   set "PATH=!OLD_PATH!"
 )
-
-echo Building Zlib...
-rmdir /S /Q "zlib-%ZLIB%"
-%SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
-cd "zlib-%ZLIB%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
 
 echo Building libpng...
 rmdir /S /Q "lpng%LIBPNG%"

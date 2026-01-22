@@ -120,6 +120,12 @@ jobs:
           path: deps
           key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
+      - name: mako
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: cmd
+        run: |
+          pip install mako PyYAML
+
       - name: Build Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         env:
