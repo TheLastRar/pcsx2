@@ -873,22 +873,22 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_NONE;
 				break;
 			case ResourceState::RenderTarget:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_RENDER_TARGET;
-				barrier.AccessBefore = m_simultaneous_tex ?
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+				barrier.AccessBefore = IsSimultaneousAccess() ?
 				                           D3D12_BARRIER_ACCESS_RENDER_TARGET | D3D12_BARRIER_ACCESS_SHADER_RESOURCE :
 				                           D3D12_BARRIER_ACCESS_RENDER_TARGET;
-				barrier.SyncBefore = m_simultaneous_tex ?
+				barrier.SyncBefore = IsSimultaneousAccess() ?
 				                         D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING :
 				                         D3D12_BARRIER_SYNC_RENDER_TARGET;
 				break;
 			case ResourceState::DepthWriteStencil:
-				pxAssert(!m_simultaneous_tex);
+				pxAssert(!IsSimultaneousAccess());
 					barrier.LayoutBefore = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
 					barrier.AccessBefore = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
 					barrier.SyncBefore = D3D12_BARRIER_SYNC_DEPTH_STENCIL;
 				break;
 			case ResourceState::DepthReadStencil:
-				pxAssert(!m_simultaneous_tex && !IsDepthColor());
+				pxAssert(!IsSimultaneousAccess() && !IsDepthColor());
 				pxAssert(level == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
 				barriers[0].Subresources = {0, static_cast<uint>(m_mipmap_levels), 0, 1, 0, 1};
@@ -905,32 +905,32 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				}
 				break;
 			case ResourceState::PixelShaderResource:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_PIXEL_SHADING;
 				break;
 			case ResourceState::ComputeShaderResource:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_COMPUTE_SHADING;
 				break;
 			case ResourceState::CopySrc:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_COPY_SOURCE;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_COPY;
 				break;
 			case ResourceState::CopyDst:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_COPY_DEST;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_COPY;
 				break;
 			case ResourceState::CASShaderUAV:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_COMPUTE_SHADING;
 				break;
 			case ResourceState::PixelShaderUAV:
-				barrier.LayoutBefore = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
+				barrier.LayoutBefore = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
 				barrier.AccessBefore = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
 				barrier.SyncBefore = D3D12_BARRIER_SYNC_PIXEL_SHADING | D3D12_BARRIER_SYNC_CLEAR_UNORDERED_ACCESS_VIEW;
 				break;
@@ -951,22 +951,22 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_NONE;
 				break;
 			case ResourceState::RenderTarget:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_RENDER_TARGET;
-				barrier.AccessAfter = m_simultaneous_tex ?
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_RENDER_TARGET;
+				barrier.AccessAfter = IsSimultaneousAccess() ?
 				                          D3D12_BARRIER_ACCESS_RENDER_TARGET | D3D12_BARRIER_ACCESS_SHADER_RESOURCE :
 				                          D3D12_BARRIER_ACCESS_RENDER_TARGET;
-				barrier.SyncAfter = m_simultaneous_tex ?
+				barrier.SyncAfter = IsSimultaneousAccess() ?
 				                        D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING :
 				                        D3D12_BARRIER_SYNC_RENDER_TARGET;
 				break;
 			case ResourceState::DepthWriteStencil:
-				pxAssert(!m_simultaneous_tex);
+				pxAssert(!IsSimultaneousAccess());
 				barrier.LayoutAfter = D3D12_BARRIER_LAYOUT_DEPTH_STENCIL_WRITE;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_DEPTH_STENCIL_WRITE;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_DEPTH_STENCIL;
 				break;
 			case ResourceState::DepthReadStencil:
-				pxAssert(!m_simultaneous_tex);
+				pxAssert(!IsSimultaneousAccess());
 				pxAssert(level == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
 				barriers[0].Subresources = {0, static_cast<uint>(m_mipmap_levels), 0, 1, 0, 1};
@@ -983,32 +983,32 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				}
 				break;
 			case ResourceState::PixelShaderResource:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_PIXEL_SHADING;
 				break;
 			case ResourceState::ComputeShaderResource:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_SHADER_RESOURCE;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_SHADER_RESOURCE;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_COMPUTE_SHADING;
 				break;
 			case ResourceState::CopySrc:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_SOURCE;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_COPY_SOURCE;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_COPY;
 				break;
 			case ResourceState::CopyDst:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_COPY_DEST;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_COPY_DEST;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_COPY;
 				break;
 			case ResourceState::CASShaderUAV:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_COMPUTE_SHADING;
 				break;
 			case ResourceState::PixelShaderUAV:
-				barrier.LayoutAfter = m_simultaneous_tex ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
+				barrier.LayoutAfter = IsSimultaneousAccess() ? D3D12_BARRIER_LAYOUT_COMMON : D3D12_BARRIER_LAYOUT_DIRECT_QUEUE_UNORDERED_ACCESS;
 				barrier.AccessAfter = D3D12_BARRIER_ACCESS_UNORDERED_ACCESS;
 				barrier.SyncAfter = D3D12_BARRIER_SYNC_PIXEL_SHADING | D3D12_BARRIER_SYNC_CLEAR_UNORDERED_ACCESS_VIEW;
 				break;
@@ -1065,7 +1065,7 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 				break;
 			case ResourceState::DepthReadStencil:
-				pxAssert(!m_simultaneous_tex && !IsDepthColor());
+				pxAssert(!IsSimultaneousAccess() && !IsDepthColor());
 				pxAssert(m_mipmap_levels == 1);
 				pxAssert(level == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 
@@ -1116,7 +1116,7 @@ void GSTexture12::TransitionSubresourceToState(const D3D12CommandList& cmdlist, 
 				barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 				break;
 			case ResourceState::DepthReadStencil:
-				pxAssert(!m_simultaneous_tex && !IsDepthColor());
+				pxAssert(!IsSimultaneousAccess() && !IsDepthColor());
 				pxAssert(m_mipmap_levels == 1);
 				pxAssert(level == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES);
 

@@ -255,12 +255,13 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 	// Enabling the debug layer will fail if the Graphics Tools feature is not installed.
 	if (enable_debug_layer)
 	{
-		ComPtr<ID3D12Debug1> debug12;
+		ComPtr<ID3D12Debug3> debug12;
 		hr = D3D12GetDebugInterface(IID_PPV_ARGS(debug12.put()));
 		if (SUCCEEDED(hr))
 		{
 			debug12->EnableDebugLayer();
 			debug12->SetEnableGPUBasedValidation(true);
+			debug12->SetGPUBasedValidationFlags(D3D12_GPU_BASED_VALIDATION_FLAGS_DISABLE_STATE_TRACKING);
 		}
 		else
 		{
@@ -319,7 +320,8 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 				// For now, disable this warning untill the OS updates.
 				D3D12_MESSAGE_ID_INCOMPATIBLE_BARRIER_LAYOUT,
 			};
-			filter.DenyList.NumIDs = static_cast<UINT>(sdkVersion < 618 ? id_list.size() : id_list.size() - 1);
+			// FIXME: Change the version back to 618!
+			filter.DenyList.NumIDs = static_cast<UINT>(sdkVersion < 619 ? id_list.size() : id_list.size() - 1);
 			filter.DenyList.pIDList = id_list.data();
 			info_queue->PushStorageFilter(&filter);
 		}

@@ -131,6 +131,11 @@ public:
 		pxAssertRel(!IsDepthColor(), "Trying to FBL resource for depth as color");
 		return m_resource_fbl.get();
 	}
+
+	__fi bool IsSimultaneousAccess() const
+	{
+		return IsDepthColor() ? static_cast<GSTexture12*>(m_depth_color.get())->m_simultaneous_tex : m_simultaneous_tex;
+	}
 	
 	void* GetNativeHandle() const override;
 
