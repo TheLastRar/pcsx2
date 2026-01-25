@@ -1406,6 +1406,19 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		m_enhanced_barriers = false;
 	}
 
+	D3D12_FEATURE_DATA_D3D12_OPTIONS16 device_options16 = {};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS16, &device_options16, sizeof(device_options16));
+	if (SUCCEEDED(hr))
+	{
+		Console.WriteLnFmt("D3D12: GPU Upload Heaps: {}", device_options16.GPUUploadHeapSupported ? "Supported" : "Not Supported");
+		m_gpu_upload = device_options16.GPUUploadHeapSupported;
+	}
+	else
+	{
+		Console.WriteLnFmt("D3D12: Failed to check for GPU Upload Heaps: 0x{:08x}", static_cast<unsigned long>(hr));
+		m_gpu_upload = false;
+	}
+
 	return true;
 }
 
@@ -2544,7 +2557,7 @@ bool GSDevice12::CreateBuffers()
 		return false;
 	}
 
-	if (!m_texture_stream_buffer.Create(TEXTURE_UPLOAD_BUFFER_SIZE))
+	if (!m_texture_stream_buffer.Create(TEXTURE_UPLOAD_BUFFER_SIZE), false)
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate texture stream buffer");
 		return false;

@@ -20,14 +20,14 @@ D3D12StreamBuffer::~D3D12StreamBuffer()
 	Destroy();
 }
 
-bool D3D12StreamBuffer::Create(u32 size)
+bool D3D12StreamBuffer::Create(u32 size, bool perfer_gpu_upload)
 {
 	const GSDevice12::D3D12_RESOURCE_DESCU resource_desc = {{D3D12_RESOURCE_DIMENSION_BUFFER, 0, size, 1, 1, 1, DXGI_FORMAT_UNKNOWN,
 		{1, 0}, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE}};
 
 	D3D12MA::ALLOCATION_DESC allocationDesc = {};
 	allocationDesc.Flags = D3D12MA::ALLOCATION_FLAG_COMMITTED;
-	allocationDesc.HeapType = D3D12_HEAP_TYPE_UPLOAD;
+	allocationDesc.HeapType = (perfer_gpu_upload && GSDevice12::GetInstance()->UseGpuUploadHeaps()) ? D3D12_HEAP_TYPE_GPU_UPLOAD : D3D12_HEAP_TYPE_UPLOAD;
 
 	wil::com_ptr_nothrow<ID3D12Resource> buffer;
 	wil::com_ptr_nothrow<D3D12MA::Allocation> allocation;

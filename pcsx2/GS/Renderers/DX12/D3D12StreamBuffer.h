@@ -22,7 +22,7 @@ public:
 	D3D12StreamBuffer();
 	~D3D12StreamBuffer();
 
-	bool Create(u32 size);
+	bool Create(u32 size, bool perfer_gpu_upload = true);
 
 	__fi bool IsValid() const { return static_cast<bool>(m_buffer); }
 	__fi ID3D12Resource* GetBuffer() const { return m_buffer.get(); }

@@ -65,6 +65,7 @@ public:
 	u32 GetAdapterVendorID() const;
 
 	bool UseEnhancedBarriers() const { return m_enhanced_barriers; }
+	bool UseGpuUploadHeaps() const { return m_gpu_upload; }
 
 	/// Returns the current command list, commands can be recorded directly.
 	const D3D12CommandList& GetCommandList() const
@@ -314,7 +315,8 @@ private:
 	bool m_allow_tearing_supported = false;
 	bool m_using_allow_tearing = false;
 	bool m_is_exclusive_fullscreen = false;
-	bool m_enhanced_barriers = true;
+	bool m_enhanced_barriers = false;
+	bool m_gpu_upload = false;
 	bool m_device_lost = false;
 
 	ComPtr<ID3D12RootSignature> m_tfx_root_signature;
