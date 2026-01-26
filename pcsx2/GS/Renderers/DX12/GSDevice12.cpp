@@ -2072,7 +2072,7 @@ void GSDevice12::BeginRenderPassForStretchRect(
 	{
 		BeginRenderPass(D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
 			D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS, load_op, D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE,
-			D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS, D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD, D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD,
 			GSVector4::zero(), dTex->GetClearDepth());
 	}
 }
@@ -2603,6 +2603,11 @@ void GSDevice12::OMSetRenderTargets(GSTexture* rt, GSTexture* ds_as_rt, GSTextur
 	if (m_current_render_target != d12Rt || m_current_depth_render_target != d12DsRt ||
 		m_current_depth_target != d12Ds || m_current_depth_read_only != depth_read)
 	{
+		EndRenderPass();
+	}
+	else if (m_current_depth_read_only != depth_read)
+	{
+		// depth read/write mode change
 		EndRenderPass();
 	}
 	else if (InRenderPass())
@@ -3969,6 +3974,8 @@ void GSDevice12::BeginRenderPass(D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE color_b
 		num_rts++;
 	}
 
+	m_current_pass_has_stencil = m_current_depth_target && 
+		(stencil_begin != D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS && !(stencil_begin == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD && stencil_end == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD));
 	D3D12_RENDER_PASS_DEPTH_STENCIL_DESC ds = {};
 	if (m_current_depth_target)
 	{
@@ -3991,11 +3998,75 @@ void GSDevice12::BeginRenderPass(D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE color_b
 		}
 	}
 
+	m_current_pass_local_access = (color_end == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER) || 
+		(depth_end == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER) ||
+	                              (stencil_end == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER);
+
 	GetCommandList().list4->BeginRenderPass(num_rts, rt.data(), m_current_depth_target ? &ds : nullptr,
 		(m_current_depth_target && m_current_depth_read_only) ? (D3D12_RENDER_PASS_FLAG_BIND_READ_ONLY_DEPTH) : D3D12_RENDER_PASS_FLAG_NONE);
 }
+/*
+void GSDevice12::BeginPreserveLocalRenderPass(D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE color_begin,
+	D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE depth_begin, bool stencil, GSVector4 clear_color, float clear_depth, u8 clear_stencil)
+{
+	BeginRenderPass(m_current_render_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+		m_current_render_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+		m_current_depth_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+		m_current_depth_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+		stencil ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+		stencil ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+		clear_color, clear_depth, clear_stencil);
+}
+*/
+void GSDevice12::ResumeLocalRenderPass()
+{
+	pxAssert(m_current_pass_local_access);
+	BeginRenderPass(m_current_render_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+		m_current_render_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+		m_current_depth_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+		m_current_depth_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+		m_current_pass_has_stencil ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : (m_current_depth_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS),
+		m_current_pass_has_stencil ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : (m_current_depth_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS),
+		{}, 0.0f, 1);
+}
 
 void GSDevice12::EndRenderPass()
+{
+	if (m_in_render_pass)
+	{
+		m_in_render_pass = false;
+
+		// to render again, we need to reset OM
+		m_dirty_flags |= DIRTY_FLAG_RENDER_TARGET;
+
+		g_perfmon.Put(GSPerfMon::RenderPasses, 1);
+
+		GetCommandList().list4->EndRenderPass();
+	}
+
+	if (m_current_pass_local_access)
+	{
+		BeginRenderPass(m_current_render_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			m_current_render_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			m_current_depth_target ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			m_current_depth_target ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			m_current_pass_has_stencil ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			m_current_pass_has_stencil ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			{}, 0.0f, 1);
+		
+		m_current_pass_local_access = false;
+		m_in_render_pass = false;
+
+		// to render again, we need to reset OM
+		m_dirty_flags |= DIRTY_FLAG_RENDER_TARGET;
+
+		g_perfmon.Put(GSPerfMon::RenderPasses, 1);
+
+		GetCommandList().list4->EndRenderPass();
+	}
+}
+
+void GSDevice12::EndLocalRenderPass()
 {
 	if (!m_in_render_pass)
 		return;
@@ -4381,8 +4452,9 @@ void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 {
 	if (m_enhanced_barriers)
 	{
-		if (m_rp_reorders_barriers)
-			EndRenderPass();
+		EndLocalRenderPass();
+		//if (m_rp_reorders_barriers)
+		//	EndRenderPass();
 
 		// Enhanced barriers allows for single resource feedback.
 		const D3D12_BARRIER_SYNC sync = D3D12_BARRIER_SYNC_RENDER_TARGET | D3D12_BARRIER_SYNC_PIXEL_SHADING;
@@ -4391,18 +4463,20 @@ void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 			texture->GetResource(), {D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, 0, 0, 0, 0, 0}, D3D12_TEXTURE_BARRIER_FLAG_NONE};
 		const D3D12_BARRIER_GROUP group = {.Type = D3D12_BARRIER_TYPE_TEXTURE, .NumBarriers = 1, .pTextureBarriers = &barrier};
 		GetCommandList().list7->Barrier(1, &group);
+		ResumeLocalRenderPass();
 	}
 	else
 	{
 		// The DX12 spec notes "You may not read from, or consume, a write that occurred within the same render pass".
 		// The only exception being the implicit reads for render target blending or depth testing.
 		// Thus, in addition to a barrier, we need to end the render pass.
-		EndRenderPass();
+		EndLocalRenderPass();
 		// Specify null for the after resource as both resources are used after the barrier.
 		// While this may also be true before the barrier, we only write using the main resource.
 		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
 		barrier.Aliasing = {texture->GetResource(), nullptr};
 		GetCommandList().list4->ResourceBarrier(1, &barrier);
+		ResumeLocalRenderPass();
 	}
 }
 
@@ -4645,6 +4719,12 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		const D3D12_RECT rect = {config.drawarea.left, config.drawarea.top, config.drawarea.left + config.drawarea.width(), config.drawarea.top + config.drawarea.height()};
 		GetCommandList().list4->ClearDepthStencilView(draw_ds->GetWriteDescriptor(), D3D12_CLEAR_FLAG_STENCIL, 0.0f, 1, 1, &rect);
 	}
+	
+	if (need_barrier /*&& !m_enhanced_barriers*/ && !m_current_pass_local_access)
+	{
+		// End the render pass to switch to local access types
+		EndRenderPass();
+	}
 
 	// Begin render pass if new target or out of the area.
 	if (!InRenderPass())
@@ -4660,13 +4740,13 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		                          config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::StencilOne;
 
 		BeginRenderPass(GetLoadOpForTexture(draw_rt),
-			draw_rt ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			draw_rt ? (need_barrier ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE) : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			GetLoadOpForTexture(draw_ds),
-			draw_ds ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			draw_ds ? (need_barrier ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE) : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			draw_ds ? (stencil_DATE ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE :
 									  D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD) :
 					  D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
-			draw_ds ? ((stencil_DATE && need_barrier) ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE :
+			draw_ds ? ((stencil_DATE && need_barrier) ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER :
 														D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD) :
 					  D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			clear_color, draw_ds ? draw_ds->GetClearDepth() : 0.0f, 1);
@@ -4730,6 +4810,21 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 			feedback_rt, feedback_depth, config.alpha_second_pass.require_one_barrier,
 			config.alpha_second_pass.require_full_barrier);
 	}
+	/*
+	if (need_barrier && !m_enhanced_barriers)
+	{
+		// Switch back to non local access types
+		EndRenderPass();
+
+		BeginRenderPass(draw_rt ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			draw_rt ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			draw_ds ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			draw_ds ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			m_current_pass_has_stencil ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
+			m_current_pass_has_stencil ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			{}, 0.0f, 1);
+	}
+	*/
 
 	if (date_image)
 		Recycle(date_image);
