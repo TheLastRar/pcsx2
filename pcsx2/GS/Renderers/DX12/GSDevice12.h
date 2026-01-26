@@ -541,6 +541,9 @@ public:
 		GSVector4 clear_color = GSVector4::zero(), float clear_depth = 0.0f, u8 clear_stencil = 0);
 	void EndRenderPass();
 
+	void ResumeLocalRenderPass();
+	void EndLocalRenderPass();
+
 	void SetViewport(const D3D12_VIEWPORT& viewport);
 	void SetScissor(const GSVector4i& scissor);
 	void SetPipeline(const ID3D12PipelineState* pipeline);
@@ -613,6 +616,8 @@ private:
 	u8 m_blend_constant_color = 0;
 	u8 m_stencil_ref = 0;
 	bool m_in_render_pass = false;
+	bool m_current_pass_has_stencil = false;
+	bool m_current_pass_local_access = false;
 
 	std::array<D3D12_GPU_VIRTUAL_ADDRESS, NUM_TFX_CONSTANT_BUFFERS> m_tfx_constant_buffers{};
 	std::array<D3D12DescriptorHandle, NUM_TOTAL_TFX_TEXTURES> m_tfx_textures{};
