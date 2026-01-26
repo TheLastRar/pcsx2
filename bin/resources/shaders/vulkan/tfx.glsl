@@ -400,7 +400,7 @@ layout(location = 0) in VSOutput
 #endif
 
 #if PS_ROV_COLOR
-	layout(set = 1, binding = 5, rgba32f) uniform restrict coherent image2D RtImageRov;
+	layout(set = 1, binding = 5, rgba8) uniform restrict coherent image2D RtImageRov;
 	#if PS_FEEDBACK_LOOP_IS_NEEDED_RT
 		vec4 cachedRtValue;
 		vec4 sample_from_rt() { return cachedRtValue; }
