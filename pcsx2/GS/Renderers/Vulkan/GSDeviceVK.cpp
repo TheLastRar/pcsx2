@@ -3571,7 +3571,7 @@ void GSDeviceVK::OMSetRenderTargets(
 	{
 		// Framebuffer unchanged, but check for clears
 		// Use an attachment clear to wipe it out without restarting the render pass
-		if (IsDeviceNVIDIA())
+		//if (IsDeviceNVIDIA())
 		{
 			// Using vkCmdClearAttachments() within a render pass on NVIDIA seems to cause dependency issues
 			// between draws that are testing depth which precede it. The result is flickering where Z tests
@@ -3606,6 +3606,7 @@ void GSDeviceVK::OMSetRenderTargets(
 				}
 			}
 		}
+		/*
 		else
 		{
 			std::array<VkClearAttachment, 2> cas;
@@ -3642,6 +3643,7 @@ void GSDeviceVK::OMSetRenderTargets(
 				vkCmdClearAttachments(GetCurrentCommandBuffer(), num_ca, cas.data(), 1, &cr);
 			}
 		}
+		*/
 	}
 
 	m_current_render_target = vkRt;
