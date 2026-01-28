@@ -3722,7 +3722,15 @@ void GSDevice12::EndRenderPass()
 			m_current_pass_has_stencil ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
 			m_current_pass_has_stencil ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			{}, 0.0f, 1);
-		EndRenderPass();
+		
+		m_in_render_pass = false;
+
+		// to render again, we need to reset OM
+		m_dirty_flags |= DIRTY_FLAG_RENDER_TARGET;
+
+		g_perfmon.Put(GSPerfMon::RenderPasses, 1);
+
+		GetCommandList().list4->EndRenderPass();
 	}
 }
 
@@ -4319,13 +4327,12 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		D3D12_RECT rect = {config.drawarea.left, config.drawarea.top, config.drawarea.left + config.drawarea.width(), config.drawarea.top + config.drawarea.height()};
 		GetCommandList().list4->ClearDepthStencilView(draw_ds->GetWriteDescriptor(), D3D12_CLEAR_FLAG_STENCIL, 0.0f, 1, 1, &rect);
 	}
-	/*
-	if (need_barrier && !m_enhanced_barriers)
+	
+	if (need_barrier && !m_enhanced_barriers && !m_current_pass_local_access)
 	{
 		// End the render pass to switch to local access types
 		EndRenderPass();
 	}
-	*/
 
 	// Begin render pass if new target or out of the area.
 	if (!m_in_render_pass)
@@ -4341,9 +4348,11 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		                          config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::StencilOne;
 
 		BeginRenderPass(GetLoadOpForTexture(draw_rt),
-			draw_rt ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			draw_rt ? (need_barrier ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE) 
+				: D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			GetLoadOpForTexture(draw_ds),
-			draw_ds ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
+			draw_ds ? (need_barrier ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE)
+				: D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS,
 			stencil_DATE ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS,
 			stencil_DATE ? (need_barrier ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE_LOCAL_RENDER :
 										   D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD) :
