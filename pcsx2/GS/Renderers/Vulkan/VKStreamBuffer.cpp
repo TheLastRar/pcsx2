@@ -175,13 +175,22 @@ bool VKStreamBuffer::ReserveMemory(u32 num_bytes, u32 alignment)
 	return false;
 }
 
-void VKStreamBuffer::CommitMemory(u32 final_num_bytes)
+void VKStreamBuffer::CommitMemory(u32 final_num_bytes, VkAccessFlags dstAccessFlags, VkPipelineStageFlagBits dstStageFlags)
 {
 	pxAssert((m_current_offset + final_num_bytes) <= m_size);
 	pxAssert(final_num_bytes <= m_current_space);
 
 	// For non-coherent mappings, flush the memory range
 	vmaFlushAllocation(GSDeviceVK::GetInstance()->GetAllocator(), m_allocation, m_current_offset, final_num_bytes);
+
+	if (dstAccessFlags)
+	{
+		const VkBufferMemoryBarrier barrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,nullptr,
+			VK_ACCESS_HOST_WRITE_BIT, dstAccessFlags, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			nullptr, m_current_offset, final_num_bytes};
+		vkCmdPipelineBarrier(GSDeviceVK::GetInstance()->GetCurrentCommandBuffer(),
+			VK_PIPELINE_STAGE_HOST_BIT, dstStageFlags, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+	}
 
 	m_current_offset += final_num_bytes;
 	m_current_space -= final_num_bytes;

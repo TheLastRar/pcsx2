@@ -361,7 +361,7 @@ bool GSTextureVK::Update(const GSVector4i& r, const void* data, int pitch, int l
 		buffer = sbuffer.GetBuffer();
 		buffer_offset = sbuffer.GetCurrentOffset();
 		CopyTextureDataForUpload(sbuffer.GetCurrentHostPointer(), data, pitch, upload_pitch, height);
-		sbuffer.CommitMemory(required_size);
+		sbuffer.CommitMemory(required_size, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 	}
 
 	const VkCommandBuffer cmdbuf = GetCommandBufferForUpdate();
@@ -433,7 +433,7 @@ void GSTextureVK::Unmap()
 	const u32 required_size = CalcUploadSize(height, pitch);
 	VKStreamBuffer& buffer = GSDeviceVK::GetInstance()->GetTextureUploadBuffer();
 	const u32 buffer_offset = buffer.GetCurrentOffset();
-	buffer.CommitMemory(required_size);
+	buffer.CommitMemory(required_size, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
 	const VkCommandBuffer cmdbuf = GetCommandBufferForUpdate();
 	GL_PUSH("GSTextureVK::Update({%d,%d} %dx%d Lvl:%u", m_map_area.x, m_map_area.y, m_map_area.width(),

@@ -2981,8 +2981,8 @@ void GSDeviceVK::DoMultiStretchRects(
 	m_vertex.count = vcount;
 	m_index.start = m_index_stream_buffer.GetCurrentOffset() / sizeof(u16);
 	m_index.count = icount;
-	m_vertex_stream_buffer.CommitMemory(vcount * sizeof(GSVertexPT1));
-	m_index_stream_buffer.CommitMemory(icount * sizeof(u16));
+	m_vertex_stream_buffer.CommitMemory(vcount * sizeof(GSVertexPT1), VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+	m_index_stream_buffer.CommitMemory(icount * sizeof(u16), VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 	SetIndexBuffer(m_index_stream_buffer.GetBuffer());
 
 	// Even though we're batching, a cmdbuffer submit could've messed this up.
@@ -3383,7 +3383,7 @@ void GSDeviceVK::IASetVertexBuffer(const void* vertex, size_t stride, size_t cou
 	m_vertex.count = count;
 
 	GSVector4i::storent(m_vertex_stream_buffer.GetCurrentHostPointer(), vertex, count * stride);
-	m_vertex_stream_buffer.CommitMemory(size);
+	m_vertex_stream_buffer.CommitMemory(size, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 }
 
 void GSDeviceVK::IASetIndexBuffer(const void* index, size_t count)
@@ -3400,7 +3400,7 @@ void GSDeviceVK::IASetIndexBuffer(const void* index, size_t count)
 	m_index.count = count;
 
 	std::memcpy(m_index_stream_buffer.GetCurrentHostPointer(), index, size);
-	m_index_stream_buffer.CommitMemory(size);
+	m_index_stream_buffer.CommitMemory(size, VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 
 	SetIndexBuffer(m_index_stream_buffer.GetBuffer());
 }
@@ -4471,7 +4471,7 @@ void GSDeviceVK::RenderImGui()
 
 			vertex_offset = m_vertex_stream_buffer.GetCurrentOffset() / sizeof(ImDrawVert);
 			std::memcpy(m_vertex_stream_buffer.GetCurrentHostPointer(), cmd_list->VtxBuffer.Data, size);
-			m_vertex_stream_buffer.CommitMemory(size);
+			m_vertex_stream_buffer.CommitMemory(size, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 		}
 
 		static_assert(sizeof(ImDrawIdx) == sizeof(u16));
@@ -5350,7 +5350,7 @@ bool GSDeviceVK::ApplyTFXState(bool already_execed)
 
 		std::memcpy(m_vertex_uniform_stream_buffer.GetCurrentHostPointer(), &m_vs_cb_cache, sizeof(m_vs_cb_cache));
 		m_tfx_dynamic_offsets[0] = m_vertex_uniform_stream_buffer.GetCurrentOffset();
-		m_vertex_uniform_stream_buffer.CommitMemory(sizeof(m_vs_cb_cache));
+		m_vertex_uniform_stream_buffer.CommitMemory(sizeof(m_vs_cb_cache), VK_ACCESS_UNIFORM_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
 		flags |= DIRTY_FLAG_TFX_UBO;
 	}
 
@@ -5371,7 +5371,7 @@ bool GSDeviceVK::ApplyTFXState(bool already_execed)
 
 		std::memcpy(m_fragment_uniform_stream_buffer.GetCurrentHostPointer(), &m_ps_cb_cache, sizeof(m_ps_cb_cache));
 		m_tfx_dynamic_offsets[1] = m_fragment_uniform_stream_buffer.GetCurrentOffset();
-		m_fragment_uniform_stream_buffer.CommitMemory(sizeof(m_ps_cb_cache));
+		m_fragment_uniform_stream_buffer.CommitMemory(sizeof(m_ps_cb_cache), VK_ACCESS_UNIFORM_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		flags |= DIRTY_FLAG_TFX_UBO;
 	}
 

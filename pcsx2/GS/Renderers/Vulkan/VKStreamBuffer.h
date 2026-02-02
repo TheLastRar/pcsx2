@@ -34,7 +34,7 @@ public:
 	void Destroy(bool defer);
 
 	bool ReserveMemory(u32 num_bytes, u32 alignment);
-	void CommitMemory(u32 final_num_bytes);
+	void CommitMemory(u32 final_num_bytes, VkAccessFlags dstAccessFlags, VkPipelineStageFlagBits dstStageFlags);
 
 private:
 	bool AllocateBuffer(VkBufferUsageFlags usage, u32 size);
