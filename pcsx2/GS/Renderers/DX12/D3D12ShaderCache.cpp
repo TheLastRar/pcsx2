@@ -13,6 +13,8 @@
 #include "common/MD5Digest.h"
 #include "common/Path.h"
 
+#include "fmt/base.h"
+
 #include <d3dcompiler.h>
 
 #pragma pack(push, 1)
@@ -404,19 +406,29 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::GetShaderBlob(EntryType typ
 	const D3D_SHADER_MACRO* macros /* = nullptr */, const char* entry_point /* = "main" */)
 {
 	const auto key = GetShaderCacheKey(type, shader_code, macros, entry_point);
+	Console.WriteLnFmt("D3D12ShaderCache: Loading Shader with key {}", KeyToString(key));
 	auto iter = m_shader_index.find(key);
 	if (iter == m_shader_index.end())
+	{
+		Console.WriteLnFmt("D3D12ShaderCache: Shader not found in cache");
 		return CompileAndAddShaderBlob(key, shader_code, macros, entry_point);
+	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: Shader blob found in cache at {} with size {}", iter->second.file_offset, iter->second.blob_size);
 
 	ComPtr<ID3DBlob> blob;
 	HRESULT hr = D3DCreateBlob(iter->second.blob_size, blob.put());
+
+	Console.WriteLnFmt("D3D12ShaderCache: Shader blob loaded with buffer size {}", blob->GetBufferSize());
+
 	if (FAILED(hr) || std::fseek(m_shader_blob_file, iter->second.file_offset, SEEK_SET) != 0 ||
 		std::fread(blob->GetBufferPointer(), 1, iter->second.blob_size, m_shader_blob_file) != iter->second.blob_size)
 	{
-		Console.Error("Read blob from file failed");
+		Console.Error("D3D12ShaderCache: Read blob from file failed");
 		return {};
 	}
 
+	Console.WriteLnFmt("D3D12ShaderCache: Returning cached Shader");
 	return blob;
 }
 
@@ -424,19 +436,26 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::GetPipelineState
 	ID3D12Device* device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc)
 {
 	const auto key = GetPipelineCacheKey(desc);
-
+	Console.WriteLnFmt("D3D12ShaderCache: Loading GraphicsPipelineState with key {}", KeyToString(key));
 	auto iter = m_pipeline_index.find(key);
 	if (iter == m_pipeline_index.end())
+	{
+		Console.WriteLnFmt("D3D12ShaderCache: PipelineState not found in cache");
 		return CompileAndAddPipeline(device, key, desc);
+	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: PipelineState blob found in cache at {} with size {}", iter->second.file_offset, iter->second.blob_size);
 
 	ComPtr<ID3DBlob> blob;
 	HRESULT hr = D3DCreateBlob(iter->second.blob_size, blob.put());
 	if (FAILED(hr) || std::fseek(m_pipeline_blob_file, iter->second.file_offset, SEEK_SET) != 0 ||
 		std::fread(blob->GetBufferPointer(), 1, iter->second.blob_size, m_pipeline_blob_file) != iter->second.blob_size)
 	{
-		Console.Error("Read blob from file failed");
+		Console.Error("D3D12ShaderCache: Read blob from file failed");
 		return {};
 	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: PipelineState blob loaded with buffer size {}", blob->GetBufferSize());
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc_with_blob(desc);
 	desc_with_blob.CachedPSO.pCachedBlob = blob->GetBufferPointer();
@@ -446,11 +465,12 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::GetPipelineState
 	hr = device->CreateGraphicsPipelineState(&desc_with_blob, IID_PPV_ARGS(pso.put()));
 	if (FAILED(hr))
 	{
-		Console.Warning("Creating cached PSO failed: %08X. Invalidating cache.", hr);
+		Console.Warning("D3D12ShaderCache: Creating cached PSO failed: %08X. Invalidating cache.", hr);
 		InvalidatePipelineCache();
-		pso = CompileAndAddPipeline(device, key, desc);
+		return CompileAndAddPipeline(device, key, desc);
 	}
 
+	Console.WriteLnFmt("D3D12ShaderCache: Returning cached pipeline state");
 	return pso;
 }
 
@@ -458,19 +478,26 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::GetPipelineState
 	ID3D12Device* device, const D3D12_COMPUTE_PIPELINE_STATE_DESC& desc)
 {
 	const auto key = GetPipelineCacheKey(desc);
-
+	Console.WriteLnFmt("D3D12ShaderCache: Loading ComputePipelineState with key {}", KeyToString(key));
 	auto iter = m_pipeline_index.find(key);
 	if (iter == m_pipeline_index.end())
+	{
+		Console.WriteLnFmt("D3D12ShaderCache: PipelineState not found in cache");
 		return CompileAndAddPipeline(device, key, desc);
+	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: PipelineState blob found in cache at {} with size {}", iter->second.file_offset, iter->second.blob_size);
 
 	ComPtr<ID3DBlob> blob;
 	HRESULT hr = D3DCreateBlob(iter->second.blob_size, blob.put());
 	if (FAILED(hr) || std::fseek(m_pipeline_blob_file, iter->second.file_offset, SEEK_SET) != 0 ||
 		std::fread(blob->GetBufferPointer(), 1, iter->second.blob_size, m_pipeline_blob_file) != iter->second.blob_size)
 	{
-		Console.Error("Read blob from file failed");
+		Console.Error("D3D12ShaderCache: Read blob from file failed");
 		return {};
 	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: PipelineState blob loaded with buffer size {}", blob->GetBufferSize());
 
 	D3D12_COMPUTE_PIPELINE_STATE_DESC desc_with_blob(desc);
 	desc_with_blob.CachedPSO.pCachedBlob = blob->GetBufferPointer();
@@ -480,12 +507,26 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::GetPipelineState
 	hr = device->CreateComputePipelineState(&desc_with_blob, IID_PPV_ARGS(pso.put()));
 	if (FAILED(hr))
 	{
-		Console.Warning("Creating cached PSO failed: %08X. Invalidating cache.", hr);
+		Console.Warning("D3D12ShaderCache: Creating cached PSO failed: %08X. Invalidating cache.", hr);
 		InvalidatePipelineCache();
-		pso = CompileAndAddPipeline(device, key, desc);
+		return CompileAndAddPipeline(device, key, desc);
 	}
 
+	Console.WriteLnFmt("D3D12ShaderCache: Returning cached pipeline state");
 	return pso;
+}
+
+std::string D3D12ShaderCache::KeyToString(const CacheIndexKey& key)
+{
+	return fmt::format("{:016X}:{:016X}:{:016X}:{:016X}:{:016X}:{:016X} ({}) {}",
+		key.source_hash_low, key.source_hash_high, key.macro_hash_low, key.macro_hash_high, key.macro_hash_low, key.macro_hash_high,
+		key.source_length,
+		key.type == EntryType::VertexShader     ? "VertexShader" :
+		key.type == EntryType::PixelShader      ? "PixelShader" :
+		key.type == EntryType::ComputeShader    ? "ComputeShader" :
+		key.type == EntryType::GraphicsPipeline ? "GraphicsPipeline" :
+		key.type == EntryType::ComputePipeline  ? "ComputePipeline" :
+												  "Unkown");
 }
 
 D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
@@ -493,6 +534,7 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 {
 	ComPtr<ID3DBlob> blob;
 
+	Console.WriteLnFmt("D3D12ShaderCache: Compiling new Shader");
 	switch (key.type)
 	{
 		case EntryType::VertexShader:
@@ -512,7 +554,13 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 	}
 
 	if (!blob)
+	{
+		Console.WriteLnFmt("D3D12ShaderCache: No Shjader blob returned");
 		return {};
+	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: Adding Shader to cache");
+	Console.WriteLnFmt("D3D12ShaderCache: Shader blob buffer size {}", blob->GetBufferSize());
 
 	if (!m_shader_blob_file || std::fseek(m_shader_blob_file, 0, SEEK_END) != 0)
 		return blob;
@@ -533,15 +581,19 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 	entry.blob_size = data.blob_size;
 	entry.file_offset = data.file_offset;
 
+	Console.WriteLnFmt("D3D12ShaderCache: Writing to cache at {} with size {}", data.file_offset, data.blob_size);
+
 	if (std::fwrite(blob->GetBufferPointer(), 1, entry.blob_size, m_shader_blob_file) != entry.blob_size ||
 		std::fflush(m_shader_blob_file) != 0 || std::fwrite(&entry, sizeof(entry), 1, m_shader_index_file) != 1 ||
 		std::fflush(m_shader_index_file) != 0)
 	{
-		Console.Error("Failed to write shader blob to file");
+		Console.Error("D3D12ShaderCache: Failed to write shader blob to file");
 		return blob;
 	}
 
 	m_shader_index.emplace(key, data);
+
+	Console.WriteLnFmt("D3D12ShaderCache: Returning new Shader");
 	return blob;
 }
 
@@ -549,14 +601,17 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::CompileAndAddPip
 	ID3D12Device* device, const CacheIndexKey& key, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& gpdesc)
 {
 	ComPtr<ID3D12PipelineState> pso;
+	Console.WriteLnFmt("D3D12ShaderCache: Creating new PipelineSate");
 	HRESULT hr = device->CreateGraphicsPipelineState(&gpdesc, IID_PPV_ARGS(pso.put()));
 	if (FAILED(hr))
 	{
-		Console.Error("Creating cached PSO failed: %08X", hr);
+		Console.Error("D3D12ShaderCache: Creating cached PSO failed: %08X", hr);
 		return {};
 	}
 
 	AddPipelineToBlob(key, pso.get());
+
+	Console.WriteLnFmt("D3D12ShaderCache: Returning new PipelineSate");
 	return pso;
 }
 
@@ -564,14 +619,16 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::CompileAndAddPip
 	ID3D12Device* device, const CacheIndexKey& key, const D3D12_COMPUTE_PIPELINE_STATE_DESC& gpdesc)
 {
 	ComPtr<ID3D12PipelineState> pso;
+	Console.WriteLnFmt("D3D12ShaderCache: Creating new PipelineSate");
 	HRESULT hr = device->CreateComputePipelineState(&gpdesc, IID_PPV_ARGS(pso.put()));
 	if (FAILED(hr))
 	{
-		Console.Error("Creating cached compute PSO failed: %08X", hr);
+		Console.Error("D3D12ShaderCache: Creating cached compute PSO failed: %08X", hr);
 		return {};
 	}
 
 	AddPipelineToBlob(key, pso.get());
+	Console.WriteLnFmt("D3D12ShaderCache: Returning new PipelineSate");
 	return pso;
 }
 
@@ -580,6 +637,8 @@ bool D3D12ShaderCache::AddPipelineToBlob(const CacheIndexKey& key, ID3D12Pipelin
 	if (!m_pipeline_blob_file || std::fseek(m_pipeline_blob_file, 0, SEEK_END) != 0)
 		return false;
 
+	Console.WriteLnFmt("D3D12ShaderCache: Adding PipelineSate to cache");
+
 	ComPtr<ID3DBlob> blob;
 	HRESULT hr = pso->GetCachedBlob(blob.put());
 	if (FAILED(hr))
@@ -587,6 +646,8 @@ bool D3D12ShaderCache::AddPipelineToBlob(const CacheIndexKey& key, ID3D12Pipelin
 		Console.Warning("Failed to get cached PSO data: %08X", hr);
 		return false;
 	}
+
+	Console.WriteLnFmt("D3D12ShaderCache: PipelineState blob buffer size {}", blob->GetBufferSize());
 
 	CacheIndexData data;
 	data.file_offset = static_cast<u32>(std::ftell(m_pipeline_blob_file));
@@ -600,11 +661,13 @@ bool D3D12ShaderCache::AddPipelineToBlob(const CacheIndexKey& key, ID3D12Pipelin
 	entry.blob_size = data.blob_size;
 	entry.file_offset = data.file_offset;
 
+	Console.WriteLnFmt("D3D12ShaderCache: Writing to cache at {} with size {}", data.file_offset, data.blob_size);
+
 	if (std::fwrite(blob->GetBufferPointer(), 1, entry.blob_size, m_pipeline_blob_file) != entry.blob_size ||
 		std::fflush(m_pipeline_blob_file) != 0 || std::fwrite(&entry, sizeof(entry), 1, m_pipeline_index_file) != 1 ||
 		std::fflush(m_pipeline_index_file) != 0)
 	{
-		Console.Error("Failed to write pipeline blob to file");
+		Console.Error("D3D12ShaderCache: Failed to write pipeline blob to file");
 		return false;
 	}
 
