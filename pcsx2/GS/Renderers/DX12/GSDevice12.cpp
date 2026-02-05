@@ -3525,7 +3525,7 @@ void GSDevice12::UnbindTexture(GSTexture12* tex)
 }
 
 void GSDevice12::RenderTextureMipmap(
-	GSTexture12* texture, u32 dst_level, u32 dst_width, u32 dst_height, u32 src_level, u32 src_width, u32 src_height)
+	GSTexture12* src_texture, GSTexture12* dst_texture, u32 dst_level, u32 dst_width, u32 dst_height, u32 src_level, u32 src_width, u32 src_height, GSVector2i offsets)
 {
 	EndRenderPass();
 
@@ -3540,14 +3540,14 @@ void GSDevice12::RenderTextureMipmap(
 		ExecuteCommandList(false);
 
 	// Setup views. This will be a partial view for the SRV.
-	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {texture->GetDXGIFormat(), D3D12_RTV_DIMENSION_TEXTURE2D};
+	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {dst_texture->GetDXGIFormat(), D3D12_RTV_DIMENSION_TEXTURE2D};
 	rtv_desc.Texture2D = {dst_level, 0u};
-	m_device.get()->CreateRenderTargetView(texture->GetResource(), &rtv_desc, rtv_handle);
+	m_device.get()->CreateRenderTargetView(dst_texture->GetResource(), &rtv_desc, rtv_handle);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {
-		texture->GetDXGIFormat(), D3D12_SRV_DIMENSION_TEXTURE2D, D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING};
+		src_texture->GetDXGIFormat(), D3D12_SRV_DIMENSION_TEXTURE2D, D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING};
 	srv_desc.Texture2D = {src_level, 1u, 0u, 0.0f};
-	m_device.get()->CreateShaderResourceView(texture->GetResource(), &srv_desc, srv_handle);
+	m_device.get()->CreateShaderResourceView(src_texture->GetResource(), &srv_desc, srv_handle);
 
 	// We need to set the descriptors up manually, because we're not going through GSTexture.
 	if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &srv_handle, 1))
@@ -3561,12 +3561,12 @@ void GSDevice12::RenderTextureMipmap(
 
 	// *now* we don't have to worry about running out of anything.
 	const D3D12CommandList& cmdlist = GetCommandList();
-	if (texture->GetResourceState() != GSTexture12::ResourceState::PixelShaderResource)
-		texture->TransitionSubresourceToState(
-			cmdlist, src_level, texture->GetResourceState(), GSTexture12::ResourceState::PixelShaderResource);
-	if (texture->GetResourceState() != GSTexture12::ResourceState::RenderTarget)
-		texture->TransitionSubresourceToState(
-			cmdlist, dst_level, texture->GetResourceState(), GSTexture12::ResourceState::RenderTarget);
+	if (src_texture->GetResourceState() != GSTexture12::ResourceState::PixelShaderResource)
+		src_texture->TransitionSubresourceToState(
+			cmdlist, src_level, src_texture->GetResourceState(), GSTexture12::ResourceState::PixelShaderResource);
+	if (dst_texture->GetResourceState() != GSTexture12::ResourceState::RenderTarget)
+		dst_texture->TransitionSubresourceToState(
+			cmdlist, dst_level, dst_texture->GetResourceState(), GSTexture12::ResourceState::RenderTarget);
 
 	// We set the state directly here.
 	constexpr u32 MODIFIED_STATE = DIRTY_FLAG_VIEWPORT | DIRTY_FLAG_SCISSOR | DIRTY_FLAG_RENDER_TARGET;
@@ -3574,7 +3574,7 @@ void GSDevice12::RenderTextureMipmap(
 
 	// Using a render pass is probably a bit overkill.
 	const D3D12_DISCARD_REGION discard_region = {0u, nullptr, dst_level, 1u};
-	cmdlist.list4->DiscardResource(texture->GetResource(), &discard_region);
+	cmdlist.list4->DiscardResource(dst_texture->GetResource(), &discard_region);
 	cmdlist.list4->OMSetRenderTargets(1, &rtv_handle.cpu_handle, FALSE, nullptr);
 
 	const D3D12_VIEWPORT vp = {0.0f, 0.0f, static_cast<float>(dst_width), static_cast<float>(dst_height), 0.0f, 1.0f};
@@ -3585,16 +3585,17 @@ void GSDevice12::RenderTextureMipmap(
 
 	SetUtilityRootSignature();
 	SetPipeline(m_convert[static_cast<int>(ShaderConvert::COPY)].get());
-	DrawStretchRect(GSVector4(0.0f, 0.0f, 1.0f, 1.0f),
+	GSVector4 src_bounds = GSVector4(static_cast<float>(offsets.x) / static_cast<float>(src_width), static_cast<float>(offsets.y) / static_cast<float>(src_height), static_cast<float>(offsets.x + src_width) / static_cast<float>(src_width), static_cast<float>(offsets.x + src_width) / static_cast<float>(src_height));
+	DrawStretchRect(GSVector4(0.0f,0.0f,1.0f, 1.0f),
 		GSVector4(0.0f, 0.0f, static_cast<float>(dst_width), static_cast<float>(dst_height)),
 		GSVector2i(dst_width, dst_height));
 
-	if (texture->GetResourceState() != GSTexture12::ResourceState::PixelShaderResource)
-		texture->TransitionSubresourceToState(
-			cmdlist, src_level, GSTexture12::ResourceState::PixelShaderResource, texture->GetResourceState());
-	if (texture->GetResourceState() != GSTexture12::ResourceState::RenderTarget)
-		texture->TransitionSubresourceToState(
-			cmdlist, dst_level, GSTexture12::ResourceState::RenderTarget, texture->GetResourceState());
+	if (src_texture->GetResourceState() != GSTexture12::ResourceState::PixelShaderResource)
+		src_texture->TransitionSubresourceToState(
+			cmdlist, src_level, GSTexture12::ResourceState::PixelShaderResource, src_texture->GetResourceState());
+	if (dst_texture->GetResourceState() != GSTexture12::ResourceState::RenderTarget)
+		dst_texture->TransitionSubresourceToState(
+			cmdlist, dst_level, GSTexture12::ResourceState::RenderTarget, dst_texture->GetResourceState());
 
 	// Must destroy after current cmdlist.
 	DeferDescriptorDestruction(m_descriptor_heap_manager, &srv_handle);
