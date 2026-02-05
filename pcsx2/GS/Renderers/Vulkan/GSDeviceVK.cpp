@@ -2024,6 +2024,7 @@ u64 GSDeviceVK::GetCPUTimestamp()
 bool GSDeviceVK::AllocatePreinitializedGPUBuffer(u32 size, VkBuffer* gpu_buffer, VmaAllocation* gpu_allocation,
 	VkBufferUsageFlags gpu_usage, const std::function<void(void*)>& fill_callback)
 {
+	pxAssert(gpu_usage == VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	// Try to place the fixed index buffer in GPU local memory.
 	// Use the staging buffer to copy into it.
 
@@ -2056,6 +2057,12 @@ bool GSDeviceVK::AllocatePreinitializedGPUBuffer(u32 size, VkBuffer* gpu_buffer,
 	fill_callback(cpu_ai.pMappedData);
 	vmaFlushAllocation(m_allocator, cpu_allocation, 0, size);
 	vkCmdCopyBuffer(GetCurrentInitCommandBuffer(), cpu_buffer, *gpu_buffer, 1, &buf_copy);
+
+	const VkBufferMemoryBarrier barrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_INDEX_READ_BIT, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, *gpu_buffer, 0, size};
+	vkCmdPipelineBarrier(GetCurrentInitCommandBuffer(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+
 	DeferBufferDestruction(cpu_buffer, cpu_allocation);
 	return true;
 }
