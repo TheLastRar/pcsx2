@@ -1595,7 +1595,8 @@ void GSDevice12::CopyRect(GSTexture* sTex, GSTexture* dTex, const GSVector4i& r,
 	dstloc.SubresourceIndex = 0;
 
 	// DX12 requires ProgrammableSamplePositions tier 1 to support partial depth copies, otherwise fallback to full depth copies.
-	const bool full_rt_copy = src_dst_rect_match && ((sTex12->IsDepthStencil() && !m_programmable_sample_positions) || (destX == 0 && destY == 0 && r.eq(src_rect)));
+	// We only want to copy mip level 0, so check resource mip levels
+	const bool full_rt_copy = src_dst_rect_match && ((sTex12->IsDepthStencil() && !m_programmable_sample_positions) || (destX == 0 && destY == 0 && r.eq(src_rect))) && (sTex12->GetMipmapLevels() == 1 && dTex12->GetMipmapLevels() == 1);
 	if (full_rt_copy)
 	{
 		GetCommandList().list4->CopyResource(dTex12->GetResource(), sTex12->GetResource());
@@ -3550,6 +3551,7 @@ void GSDevice12::RenderTextureMipmap(
 	m_device.get()->CreateShaderResourceView(src_texture->GetResource(), &srv_desc, srv_handle);
 
 	// We need to set the descriptors up manually, because we're not going through GSTexture.
+	m_dirty_flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 	if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &srv_handle, 1))
 		ExecuteCommandList(false);
 	if (m_utility_sampler_cpu != m_linear_sampler_cpu)
@@ -3585,8 +3587,12 @@ void GSDevice12::RenderTextureMipmap(
 
 	SetUtilityRootSignature();
 	SetPipeline(m_convert[static_cast<int>(ShaderConvert::COPY)].get());
-	GSVector4 src_bounds = GSVector4(static_cast<float>(offsets.x) / static_cast<float>(src_width), static_cast<float>(offsets.y) / static_cast<float>(src_height), static_cast<float>(offsets.x + src_width) / static_cast<float>(src_width), static_cast<float>(offsets.x + src_width) / static_cast<float>(src_height));
-	DrawStretchRect(GSVector4(0.0f,0.0f,1.0f, 1.0f),
+	const int src_tex_width = std::max<int>(src_texture->GetWidth() >> src_level, 1);
+	const int src_tex_height = std::max<int>(src_texture->GetHeight() >> src_level, 1);
+	GSVector4 src_level_size = GSVector4(src_tex_width, src_tex_height, src_tex_width, src_tex_height);
+	GSVector4 src_bounds = GSVector4(static_cast<float>(offsets.x), static_cast<float>(offsets.y), static_cast<float>(offsets.x + src_width), static_cast<float>(offsets.y + src_height)) / 
+		src_level_size;
+	DrawStretchRect(src_bounds,
 		GSVector4(0.0f, 0.0f, static_cast<float>(dst_width), static_cast<float>(dst_height)),
 		GSVector2i(dst_width, dst_height));
 
