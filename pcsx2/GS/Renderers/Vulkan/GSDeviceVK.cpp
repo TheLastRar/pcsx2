@@ -5348,7 +5348,7 @@ void GSDeviceVK::PSSetShaderResource(int i, GSTexture* sr, bool check_state, boo
 				}
 				vkTex->TransitionToLayout(layout);
 			}
-			else if (!read_only && GSConfig.HWROVUseBarriersVK)
+			else if (!read_only && GSConfig.HWROVUseBarriersVK == 1)
 			{
 				// It seems we need a barrier even when using fragment shader interlock
 				if (InRenderPass())
@@ -5451,6 +5451,25 @@ void GSDeviceVK::BeginRenderPass(VkRenderPass rp, const GSVector4i& rect)
 	m_current_render_pass = rp;
 	m_current_render_pass_area = rect;
 
+	if (GSConfig.HWROVUseBarriersVK == 2)
+	{
+		for (const GSTextureVK* tex : m_tfx_textures)
+		{
+			if (tex->GetLayout() == GSTextureVK::Layout::ReadWriteImage)
+			{
+				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
+					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
+						0u, 1u, 0u, 1u}};
+
+				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+					nullptr, 0, nullptr, 1, &barrier);
+				g_perfmon.Put(GSPerfMon::Barriers, 1);
+			}
+		}
+	}
+
 	const VkRenderPassBeginInfo begin_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, m_current_render_pass,
 		m_current_framebuffer, {{rect.x, rect.y}, {static_cast<u32>(rect.width()), static_cast<u32>(rect.height())}}, 0,
 		nullptr};
@@ -5466,6 +5485,25 @@ void GSDeviceVK::BeginClearRenderPass(VkRenderPass rp, const GSVector4i& rect, c
 
 	m_current_render_pass = rp;
 	m_current_render_pass_area = rect;
+
+	if (GSConfig.HWROVUseBarriersVK == 2)
+	{
+		for (const GSTextureVK* tex : m_tfx_textures)
+		{
+			if (tex->GetLayout() == GSTextureVK::Layout::ReadWriteImage)
+			{
+				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
+					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
+						0u, 1u, 0u, 1u}};
+
+				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+					nullptr, 0, nullptr, 1, &barrier);
+				g_perfmon.Put(GSPerfMon::Barriers, 1);
+			}
+		}
+	}
 
 	const VkRenderPassBeginInfo begin_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, m_current_render_pass,
 		m_current_framebuffer, {{rect.x, rect.y}, {static_cast<u32>(rect.width()), static_cast<u32>(rect.height())}},
@@ -5498,6 +5536,25 @@ void GSDeviceVK::EndRenderPass()
 	g_perfmon.Put(GSPerfMon::RenderPasses, 1);
 
 	vkCmdEndRenderPass(GetCurrentCommandBuffer());
+
+	if (GSConfig.HWROVUseBarriersVK == 2)
+	{
+		for (const GSTextureVK* tex : m_tfx_textures)
+		{
+			if (tex->GetLayout() == GSTextureVK::Layout::ReadWriteImage)
+			{
+				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
+					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
+					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
+						0u, 1u, 0u, 1u}};
+
+				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
+					nullptr, 0, nullptr, 1, &barrier);
+				g_perfmon.Put(GSPerfMon::Barriers, 1);
+			}
+		}
+	}
 }
 
 void GSDeviceVK::SetViewport(const VkViewport& viewport)
