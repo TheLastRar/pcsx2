@@ -783,17 +783,20 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 		case Layout::Undefined:
 			barrier.dstAccessMask = 0;
 			dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			m_layout_was_rwi = false;
 			break;
 
 		case Layout::ColorAttachment:
 			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			m_layout_was_rwi = false;
 			break;
 
 		case Layout::DepthStencilAttachment:
 			barrier.dstAccessMask =
 				VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 			dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			m_layout_was_rwi = false;
 			break;
 
 		case Layout::ShaderReadOnly:
@@ -804,6 +807,7 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 		case Layout::ClearDst:
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			m_layout_was_rwi = false;
 			break;
 
 		case Layout::TransferSrc:
@@ -814,6 +818,7 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 		case Layout::TransferDst:
 			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 			dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			m_layout_was_rwi = false;
 			break;
 
 		case Layout::TransferSelf:
@@ -833,11 +838,35 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 			dstStageMask = (aspect == VK_IMAGE_ASPECT_COLOR_BIT)
 			             ? (VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
 			             : (VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+			if (m_layout_was_rwi)
+			{
+				// Windows RDNA2 drivers don't always correctly transition the layout(?) when ROV is involved.
+				// ReadWriteImage -> Feedback transitions are broken.
+				// ReadWriteImage -> Read only layout  -> Feedback transitions are broken.
+				// ReadWriteImage -> General layout    -> Feedback transitions are broken.
+				// ReadWriteImage -> Write only layout -> Feedback transitions works fine.
+				// Not every broken transition gives broken rendering, the Shadow of the colossus eagle dump is fine after the 1st frame.
+				// Transiting to a write only layout using an extra barrier, then to feedback fixes this issue.
+				
+				VkImageMemoryBarrier pre_barrier = barrier;
+				pre_barrier.dstAccessMask = 0;
+				pre_barrier.newLayout = (aspect == VK_IMAGE_ASPECT_COLOR_BIT) ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+				vkCmdPipelineBarrier(command_buffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &pre_barrier);
+				srcStageMask = dstStageMask;
+
+				barrier.srcAccessMask = 0;
+				barrier.dstAccessMask = barrier.dstAccessMask;
+				barrier.oldLayout = pre_barrier.newLayout;
+
+				m_layout_was_rwi = false;
+			}
 			break;
 
 		case Layout::ReadWriteImage:
 			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
 			dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			m_layout_was_rwi = true;
 			break;
 
 		case Layout::ComputeReadWriteImage:

@@ -63,8 +63,7 @@ public:
 	__fi bool UseFeedbackLoopLayout() const
 	{
 		return (m_optional_extensions.vk_ext_attachment_feedback_loop_layout &&
-				!m_optional_extensions.vk_ext_rasterization_order_attachment_access &&
-		        !m_features.rov);
+				!m_optional_extensions.vk_ext_rasterization_order_attachment_access);
 	}
 
 	// Helpers for getting constants
