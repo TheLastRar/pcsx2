@@ -5460,8 +5460,7 @@ void GSDeviceVK::BeginRenderPass(VkRenderPass rp, const GSVector4i& rect)
 				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
 					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
-					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
-						0u, 1u, 0u, 1u}};
+					{VK_IMAGE_ASPECT_COLOR_BIT,	0u, 1u, 0u, 1u}};
 
 				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
 					nullptr, 0, nullptr, 1, &barrier);
@@ -5495,8 +5494,7 @@ void GSDeviceVK::BeginClearRenderPass(VkRenderPass rp, const GSVector4i& rect, c
 				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
 					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
-					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
-						0u, 1u, 0u, 1u}};
+					{VK_IMAGE_ASPECT_COLOR_BIT,	0u, 1u, 0u, 1u}};
 
 				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
 					nullptr, 0, nullptr, 1, &barrier);
@@ -5546,8 +5544,7 @@ void GSDeviceVK::EndRenderPass()
 				VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 					nullptr, 0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
 					VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, tex->GetImage(),
-					{tex->IsDepthStencil() ? static_cast<VkImageAspectFlags>(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT,
-						0u, 1u, 0u, 1u}};
+					{VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u}};
 
 				vkCmdPipelineBarrier(GetCurrentCommandBuffer(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
 					nullptr, 0, nullptr, 1, &barrier);
