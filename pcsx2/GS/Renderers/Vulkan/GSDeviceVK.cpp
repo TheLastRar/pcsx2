@@ -4836,6 +4836,12 @@ void GSDeviceVK::DestroyResources()
 		m_null_texture.reset();
 	}
 
+	if (m_null_depth)
+	{
+		m_null_depth->Destroy(false);
+		m_null_depth = nullptr;
+	}
+
 	for (FrameResources& resources : m_frame_resources)
 	{
 		for (auto& it : resources.cleanup_resources)
@@ -5859,6 +5865,19 @@ void GSDeviceVK::RenderHW(GSHWDrawConfig& config)
 	GSTextureVK* draw_rt_clone = nullptr;
 	GSTextureVK* colclip_rt = static_cast<GSTextureVK*>(g_gs_device->GetColorClipTexture());
 
+	if (config.ps.rov_depth && draw_ds_rov)
+	{
+		if (!m_null_depth || draw_ds_rov->GetSize() != m_null_depth->GetSize())
+		{
+			if (m_null_depth)
+				Recycle(m_null_depth);
+
+			// Probably don't need to clear
+			m_null_depth = static_cast<GSTextureVK*>(CreateDepthStencil(rtsize.x, rtsize.y, GSTexture::Format::DepthStencil, true));
+		}
+		draw_ds = m_null_depth;
+	}
+
 	if (draw_ds_rov && !draw_ds_rov->IsDepthColor())
 	{
 		// Do this before making other settings because uses a draw and could mess up render state.
@@ -6367,7 +6386,7 @@ void GSDeviceVK::UpdateHWPipelineSelector(GSHWDrawConfig& config, PipelineSelect
 	pipe.cms.key = config.ps.rov_color ? GSHWDrawConfig::ColorMaskSelector().key : config.colormask.key;
 	pipe.topology = static_cast<u32>(config.topology);
 	pipe.rt = config.rt != nullptr && !config.ps.rov_color;
-	pipe.ds = config.ds != nullptr && !config.ps.rov_depth;
+	pipe.ds = config.ds != nullptr;
 	pipe.line_width = config.line_expand;
 	pipe.feedback_loop_flags = FeedbackLoopFlag_None;
 	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier))
