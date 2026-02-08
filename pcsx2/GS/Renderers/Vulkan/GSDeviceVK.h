@@ -712,6 +712,7 @@ private:
 
 	std::unique_ptr<GSTextureVK> m_null_texture;
 	GSTextureVK* m_null_depth = nullptr;
+	GSTextureVK* m_null_rt = nullptr;
 	VkFramebuffer m_null_framebuffer;
 
 	// current pipeline selector - we save this in the struct to avoid re-zeroing it every draw

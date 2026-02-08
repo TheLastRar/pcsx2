@@ -4842,6 +4842,12 @@ void GSDeviceVK::DestroyResources()
 		m_null_depth = nullptr;
 	}
 
+	if (m_null_rt)
+	{
+		m_null_rt->Destroy(false);
+		m_null_rt = nullptr;
+	}
+
 	for (FrameResources& resources : m_frame_resources)
 	{
 		for (auto& it : resources.cleanup_resources)
@@ -5878,6 +5884,19 @@ void GSDeviceVK::RenderHW(GSHWDrawConfig& config)
 		draw_ds = m_null_depth;
 	}
 
+	if (config.ps.rov_color && draw_rt_rov)
+	{
+		if (!m_null_rt || draw_rt_rov->GetSize() != m_null_rt->GetSize())
+		{
+			if (m_null_rt)
+				Recycle(m_null_rt);
+
+			// Probably don't need to clear
+			m_null_rt = static_cast<GSTextureVK*>(CreateRenderTarget(rtsize.x, rtsize.y, GSTexture::Format::Color, true));
+		}
+		draw_rt = m_null_rt;
+	}
+
 	if (draw_ds_rov && !draw_ds_rov->IsDepthColor())
 	{
 		// Do this before making other settings because uses a draw and could mess up render state.
@@ -6385,7 +6404,7 @@ void GSDeviceVK::UpdateHWPipelineSelector(GSHWDrawConfig& config, PipelineSelect
 	pipe.bs.constant = 0; // don't dupe states with different alpha values
 	pipe.cms.key = config.ps.rov_color ? GSHWDrawConfig::ColorMaskSelector().key : config.colormask.key;
 	pipe.topology = static_cast<u32>(config.topology);
-	pipe.rt = config.rt != nullptr && !config.ps.rov_color;
+	pipe.rt = config.rt != nullptr;
 	pipe.ds = config.ds != nullptr;
 	pipe.line_width = config.line_expand;
 	pipe.feedback_loop_flags = FeedbackLoopFlag_None;
