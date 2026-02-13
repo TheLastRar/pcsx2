@@ -339,12 +339,21 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 		}
 	}
 
-	const D3D12_COMMAND_QUEUE_DESC queue_desc = {
+	const D3D12_COMMAND_QUEUE_DESC graphics_queue_desc = {
 		D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE};
-	hr = m_device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&m_command_queue));
+	hr = m_device->CreateCommandQueue(&graphics_queue_desc, IID_PPV_ARGS(&m_command_queue));
 	if (FAILED(hr))
 	{
 		Console.Error("D3D12: Failed to create command queue: %08X", hr);
+		return false;
+	}
+	// Havn't checked features yet so always create the copy queue.
+	const D3D12_COMMAND_QUEUE_DESC copy_queue_desc = {
+		D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_QUEUE_PRIORITY_NORMAL, D3D12_COMMAND_QUEUE_FLAG_NONE};
+	hr = m_device->CreateCommandQueue(&copy_queue_desc, IID_PPV_ARGS(&m_copy_queue));
+	if (FAILED(hr))
+	{
+		Console.Error("D3D12: Failed to create copy queue: %08X", hr);
 		return false;
 	}
 
@@ -363,6 +372,13 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 	}
 
 	hr = m_device->CreateFence(m_completed_fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence));
+	if (FAILED(hr))
+	{
+		Console.Error("D3D12: Failed to create fence: %08X", hr);
+		return false;
+	}
+	// As per copy queue.
+	hr = m_device->CreateFence(m_completed_fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_copy_fence));
 	if (FAILED(hr))
 	{
 		Console.Error("D3D12: Failed to create fence: %08X", hr);
@@ -418,23 +434,25 @@ bool GSDevice12::CreateCommandLists()
 		CommandListResources& res = m_command_lists[i];
 		HRESULT hr;
 
-		for (u32 i = 0; i < 2; i++)
+		D3D12_COMMAND_LIST_TYPE command_list_type[]{D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_TYPE_COPY};
+		const u32 num_commandlists = m_uma ? 2 : 3;
+		for (u32 i = 0; i < m_uma; i++)
 		{
 			hr = m_device->CreateCommandAllocator(
-				D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(res.command_allocators[i].put()));
+				command_list_type[i], IID_PPV_ARGS(res.command_allocators[i].put()));
 			pxAssertRel(SUCCEEDED(hr), "Create command allocator");
 			if (FAILED(hr))
 				return false;
 
 			if (m_enhanced_barriers)
 			{
-				hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, res.command_allocators[i].get(),
+				hr = m_device->CreateCommandList(0, command_list_type[i], res.command_allocators[i].get(),
 					nullptr, IID_PPV_ARGS(res.command_lists[i].list7.put()));
 				res.command_lists[i].list4 = res.command_lists[i].list7;
 			}
 			else
 			{
-				hr = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, res.command_allocators[i].get(),
+				hr = m_device->CreateCommandList(0, command_list_type[i], res.command_allocators[i].get(),
 					nullptr, IID_PPV_ARGS(res.command_lists[i].list4.put()));
 			}
 			if (FAILED(hr))
@@ -482,7 +500,9 @@ void GSDevice12::MoveToNextCommandList()
 
 	// Begin command list.
 	res.command_allocators[1]->Reset();
+	res.command_allocators[2]->Reset();
 	res.command_lists[1].list4->Reset(res.command_allocators[1].get(), nullptr);
+	res.command_lists[2].list4->Reset(res.command_allocators[2].get(), nullptr);
 	res.descriptor_allocator.Reset();
 	if (res.sampler_allocator.ShouldReset())
 		res.sampler_allocator.Reset();
@@ -546,6 +566,12 @@ bool GSDevice12::ExecuteCommandList(WaitType wait_for_completion)
 	CommandListResources& res = m_command_lists[m_current_command_list];
 	HRESULT hr;
 
+	// Flush stream buffers to GPU memory
+	m_vertex_stream_buffer.FlushMemory();
+	m_index_stream_buffer.FlushMemory();
+	m_vertex_constant_buffer.FlushMemory();
+	m_pixel_constant_buffer.FlushMemory();
+
 	if (res.has_timestamp_query)
 	{
 		// write the timestamp back at the end of the cmdlist
@@ -572,6 +598,24 @@ bool GSDevice12::ExecuteCommandList(WaitType wait_for_completion)
 	{
 		Console.Error("D3D12: Closing main command list failed with HRESULT %08X", hr);
 		return false;
+	}
+
+	if (!m_uma)
+	{
+		hr = res.command_lists[2].list4->Close();
+		if (FAILED(hr))
+		{
+			Console.Error("D3D12: Closing copy command list failed with HRESULT %08X", hr);
+			return false;
+		}
+
+		const std::array<ID3D12CommandList*, 1> copy_lists{res.command_lists[2].list4.get()};
+		m_copy_queue->ExecuteCommandLists(static_cast<UINT>(copy_lists.size()), copy_lists.data());
+		hr = m_copy_queue->Signal(m_copy_fence.get(), res.ready_fence_value);
+		pxAssertRel(SUCCEEDED(hr), "Signal copy fence");
+
+		hr = m_command_queue->Wait(m_copy_fence.get(), res.ready_fence_value);
+		pxAssertRel(SUCCEEDED(hr), "Wait copy fence");
 	}
 
 	if (res.init_command_list_used)
@@ -2555,25 +2599,25 @@ bool GSDevice12::CreateNullTexture()
 
 bool GSDevice12::CreateBuffers()
 {
-	if (!m_vertex_stream_buffer.Create(VERTEX_BUFFER_SIZE))
+	if (!m_vertex_stream_buffer.Create(VERTEX_BUFFER_SIZE, false))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate vertex buffer");
 		return false;
 	}
 
-	if (!m_index_stream_buffer.Create(INDEX_BUFFER_SIZE))
+	if (!m_index_stream_buffer.Create(INDEX_BUFFER_SIZE, false))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate index buffer");
 		return false;
 	}
 
-	if (!m_vertex_constant_buffer.Create(VERTEX_UNIFORM_BUFFER_SIZE))
+	if (!m_vertex_constant_buffer.Create(VERTEX_UNIFORM_BUFFER_SIZE, !m_uma))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate vertex uniform buffer");
 		return false;
 	}
 
-	if (!m_pixel_constant_buffer.Create(FRAGMENT_UNIFORM_BUFFER_SIZE))
+	if (!m_pixel_constant_buffer.Create(FRAGMENT_UNIFORM_BUFFER_SIZE, !m_uma))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate fragment uniform buffer");
 		return false;
@@ -3035,8 +3079,11 @@ void GSDevice12::DestroyResources()
 		CloseHandle(m_fence_event);
 		m_fence_event = {};
 	}
+	m_fence.reset();
+	m_copy_fence.reset();
 
 	m_allocator.reset();
+	m_copy_queue.reset();
 	m_command_queue.reset();
 	m_device.reset();
 }

@@ -72,8 +72,13 @@ public:
 		return m_command_lists[m_current_command_list].command_lists[1];
 	}
 
-	/// Returns the init command list for uploading.
+	/// Returns the init command list for texture uploading.
 	const D3D12CommandList& GetInitCommandList();
+	/// Returns the init command list for buffer uploading.
+	const D3D12CommandList& GetCopyCommandList()
+	{
+		return m_command_lists[m_current_command_list].command_lists[2];
+	}
 
 	/// Returns the per-frame SRV/CBV/UAV allocator.
 	D3D12DescriptorAllocator& GetDescriptorAllocator()
@@ -152,8 +157,8 @@ public:
 private:
 	struct CommandListResources
 	{
-		std::array<ComPtr<ID3D12CommandAllocator>, 2> command_allocators;
-		std::array<D3D12CommandList, 2> command_lists;
+		std::array<ComPtr<ID3D12CommandAllocator>, 3> command_allocators;
+		std::array<D3D12CommandList, 3> command_lists;
 		D3D12DescriptorAllocator descriptor_allocator;
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
@@ -175,9 +180,11 @@ private:
 	ComPtr<IDXGIAdapter1> m_adapter;
 	ComPtr<ID3D12Device> m_device;
 	ComPtr<ID3D12CommandQueue> m_command_queue;
+	ComPtr<ID3D12CommandQueue> m_copy_queue;
 	ComPtr<D3D12MA::Allocator> m_allocator;
 
 	ComPtr<ID3D12Fence> m_fence;
+	ComPtr<ID3D12Fence> m_copy_fence;
 	HANDLE m_fence_event = {};
 	u32 m_current_fence_value = 0;
 	u64 m_completed_fence_value = 0;
