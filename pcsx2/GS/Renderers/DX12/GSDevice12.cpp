@@ -2555,13 +2555,13 @@ bool GSDevice12::CreateNullTexture()
 
 bool GSDevice12::CreateBuffers()
 {
-	if (!m_vertex_stream_buffer.Create(VERTEX_BUFFER_SIZE, true))
+	if (!m_vertex_stream_buffer.Create(VERTEX_BUFFER_SIZE, false))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate vertex buffer");
 		return false;
 	}
 
-	if (!m_index_stream_buffer.Create(INDEX_BUFFER_SIZE, true))
+	if (!m_index_stream_buffer.Create(INDEX_BUFFER_SIZE, false))
 	{
 		Host::ReportErrorAsync("GS", "Failed to allocate index buffer");
 		return false;
