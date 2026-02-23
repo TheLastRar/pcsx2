@@ -392,7 +392,10 @@ bool GLContextWGL::CreateAnyContext(HGLRC share_context, bool make_current, Erro
 		}
 
 		// re-init glad-wgl
-		if (!gladLoadWGL(m_dc, [](const char* name) { return (GLADapiproc)wglGetProcAddress(name); }))
+		if (!gladLoadWGL(m_dc, [](const char* name) {
+			Console.WriteLn(name);
+			return (GLADapiproc)wglGetProcAddress(name); 
+			}))
 		{
 			Error::SetStringView(error, "Loading GLAD WGL functions failed");
 			return false;
