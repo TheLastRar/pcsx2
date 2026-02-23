@@ -118,12 +118,12 @@ jobs:
         uses: actions/cache@v5
         with:
           path: deps
-          key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
+          key: ${{ inputs.os }} ${{ inputs.platform }} deps-debug ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
       - name: Build Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
         env:
-          DEBUG: 0
+          DEBUG: 1
         run: .github/workflows/scripts/windows/build-dependencies.bat
 
       - name: Generate CMake
