@@ -25,6 +25,11 @@
 
 #include "fmt/format.h"
 
+// The linker may exclude unreferenced objs when linking to a static library.
+// Force a reference to the optimus exports to prevent them from being excluded.
+// Referencing just one export is enough to get both Nv and AMD exports included.
+#pragma comment(linker, "/include:NvOptimusEnablement")
+
 static u32 s_next_bad_shader_id = 1;
 
 wil::com_ptr_nothrow<IDXGIFactory5> D3D::CreateFactory(bool debug)
