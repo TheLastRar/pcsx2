@@ -1,7 +1,7 @@
 # All flags, libraries, etc, that are shared between PCSX2 compilation files
 add_library(PCSX2_FLAGS INTERFACE)
 
-if(DISABLE_ADVANCE_SIMD OR LTO_PCSX2_CORE)
+if(LTO_PCSX2_CORE)
 	# Fixes issues with some compiler + linker combinations
 	add_library(PCSX2 OBJECT)
 else()
