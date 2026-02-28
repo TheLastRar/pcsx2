@@ -56,6 +56,27 @@ public:
 		D3D12_RESOURCE_DESC desc;
 	};
 
+	struct alignas(8) DescriptorSelection
+	{
+		u32 size;
+		u32 tex[3];
+
+		__fi bool operator==(const DescriptorSelection& p) const { return BitEqual(*this, p); }
+		__fi bool operator!=(const DescriptorSelection& p) const { return !BitEqual(*this, p); }
+
+		__fi DescriptorSelection() { std::memset(this, 0, sizeof(*this)); }
+	};
+
+	struct DescriptorSelectionHash
+	{
+		std::size_t operator()(const DescriptorSelection& e) const noexcept
+		{
+			std::size_t hash = 0;
+			HashCombine(hash, e.size, e.tex[0], e.tex[1], e.tex[2]);
+			return hash;
+		}
+	};
+
 	__fi IDXGIAdapter1* GetAdapter() const { return m_adapter.get(); }
 	__fi ID3D12Device* GetDevice() const { return m_device.get(); }
 	__fi ID3D12CommandQueue* GetCommandQueue() const { return m_command_queue.get(); }
@@ -79,6 +100,10 @@ public:
 	D3D12DescriptorAllocator& GetDescriptorAllocator()
 	{
 		return m_command_lists[m_current_command_list].descriptor_allocator;
+	}
+	std::unordered_map<DescriptorSelection, D3D12DescriptorHandle, DescriptorSelectionHash>& GetDescriptorTables()
+	{
+		return m_command_lists[m_current_command_list].desciptor_tables;
 	}
 
 	/// Returns the per-frame sampler allocator.
@@ -158,6 +183,7 @@ private:
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
 		std::vector<std::pair<D3D12DescriptorHeapManager&, u32>> pending_descriptors;
+		std::unordered_map<DescriptorSelection, D3D12DescriptorHandle, DescriptorSelectionHash> desciptor_tables;
 		u64 ready_fence_value = 0;
 		bool init_command_list_used = false;
 		bool has_timestamp_query = false;

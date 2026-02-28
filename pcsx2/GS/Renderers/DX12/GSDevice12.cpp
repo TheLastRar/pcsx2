@@ -484,6 +484,7 @@ void GSDevice12::MoveToNextCommandList()
 	res.command_allocators[1]->Reset();
 	res.command_lists[1].list4->Reset(res.command_allocators[1].get(), nullptr);
 	res.descriptor_allocator.Reset();
+	res.desciptor_tables.clear();
 	if (res.sampler_allocator.ShouldReset())
 		res.sampler_allocator.Reset();
 
@@ -2491,6 +2492,21 @@ void GSDevice12::ClearSamplerCache()
 bool GSDevice12::GetTextureGroupDescriptors(
 	D3D12DescriptorHandle* gpu_handle, const D3D12DescriptorHandle* cpu_handles, u32 count)
 {
+	pxAssert(count <= 3);
+
+	DescriptorSelection sel{};
+	sel.size = count;
+	for (u32 i = 0; i < count; i++)
+		sel.tex[i] = cpu_handles[i].index;
+
+	auto& desciptor_tables = GetDescriptorTables();
+	auto it = desciptor_tables.find(sel);
+	if (it != desciptor_tables.end())
+	{
+		*gpu_handle = it->second;
+		return true;
+	}
+
 	if (!GetDescriptorAllocator().Allocate(count, gpu_handle))
 		return false;
 
@@ -2498,6 +2514,8 @@ bool GSDevice12::GetTextureGroupDescriptors(
 	{
 		m_device.get()->CopyDescriptorsSimple(
 			1, *gpu_handle, cpu_handles[0], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		desciptor_tables.emplace(sel, *gpu_handle).first;
 		return true;
 	}
 
@@ -2512,6 +2530,7 @@ bool GSDevice12::GetTextureGroupDescriptors(
 	}
 	m_device.get()->CopyDescriptors(
 		1, &dst_handle, &count, count, src_handles, src_sizes, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	desciptor_tables.emplace(sel, *gpu_handle).first;
 	return true;
 }
 
