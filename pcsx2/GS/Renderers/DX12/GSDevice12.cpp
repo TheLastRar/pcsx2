@@ -4042,7 +4042,13 @@ void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 		// The DX12 spec notes "You may not read from, or consume, a write that occurred within the same render pass".
 		// The only exception being the implicit reads for render target blending or depth testing.
 		// Thus, in addition to a barrier, we need to end the render pass.
-		EndRenderPass();
+		if (InRenderPass())
+		{
+			EndRenderPass();
+			// Rebind the RT as it gets unbound upon ending the RP.
+			ApplyBaseState(DIRTY_FLAG_RENDER_TARGET, GetCommandList().list4.get());
+			m_dirty_flags &= ~DIRTY_FLAG_RENDER_TARGET;
+		}
 		// Specify null for the after resource as both resources are used after the barrier.
 		// While this may also be true before the barrier, we only write using the main resource.
 		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
@@ -4140,7 +4146,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	// bind textures before checking the render pass, in case we need to transition them
 	if (config.tex)
 	{
-		PSSetShaderResource(0, config.tex, config.tex != config.rt && config.tex != config.ds);
+		PSSetShaderResource(0, config.tex, config.tex != config.rt && config.tex != config.ds, config.tex == config.rt);
 		PSSetSampler(config.sampler);
 	}
 	if (config.pal)
@@ -4253,6 +4259,11 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 	// For depth testing and sampling, use a read only dsv, otherwise use a write dsv
 	OMSetRenderTargets(draw_rt, draw_ds, config.scissor, config.tex && config.tex == config.ds);
+	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier))
+	{
+		pxAssertMsg(m_features.texture_barrier, "Texture barriers enabled");
+		PSSetShaderResource(2, draw_rt, false, true);
+	}
 
 	// DX12 equivalent of vkCmdClearAttachments for StencilOne
 	if (config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::StencilOne)
@@ -4312,7 +4323,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		UploadHWDrawVerticesAndIndices(config);
 
 	// now we can do the actual draw
-	SendHWDraw(pipe, config, draw_rt, feedback, config.require_one_barrier, config.require_full_barrier);
+	if (BindDrawPipeline(pipe))
+		SendHWDraw(pipe, config, draw_rt, feedback, config.require_one_barrier, config.require_full_barrier);
 
 	// blend second pass
 	if (config.blend_multi_pass.enable)
@@ -4342,7 +4354,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		pipe.cms = config.alpha_second_pass.colormask;
 		pipe.dss = config.alpha_second_pass.depth;
 		pipe.bs = config.blend;
-		SendHWDraw(pipe, config, draw_rt, feedback, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
+		if (BindDrawPipeline(pipe))
+			SendHWDraw(pipe, config, draw_rt, feedback, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
 	}
 
 	if (date_image)
@@ -4386,7 +4399,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt, const bool feedback, const bool one_barrier, const bool full_barrier)
 {
-	if (BindDrawPipeline(pipe) && !m_features.texture_barrier) [[unlikely]]
+	if (!m_features.texture_barrier) [[unlikely]]
 	{
 		DrawIndexedPrimitive();
 		return;
@@ -4398,10 +4411,6 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
 			Console.Warning("D3D12: Possible unnecessary barrier detected.");
 #endif
-		if (one_barrier || full_barrier)
-			PSSetShaderResource(2, draw_rt, false, true);
-		if (config.tex && config.tex == config.rt)
-			PSSetShaderResource(0, draw_rt, false, true);
 
 		if (full_barrier)
 		{
@@ -4418,8 +4427,7 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 
 				FeedbackBarrier(draw_rt);
 
-				if (BindDrawPipeline(pipe))
-					DrawIndexedPrimitive(p, count);
+				DrawIndexedPrimitive(p, count);
 				p += count;
 			}
 
@@ -4434,8 +4442,7 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		}
 	}
 
-	if (BindDrawPipeline(pipe))
-		DrawIndexedPrimitive();
+	DrawIndexedPrimitive();
 }
 
 void GSDevice12::UpdateHWPipelineSelector(GSHWDrawConfig& config)
