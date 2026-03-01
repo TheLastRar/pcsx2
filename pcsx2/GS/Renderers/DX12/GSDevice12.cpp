@@ -4235,8 +4235,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		m_pipeline_selector.ds = true;
 	}
 
-	const bool feedback = draw_rt && (config.require_one_barrier || (config.require_full_barrier && m_features.texture_barrier) || (config.tex && config.tex == config.rt));
-	if (feedback && !m_features.texture_barrier)
+	if (draw_rt && (config.require_one_barrier || (config.tex && config.tex == config.rt)) && !m_features.texture_barrier)
 	{
 		// Requires a copy of the RT.
 		draw_rt_clone = static_cast<GSTexture12*>(CreateTexture(rtsize.x, rtsize.y, 1, draw_rt->GetFormat(), true));
@@ -4324,7 +4323,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 	// now we can do the actual draw
 	if (BindDrawPipeline(pipe))
-		SendHWDraw(pipe, config, draw_rt, feedback, config.require_one_barrier, config.require_full_barrier);
+		SendHWDraw(pipe, config, draw_rt, config.require_one_barrier, config.require_full_barrier);
 
 	// blend second pass
 	if (config.blend_multi_pass.enable)
@@ -4355,7 +4354,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		pipe.dss = config.alpha_second_pass.depth;
 		pipe.bs = config.blend;
 		if (BindDrawPipeline(pipe))
-			SendHWDraw(pipe, config, draw_rt, feedback, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
+			SendHWDraw(pipe, config, draw_rt, config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
 	}
 
 	if (date_image)
@@ -4397,7 +4396,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	}
 }
 
-void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt, const bool feedback, const bool one_barrier, const bool full_barrier)
+void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& config, GSTexture12* draw_rt, const bool one_barrier, const bool full_barrier)
 {
 	if (!m_features.texture_barrier) [[unlikely]]
 	{
@@ -4405,41 +4404,38 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		return;
 	}
 
-	if (feedback)
-	{
 #ifdef PCSX2_DEVBUILD
-		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
-			Console.Warning("D3D12: Possible unnecessary barrier detected.");
+	if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
+		Console.Warning("D3D12: Possible unnecessary barrier detected.");
 #endif
 
-		if (full_barrier)
+	if (full_barrier)
+	{
+		pxAssert(config.drawlist && !config.drawlist->empty());
+		const u32 draw_list_size = static_cast<u32>(config.drawlist->size());
+		const u32 indices_per_prim = config.indices_per_prim;
+
+		GL_PUSH("Split the draw");
+		g_perfmon.Put(GSPerfMon::Barriers, draw_list_size);
+
+		for (u32 n = 0, p = 0; n < draw_list_size; n++)
 		{
-			pxAssert(config.drawlist && !config.drawlist->empty());
-			const u32 draw_list_size = static_cast<u32>(config.drawlist->size());
-			const u32 indices_per_prim = config.indices_per_prim;
-
-			GL_PUSH("Split the draw");
-			g_perfmon.Put(GSPerfMon::Barriers, draw_list_size);
-
-			for (u32 n = 0, p = 0; n < draw_list_size; n++)
-			{
-				const u32 count = (*config.drawlist)[n] * indices_per_prim;
-
-				FeedbackBarrier(draw_rt);
-
-				DrawIndexedPrimitive(p, count);
-				p += count;
-			}
-
-			return;
-		}
-
-		if (one_barrier)
-		{
-			g_perfmon.Put(GSPerfMon::Barriers, 1);
+			const u32 count = (*config.drawlist)[n] * indices_per_prim;
 
 			FeedbackBarrier(draw_rt);
+
+			DrawIndexedPrimitive(p, count);
+			p += count;
 		}
+
+		return;
+	}
+
+	if (one_barrier)
+	{
+		g_perfmon.Put(GSPerfMon::Barriers, 1);
+
+		FeedbackBarrier(draw_rt);
 	}
 
 	DrawIndexedPrimitive();
