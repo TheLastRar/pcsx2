@@ -854,12 +854,6 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 	if (!AcquireWindow(true) || (m_window_info.type != WindowInfo::Type::Surfaceless && !CreateSwapChain()))
 		return false;
 
-	if (!CreateNullTexture())
-	{
-		Host::ReportErrorAsync("GS", "Failed to create dummy texture");
-		return false;
-	}
-
 	{
 		std::optional<std::string> shader = ReadShaderSource("shaders/dx11/tfx.fx");
 		if (!shader.has_value())
@@ -2266,7 +2260,7 @@ void GSDevice12::RenderImGui()
 			SetScissor(GSVector4i(clip));
 
 			GSTexture12* tex = reinterpret_cast<GSTexture12*>(pcmd->GetTexID());
-			D3D12DescriptorHandle handle = m_null_texture->GetSRVDescriptor();
+			D3D12DescriptorHandle handle = m_null_srv_descriptor;
 			if (tex)
 			{
 				tex->TransitionToState(GSTexture12::ResourceState::PixelShaderResource);
@@ -2533,19 +2527,6 @@ GSDevice12::ComPtr<ID3DBlob> GSDevice12::GetUtilityPixelShader(const std::string
 {
 	ShaderMacro sm_model;
 	return m_shader_cache.GetPixelShader(source, sm_model.GetPtr(), entry_point);
-}
-
-bool GSDevice12::CreateNullTexture()
-{
-	m_null_texture =
-		GSTexture12::Create(GSTexture::Type::Texture, GSTexture::Format::Color, 1, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM,
-			DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN, DXGI_FORMAT_UNKNOWN);
-	if (!m_null_texture)
-		return false;
-
-	m_null_texture->TransitionToState(GSTexture12::ResourceState::PixelShaderResource);
-	D3D12::SetObjectName(m_null_texture->GetResource(), "Null texture");
-	return true;
 }
 
 bool GSDevice12::CreateBuffers()
@@ -3006,12 +2987,6 @@ void GSDevice12::DestroyResources()
 	m_utility_root_signature.reset();
 	m_tfx_root_signature.reset();
 
-	if (m_null_texture)
-	{
-		m_null_texture->Destroy(false);
-		m_null_texture.reset();
-	}
-
 	m_shader_cache.Close();
 
 	m_descriptor_heap_manager.Free(&m_null_srv_descriptor);
@@ -3267,7 +3242,7 @@ bool GSDevice12::BindDrawPipeline(const PipelineSelector& p)
 void GSDevice12::InitializeState()
 {
 	for (u32 i = 0; i < NUM_TOTAL_TFX_TEXTURES; i++)
-		m_tfx_textures[i] = m_null_texture->GetSRVDescriptor();
+		m_tfx_textures[i] = m_null_srv_descriptor;
 	m_tfx_sampler_sel = GSHWDrawConfig::SamplerSelector::Point().key;
 
 	InvalidateCachedState();
@@ -3428,7 +3403,7 @@ void GSDevice12::PSSetShaderResource(int i, GSTexture* sr, bool check_state, boo
 	}
 	else
 	{
-		handle = m_null_texture->GetSRVDescriptor();
+		handle = m_null_srv_descriptor;
 	}
 
 	if (m_tfx_textures[i] == handle)
@@ -3471,7 +3446,7 @@ void GSDevice12::SetUtilityTexture(GSTexture* dtex, const D3D12DescriptorHandle&
 	}
 	else
 	{
-		handle = m_null_texture->GetSRVDescriptor();
+		handle = m_null_srv_descriptor;
 	}
 
 	if (m_utility_texture_cpu != handle)
@@ -3513,7 +3488,7 @@ void GSDevice12::UnbindTexture(GSTexture12* tex)
 	{
 		if (m_tfx_textures[i] == tex->GetSRVDescriptor() || m_tfx_textures[i] == tex->GetFBLDescriptor())
 		{
-			m_tfx_textures[i] = m_null_texture->GetSRVDescriptor();
+			m_tfx_textures[i] = m_null_srv_descriptor;
 			m_dirty_flags |= DIRTY_FLAG_TFX_TEXTURES;
 		}
 	}
