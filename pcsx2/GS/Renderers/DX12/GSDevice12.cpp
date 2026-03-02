@@ -2597,6 +2597,7 @@ bool GSDevice12::CreateRootSignatures()
 	//////////////////////////////////////////////////////////////////////////
 	// Convert Pipeline Layout
 	//////////////////////////////////////////////////////////////////////////
+	/*
 	rsb.SetInputAssemblerFlag();
 	rsb.Add32BitConstants(0, CONVERT_PUSH_CONSTANTS_SIZE / sizeof(u32), D3D12_SHADER_VISIBILITY_ALL);
 	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, NUM_UTILITY_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
@@ -2604,6 +2605,7 @@ bool GSDevice12::CreateRootSignatures()
 	if (!(m_utility_root_signature = rsb.Create()))
 		return false;
 	D3D12::SetObjectName(m_utility_root_signature.get(), "Convert root signature");
+	*/
 
 	//////////////////////////////////////////////////////////////////////////
 	// Draw/TFX Pipeline Layout
@@ -2634,8 +2636,13 @@ bool GSDevice12::CompileConvertPipelines()
 	if (!m_convert_vs)
 		return false;
 
+	HRESULT hr = m_device->CreateRootSignature(0, m_convert_vs->GetBufferPointer(), m_convert_vs->GetBufferSize(), IID_PPV_ARGS(m_utility_root_signature.put()));
+	if (FAILED(hr))
+		return false;
+	D3D12::SetObjectName(m_utility_root_signature.get(), "Convert root signature");
+
 	D3D12::GraphicsPipelineBuilder gpb;
-	gpb.SetRootSignature(m_utility_root_signature.get());
+	//gpb.SetRootSignature(m_utility_root_signature.get());
 	AddUtilityVertexAttributes(gpb);
 	gpb.SetNoCullRasterizationState();
 	gpb.SetNoBlendingState();
@@ -2767,7 +2774,7 @@ bool GSDevice12::CompileConvertPipelines()
 		if (!ps)
 			return false;
 
-		gpb.SetRootSignature(m_utility_root_signature.get());
+		//gpb.SetRootSignature(m_utility_root_signature.get());
 		gpb.SetRenderTarget(0, DXGI_FORMAT_R32_FLOAT);
 		gpb.SetPixelShader(ps.get());
 		gpb.SetNoDepthTestState();
