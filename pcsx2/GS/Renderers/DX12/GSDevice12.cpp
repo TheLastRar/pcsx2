@@ -274,7 +274,7 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 		if (SUCCEEDED(hr))
 		{
 			debug12->EnableDebugLayer();
-			debug12->SetEnableGPUBasedValidation(true);
+			//debug12->SetEnableGPUBasedValidation(true);
 		}
 		else
 		{
@@ -288,7 +288,7 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 	const bool isIntel = (vendor_id == 0x163C || vendor_id == 0x8086 || vendor_id == 0x8087);
 
 	// Create the actual device.
-	hr = D3D12CreateDevice(m_adapter.get(), isIntel ? D3D_FEATURE_LEVEL_12_0 : D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
+	hr = D3D12CreateDevice(m_adapter.get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
 	if (FAILED(hr))
 	{
 		Console.Error("D3D12: Failed to create device: %08X", hr);
