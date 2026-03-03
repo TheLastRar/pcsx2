@@ -198,10 +198,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 	{
 		case Type::Texture:
 		{
-			// This is a little annoying. basically, to do mipmap generation, we need to be a render target.
-			// If it's a compressed texture, we won't be generating mips anyway, so this should be fine.
-			desc.desc1.Flags = (levels > 1 && !IsCompressedFormat(format)) ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET :
-			                                                                 D3D12_RESOURCE_FLAG_NONE;
+			desc.desc1.Flags = D3D12_RESOURCE_FLAG_NONE;
 			state = ResourceState::CopyDst;
 		}
 		break;
@@ -774,6 +771,10 @@ void GSTexture12::Unmap()
 void GSTexture12::GenerateMipmap()
 {
 	pxAssert(!IsCompressedFormat(m_format));
+	pxAssert(false);
+	// Need a temporary render target for generating mipmaps.
+	GSTexture12* temp_texture = static_cast<GSTexture12*>(GSDevice12::GetInstance()->CreateTexture(m_size.x, m_size.y, m_mipmap_levels, m_format));
+	// TODO: Copy to temp_texture
 
 	for (int dst_level = 1; dst_level < m_mipmap_levels; dst_level++)
 	{
@@ -784,8 +785,10 @@ void GSTexture12::GenerateMipmap()
 		const int dst_height = std::max<int>(m_size.y >> dst_level, 1);
 
 		GSDevice12::GetInstance()->RenderTextureMipmap(
-			this, dst_level, dst_width, dst_height, src_level, src_width, src_height);
+			temp_texture, dst_level, dst_width, dst_height, src_level, src_width, src_height);
 	}
+
+	// TODO: Copy back from temp_texture
 
 	SetUseFenceCounter(GSDevice12::GetInstance()->GetCurrentFenceValue());
 }
