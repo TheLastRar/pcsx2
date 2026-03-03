@@ -100,8 +100,8 @@ public:
 	D3D12StreamBuffer& GetTextureStreamBuffer() { return m_texture_stream_buffer; }
 
 	// Root signature access.
-	ComPtr<ID3DBlob> SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC* desc);
-	ComPtr<ID3D12RootSignature> CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC* desc);
+	ComPtr<ID3DBlob> SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC1* desc);
+	ComPtr<ID3D12RootSignature> CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC1* desc);
 
 	/// Fence value for current command list.
 	u64 GetCurrentFenceValue() const { return m_current_fence_value; }

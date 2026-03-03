@@ -95,11 +95,12 @@ GSDevice12::GSDevice12() = default;
 
 GSDevice12::~GSDevice12() = default;
 
-GSDevice12::ComPtr<ID3DBlob> GSDevice12::SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC* desc)
+GSDevice12::ComPtr<ID3DBlob> GSDevice12::SerializeRootSignature(const D3D12_ROOT_SIGNATURE_DESC1* desc)
 {
 	ComPtr<ID3DBlob> blob;
 	ComPtr<ID3DBlob> error_blob;
-	const HRESULT hr = D3D12SerializeRootSignature(desc, D3D_ROOT_SIGNATURE_VERSION_1, blob.put(), error_blob.put());
+	const D3D12_VERSIONED_ROOT_SIGNATURE_DESC versioned_desc{D3D_ROOT_SIGNATURE_VERSION_1_1, {.Desc_1_1 = *desc}}; 
+	const HRESULT hr = D3D12SerializeVersionedRootSignature(&versioned_desc, blob.put(), error_blob.put());
 	if (FAILED(hr))
 	{
 		Console.Error("D3D12SerializeRootSignature() failed: %08X", hr);
@@ -112,7 +113,7 @@ GSDevice12::ComPtr<ID3DBlob> GSDevice12::SerializeRootSignature(const D3D12_ROOT
 	return blob;
 }
 
-GSDevice12::ComPtr<ID3D12RootSignature> GSDevice12::CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC* desc)
+GSDevice12::ComPtr<ID3D12RootSignature> GSDevice12::CreateRootSignature(const D3D12_ROOT_SIGNATURE_DESC1* desc)
 {
 	ComPtr<ID3DBlob> blob = SerializeRootSignature(desc);
 	if (!blob)

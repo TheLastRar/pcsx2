@@ -39,9 +39,9 @@ namespace D3D12
 			D3D12_SHADER_VISIBILITY visibility);
 
 	private:
-		D3D12_ROOT_SIGNATURE_DESC m_desc{};
-		std::array<D3D12_ROOT_PARAMETER, MAX_PARAMETERS> m_params{};
-		std::array<D3D12_DESCRIPTOR_RANGE, MAX_DESCRIPTOR_RANGES> m_descriptor_ranges{};
+		D3D12_ROOT_SIGNATURE_DESC1 m_desc{};
+		std::array<D3D12_ROOT_PARAMETER1, MAX_PARAMETERS> m_params{};
+		std::array<D3D12_DESCRIPTOR_RANGE1, MAX_DESCRIPTOR_RANGES> m_descriptor_ranges{};
 		u32 m_num_descriptor_ranges = 0;
 	};
 

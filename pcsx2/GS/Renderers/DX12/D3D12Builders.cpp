@@ -318,6 +318,7 @@ u32 D3D12::RootSignatureBuilder::AddCBVParameter(u32 shader_reg, D3D12_SHADER_VI
 	m_params[index].ShaderVisibility = visibility;
 	m_params[index].Descriptor.ShaderRegister = shader_reg;
 	m_params[index].Descriptor.RegisterSpace = 0;
+	m_params[index].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
 
 	return index;
 }
@@ -345,6 +346,7 @@ u32 D3D12::RootSignatureBuilder::AddDescriptorTable(
 	m_descriptor_ranges[dr_index].BaseShaderRegister = start_shader_reg;
 	m_descriptor_ranges[dr_index].RegisterSpace = 0;
 	m_descriptor_ranges[dr_index].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+	m_descriptor_ranges[dr_index].Flags = rt == D3D12_DESCRIPTOR_RANGE_TYPE_CBV ? D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC : D3D12_DESCRIPTOR_RANGE_FLAG_NONE;
 
 	m_params[index].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	m_params[index].DescriptorTable.pDescriptorRanges = &m_descriptor_ranges[dr_index];
