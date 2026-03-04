@@ -10,6 +10,7 @@
 #include "GS/GS.h"
 
 #include <d3d11_1.h>
+#include <d3d12.h>
 #include <dxgi1_5.h>
 #include <string>
 #include <string_view>
@@ -64,5 +65,12 @@ namespace D3D
 	};
 
 	wil::com_ptr_nothrow<ID3DBlob> CompileShader(ShaderType type, D3D_FEATURE_LEVEL feature_level, bool debug,
+		const std::string_view code, const D3D_SHADER_MACRO* macros = nullptr, const char* entry_point = "main");
+	wil::com_ptr_nothrow<ID3DBlob> CompileShaderDX12(ShaderType type, D3D_SHADER_MODEL shader_model, bool debug,
+		const std::string_view code, const D3D_SHADER_MACRO* macros = nullptr, const char* entry_point = "main");
+
+	wil::com_ptr_nothrow<ID3DBlob> CompileShaderDXBC(ShaderType type, D3D_FEATURE_LEVEL feature_level, bool debug,
+		const std::string_view code, const D3D_SHADER_MACRO* macros = nullptr, const char* entry_point = "main");
+	wil::com_ptr_nothrow<ID3DBlob> CompileShaderDXIL(ShaderType type, D3D_SHADER_MODEL shader_model, bool debug,
 		const std::string_view code, const D3D_SHADER_MACRO* macros = nullptr, const char* entry_point = "main");
 }; // namespace D3D

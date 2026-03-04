@@ -21,6 +21,7 @@
 #include <d3d11.h>
 #include <d3d12.h>
 #include <d3dcompiler.h>
+#include <dxcapi.h>
 #include <fstream>
 
 #include "fmt/format.h"
@@ -466,7 +467,7 @@ GSRendererType D3D::GetPreferredRenderer()
 	}
 }
 
-wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D_FEATURE_LEVEL feature_level, bool debug,
+wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D_FEATURE_LEVEL feature_level, bool debug,
 	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
 	const char* entry_point /* = "main" */)
 {
@@ -487,7 +488,8 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D_FEAT
 		}
 		break;
 
-		case D3D_FEATURE_LEVEL_11_1:
+		// DX11.3 or DX12 FL_11_0
+		case D3D_FEATURE_LEVEL_12_0:
 		default:
 		{
 			static constexpr std::array<const char*, 4> targets = {{"vs_5_1", "ps_5_1", "cs_5_1"}};
@@ -538,4 +540,136 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D_FEAT
 		Console.Warning("'%s' compiled with warnings:\n%s", target, error_string.c_str());
 
 	return blob;
+}
+
+wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D_SHADER_MODEL shader_model, bool debug,
+	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const char* entry_point /* = "main" */)
+{
+	const wchar_t* target;
+	switch (shader_model)
+	{
+		case D3D_SHADER_MODEL_6_0:
+		case D3D_SHADER_MODEL_6_1:
+		case D3D_SHADER_MODEL_6_2:
+		case D3D_SHADER_MODEL_6_3:
+		case D3D_SHADER_MODEL_6_4:
+		case D3D_SHADER_MODEL_6_5:
+		{
+			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_0", L"ps_6_0", L"cs_6_0"}};
+			target = targets[static_cast<int>(type)];
+		}
+		break;
+
+		case D3D_SHADER_MODEL_6_6:
+		default:
+		{
+			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_0", L"ps_6_0", L"cs_6_0"}};
+			target = targets[static_cast<int>(type)];
+		}
+		break;
+	}
+
+	// Build args
+	std::wstring wentry_point = StringUtil::UTF8StringToWideString(entry_point);
+
+	std::vector<const wchar_t*> args;
+	args.push_back(L"-E");
+	args.push_back(wentry_point.c_str());
+	args.push_back(L"-T");
+	args.push_back(target);
+
+	if (debug)
+	{
+		args.push_back(L"-Od");
+		args.push_back(L"-Zi");
+		args.push_back(L"-Zss");
+		args.push_back(L"-Qembed_debug");
+	}
+	else
+	{
+		args.push_back(L"-O3");
+		args.push_back(L"-Qstrip_reflect");
+	}
+
+	std::vector<std::wstring> defines;
+	if (macros)
+	{
+		for (const D3D_SHADER_MACRO* macro = macros; macro->Name != nullptr; macro++)
+			defines.push_back(StringUtil::UTF8StringToWideString(macro->Name) + L"=" + StringUtil::UTF8StringToWideString(macro->Definition));
+
+		for (const std::wstring& define : defines)
+		{
+			args.push_back(L"-D");
+			args.push_back(define.c_str());
+		}
+	}
+
+	// Compile Shader
+	wil::com_ptr_nothrow<IDxcCompiler3> pCompiler;
+	DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(pCompiler.put()));
+
+	const DxcBuffer source{code.data(), code.length(), DXC_CP_UTF8};
+	wil::com_ptr_nothrow<IDxcResult> pResults;
+	HRESULT hr = pCompiler->Compile(&source, args.data(), args.size(), nullptr, IID_PPV_ARGS(pResults.put()));
+
+	if (FAILED(hr))
+	{
+		Console.WriteLn("Compiler Failed");
+		return {};
+	}
+
+	wil::com_ptr_nothrow<IDxcBlobUtf8> error_string = nullptr;
+	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&error_string), nullptr);
+
+	pResults->GetStatus(&hr);
+	if (FAILED(hr))
+	{
+		std::string target_utf8 = StringUtil::WideStringToUTF8String(target);
+		Console.WriteLn("Failed to compile '%s':\n%s", target_utf8.c_str(), error_string->GetStringPointer());
+
+		std::ofstream ofs(Path::Combine(EmuFolders::Logs, fmt::format("pcsx2_bad_shader_{}.txt", s_next_bad_shader_id++)),
+			std::ofstream::out | std::ofstream::binary);
+		if (ofs.is_open())
+		{
+			ofs << code;
+			ofs << "\n\nCompile as " << target_utf8.c_str() << " failed: " << hr << "\n";
+			ofs.write(error_string->GetStringPointer(), error_string->GetStringLength());
+			ofs << "\n";
+			if (macros)
+			{
+				for (const D3D_SHADER_MACRO* macro = macros; macro->Name != nullptr; macro++)
+					ofs << "#define " << macro->Name << " " << macro->Definition << "\n";
+			}
+			ofs.close();
+		}
+
+		return {};
+	}
+
+	if (error_string->GetStringLength() != 0)
+		Console.Warning("'%s' compiled with warnings:\n%s", StringUtil::WideStringToUTF8String(target).c_str(), error_string->GetStringPointer());
+
+	wil::com_ptr_nothrow<ID3DBlob> blob = nullptr;
+	pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(blob.put()), nullptr);
+
+	return blob;
+}
+
+wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D_FEATURE_LEVEL feature_level, bool debug,
+	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const char* entry_point /* = "main" */)
+{
+	return CompileShaderDXBC(type, feature_level, debug, code, macros, entry_point);
+}
+
+wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDX12(D3D::ShaderType type, D3D_SHADER_MODEL shader_model, bool debug,
+	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const char* entry_point /* = "main" */)
+{
+	if (shader_model < D3D_SHADER_MODEL_5_1)
+		// DX 11 class device
+		return CompileShaderDXBC(type, D3D_FEATURE_LEVEL_12_0, debug, code, macros, entry_point);
+	else
+		return CompileShaderDXIL(type, shader_model, debug, code, macros, entry_point);
 }
