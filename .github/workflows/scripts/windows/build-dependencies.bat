@@ -97,6 +97,7 @@ set SHADERC_SPIRVHEADERS=58006c901d1d5c37dece6b6610e9af87fa951375
 set SHADERC_SPIRVTOOLS=6337eb62cadd7d124ac6789bf39c0f71148f0a73
 
 set AGILITYSDK=1.619.2
+set DXC=1.9.2602
 
 call :downloadfile "qtbase-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtbase-everywhere-src-%QT%.zip" 3529cc37297a5a7aae4486843b9fd41c30df1d79a770f85e240b537dcc327ca5 || goto error
 call :downloadfile "qtimageformats-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtimageformats-everywhere-src-%QT%.zip" 37fba768f2780580dfae535ad6654cb9dc0bf2272e71b9b9781988de9ed0dac0 || goto error
@@ -130,6 +131,7 @@ call :downloadfile "plutovg-%PLUTOVG%.zip" "https://github.com/sammycage/plutovg
 call :downloadfile "plutosvg-%PLUTOSVG%.zip" "https://github.com/sammycage/plutosvg/archive/v%PLUTOSVG%.zip" 82dee2c57ad712bdd6d6d81d3e76249d89caa4b5a4214353660fd5adff12201a || goto error
 call :downloadfile "agility-sdk-%AGILITYSDK%.nupkg" "https://www.nuget.org/api/v2/package/Microsoft.Direct3D.D3D12/%AGILITYSDK%" eb92d90bb23b2ec23410c41d791e41dbdbec942ab946924d1fdcb31eac6f0735 || goto error
 call :downloadfile "rapidyaml-%RAPIDYAML%-src.zip" "https://github.com/biojppm/rapidyaml/releases/download/v%RAPIDYAML%/rapidyaml-%RAPIDYAML%-src.zip" 96276f55b9fa7837ac8f3f72fd52965879cbb5d5d2e6af548c69a177fb078304 || goto error
+call :downloadfile "DirectXShaderCompiler-%DXC%.zip" "https://github.com/microsoft/DirectXShaderCompiler/archive/v%DXC%.zip" dd7b59a4ca2989a4005a2689b7c7f21d39aa1d661bd155df066df0979809f4e9 || goto error
 
 call :downloadfile "shaderc-%SHADERC%.zip" "https://github.com/google/shaderc/archive/refs/tags/v%SHADERC%.zip" f9401cc5cb36c276cd1e072b6595dbd728148e8dba389e50f7339e2d388dbc08 || goto error
 call :downloadfile "shaderc-glslang-%SHADERC_GLSLANG%.zip" "https://github.com/KhronosGroup/glslang/archive/%SHADERC_GLSLANG%.zip" 2b63189efad0348d88d410a5e12ec550a612e0b6ceef64624b8f45491269fb9c || goto error
@@ -504,6 +506,19 @@ copy "build\native\bin\x64\D3D12Core.dll" "%INSTALLDIR%\bin\D3D12\D3D12Core.dll"
 if %DEBUG%==1 (
   copy "build\native\bin\x64\d3d12SDKLayers.dll" "%INSTALLDIR%\bin\D3D12\d3d12SDKLayers.dll" || goto error
 )
+cd .. || goto error
+
+echo "Building DirectXShaderCompiler..."
+rmdir /S /Q "DirectXShaderCompiler-%DXC%"
+%SEVENZIP% x "DirectXShaderCompiler-%DXC%.zip" || goto error
+cd "DirectXShaderCompiler-%DXC%" || goto error
+rem cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DLLVM_ENABLE_EH=ON -DLLVM_DEFAULT_TARGET_TRIPLE="dxil-ms-dx" -DLLVM_TARGETS_TO_BUILD=None -DCLANG_CL=OFF -DLLVM_INCLUDE_TESTS=OFF -DHLSL_INCLUDE_TESTS=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DCLANG_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_DOCS=OFF -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_STATIC_ANALYZER=OFF -DLIBCLANG_BUILD_STATIC=ON -DLLVM_ENABLE_TERMINFO=OFF -DLLVM_OPTIMIZED_TABLEGEN=OFF -B build -G Ninja || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -C .\cmake\caches\PredefinedParams.cmake -DHLSL_DISABLE_SOURCE_GENERATION=ON -DLLVM_INCLUDE_TESTS=OFF -DHLSL_INCLUDE_TESTS=OFF -DENABLE_SPIRV_CODEGEN=OFF -DSPIRV_BUILD_TESTS=OFF -DHLSL_BUILD_DXILCONV=OFF -DLLVM_BUILD_TOOLS=OFF -B build -G Ninja || goto error
+cmake --build build --target dxcompiler dxildll --parallel || goto error
+rem Instead of installing all of LLVM, just copy the files needed.
+copy "build\bin\dxcompiler.dll" "%INSTALLDIR%\bin\dxcompiler.dll" || goto error
+copy "build\bin\dxil.dll" "%INSTALLDIR%\bin\dxil.dll" || goto error
+rem ninja -C build install || goto error
 cd .. || goto error
 
 echo Building shaderc...
