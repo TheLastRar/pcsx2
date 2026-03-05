@@ -270,11 +270,13 @@ std::string D3D12ShaderCache::GetCacheBaseFileName(const std::string_view type, 
 		case D3D_SHADER_MODEL_6_3:
 		case D3D_SHADER_MODEL_6_4:
 		case D3D_SHADER_MODEL_6_5:
+			base_filename += "sm60";
+			break;
 		case D3D_SHADER_MODEL_6_6:
 		case D3D_SHADER_MODEL_6_7:
 		case D3D_SHADER_MODEL_6_8:
 		case D3D_SHADER_MODEL_6_9:
-			base_filename += "sm60";
+			base_filename += "sm66";
 			break;
 		default:
 			base_filename += "unk";

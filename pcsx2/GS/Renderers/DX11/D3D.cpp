@@ -564,7 +564,7 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D_
 		case D3D_SHADER_MODEL_6_6:
 		default:
 		{
-			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_0", L"ps_6_0", L"cs_6_0"}};
+			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_6", L"ps_6_6", L"cs_6_6"}};
 			target = targets[static_cast<int>(type)];
 		}
 		break;
