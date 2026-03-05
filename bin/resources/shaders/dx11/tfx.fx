@@ -56,6 +56,10 @@
 #define PS_ROV_DEPTH_READ_ONLY 2
 #endif
 
+//#define DX12
+//#define PIXEL_SHADER
+//#define BINDLESS 1
+
 #ifndef PS_FST
 #define PS_IIP 0
 #define PS_FST 0
@@ -231,24 +235,48 @@ struct PS_OUTPUT
 #undef NUM_RTS
 };
 
-Texture2D<float4> Texture : register(t0);
-Texture2D<float4> Palette : register(t1);
-#if !PS_ROV_COLOR
-Texture2D<float4> RtTexture : register(t2);
+#ifndef BINDLESS
+	Texture2D<float4> Texture : register(t0);
+	Texture2D<float4> Palette : register(t1);
+
+	#if !PS_ROV_COLOR
+		Texture2D<float4> RtTexture : register(t2);
+	#else
+		RasterizerOrderedTexture2D<unorm float4> RtTextureRov : register(u0);
+	#endif
+	Texture2D<float> PrimMinTexture : register(t3);
+
+	#if !PS_ROV_DEPTH
+		Texture2D<float> DepthTexture : register(t4);
+	#else
+		RasterizerOrderedTexture2D<float> DepthTextureRov : register(u1);
+	#endif
+
+#else
+	static Texture2D<float4> Texture;
+	static Texture2D<float4> Palette;
+
+	#if !PS_ROV_COLOR
+		static Texture2D<float4> RtTexture;
+	#else
+		static RasterizerOrderedTexture2D<unorm float4> RtTextureRov;
+	#endif
+	static Texture2D<float> PrimMinTexture;
+
+	#if !PS_ROV_DEPTH
+		static Texture2D<float> DepthTexture;
+	#else
+		static RasterizerOrderedTexture2D<float> DepthTextureRov;
+	#endif
 #endif
-Texture2D<float> PrimMinTexture : register(t3);
-#if !PS_ROV_DEPTH
-Texture2D<float> DepthTexture : register(t4);
-#endif
+
 SamplerState TextureSampler : register(s0);
 
 #if PS_ROV_COLOR
-RasterizerOrderedTexture2D<unorm float4> RtTextureRov : register(u0);
 static float4 rov_rt_value;
 #endif
 
 #if PS_ROV_DEPTH
-RasterizerOrderedTexture2D<float> DepthTextureRov : register(u1);
 static float rov_depth_value;
 #endif
 
@@ -283,6 +311,19 @@ cbuffer cb1
 	float _pad3_cb1;
 	float _pad4_cb1;
 };
+
+#ifdef BINDLESS
+cbuffer cb2 : register(b2)
+{
+	uint TexIdx;
+	uint PalIdx;
+	uint RtIdx;
+	uint PrimIdx;
+	uint DepthIdx;
+	uint RovRtIdx;
+	uint RovDepthIdx;
+};
+#endif
 
 float4 RtLoad(int2 xy)
 {
@@ -1330,6 +1371,22 @@ PS_OUTPUT ps_main(PS_INPUT input)
 void ps_main(PS_INPUT input)
 #endif
 {
+#ifdef BINDLESS
+	Texture = ResourceDescriptorHeap[TexIdx];
+	Palette = ResourceDescriptorHeap[PalIdx];
+	PrimMinTexture = ResourceDescriptorHeap[PrimIdx];
+	#if !PS_ROV_COLOR
+	RtTexture = ResourceDescriptorHeap[RtIdx];
+	#else
+	RtTextureRov = ResourceDescriptorHeap[RovRtIdx];
+	#endif
+	#if !PS_ROV_DEPTH
+	DepthTexture = ResourceDescriptorHeap[DepthIdx];
+	#else
+	DepthTextureRov = ResourceDescriptorHeap[RovDepthIdx];
+	#endif
+#endif
+
 	// Must floor before depth testing.
 #if PS_ZFLOOR
 	input.p.z = floor(input.p.z * exp2(32.0f)) * exp2(-32.0f);

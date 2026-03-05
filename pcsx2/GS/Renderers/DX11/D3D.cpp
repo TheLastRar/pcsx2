@@ -502,6 +502,8 @@ const char* D3D::ShaderModelToCacheString(D3D::ShaderModel shader_model)
 			return "sm51";
 		case ShaderModel::SM65:
 			return "sm65";
+		case ShaderModel::SM66:
+			return "sm66";
 		default:
 			return "unk";
 	}
@@ -603,9 +605,16 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 			pxAssert(false);
 			break;
 		case ShaderModel::SM65:
-		default:
 		{
 			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_5", L"ps_6_5", L"cs_6_5"}};
+			target = targets[static_cast<int>(type)];
+		}
+		break;
+
+		case ShaderModel::SM66:
+		default:
+		{
+			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_6", L"ps_6_6", L"cs_6_6"}};
 			target = targets[static_cast<int>(type)];
 		}
 		break;

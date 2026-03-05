@@ -31,6 +31,7 @@ namespace D3D12
 		wil::com_ptr_nothrow<ID3D12RootSignature> Create(bool clear = true);
 
 		void SetInputAssemblerFlag();
+		void SetViewHeapIndexedFlag();
 
 		u32 Add32BitConstants(u32 shader_reg, u32 num_values, D3D12_SHADER_VISIBILITY visibility);
 		u32 AddCBVParameter(u32 shader_reg, D3D12_SHADER_VISIBILITY visibility);

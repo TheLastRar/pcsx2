@@ -383,6 +383,7 @@ private:
 	D3D_SHADER_MODEL m_shader_model = D3D_SHADER_MODEL_5_1;
 	bool m_uma = false;
 	bool m_typed_casting_supported = false;
+	bool m_dynamic_resources = false;
 	bool m_enhanced_barriers = false;
 	bool m_device_lost = false;
 

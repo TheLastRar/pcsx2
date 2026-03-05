@@ -75,6 +75,7 @@ namespace D3D
 		SM63 = 0x63,
 		SM64 = 0x64,
 		SM65 = 0x65,
+		SM66 = 0x66,
 	};
 
 	const char* ShaderModelToCacheString(ShaderModel shader_model);

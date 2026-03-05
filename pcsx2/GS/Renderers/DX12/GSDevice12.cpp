@@ -394,7 +394,7 @@ bool GSDevice12::CreateDescriptorHeaps()
 	static constexpr size_t MAX_DSVS = 16384;
 	static constexpr size_t MAX_CPU_SAMPLERS = 1024;
 
-	if (!m_descriptor_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRVS, false) ||
+	if (!m_descriptor_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRVS, m_dynamic_resources) ||
 		!m_rtv_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, MAX_RTVS, false) ||
 		!m_dsv_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, MAX_DSVS, false) ||
 		!m_sampler_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, MAX_CPU_SAMPLERS, false))
@@ -521,7 +521,7 @@ void GSDevice12::MoveToNextCommandList()
 	}
 
 	ID3D12DescriptorHeap* heaps[2] = {
-		res.descriptor_allocator.GetDescriptorHeap(), res.sampler_allocator.GetDescriptorHeap()};
+		GetDescriptorHeapManager().GetDescriptorHeap(), res.sampler_allocator.GetDescriptorHeap()};
 	res.command_lists[1].list4->SetDescriptorHeaps(std::size(heaps), heaps);
 
 	m_allocator->SetCurrentFrameIndex(static_cast<UINT>(m_current_fence_value));
@@ -992,7 +992,7 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 		m_tfx_source = std::move(*shader);
 	}
 
-	if (!m_shader_cache.Open(static_cast<D3D::ShaderModel>(m_shader_model), GSConfig.UseDebugDevice))
+	if (!m_shader_cache.Open(static_cast<D3D::ShaderModel>(m_shader_model), false))
 		Console.Warning("D3D12: Shader cache failed to open.");
 
 	if (!CreateRootSignatures())
@@ -1538,10 +1538,17 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allow_tearing_supported, sizeof(allow_tearing_supported));
 	m_allow_tearing_supported = (SUCCEEDED(hr) && allow_tearing_supported == TRUE);
 
-	D3D12_FEATURE_DATA_SHADER_MODEL device_shader_support = {D3D_SHADER_MODEL_6_5};
+	D3D12_FEATURE_DATA_SHADER_MODEL device_shader_support = {D3D_SHADER_MODEL_6_6};
 	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &device_shader_support, sizeof(device_shader_support));
 	m_shader_model = SUCCEEDED(hr) ? device_shader_support.HighestShaderModel : D3D_SHADER_MODEL_5_1;
-	Console.WriteLnFmt("D3D12: Shader Model: {}.{}", (m_shader_model & 0xF0) >> 4, (m_shader_model & 0xF));
+	//Console.WriteLnFmt("D3D12: Shader Model: {}.{}", (m_shader_model & 0xF0) >> 4, (m_shader_model & 0xF));
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS device_options0 = {};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &device_options0, sizeof(device_options0));
+	const int bind_tier = SUCCEEDED(hr) ? device_options0.ResourceBindingTier : D3D12_RESOURCE_BINDING_TIER_1;
+
+	m_dynamic_resources = m_shader_model >= D3D_SHADER_MODEL_6_6 && bind_tier >= D3D12_RESOURCE_BINDING_TIER_3;
+	Console.WriteLnFmt("D3D12: Dynamic Resources: {}", m_dynamic_resources ? "Supported" : "Not Supported");
 
 	D3D12_FEATURE_DATA_ARCHITECTURE1 device_architecture1 = {};
 	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE1, &device_architecture1, sizeof(device_architecture1));
@@ -2472,10 +2479,15 @@ void GSDevice12::RenderImGui()
 				m_utility_texture_cpu = handle;
 				m_dirty_flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 
-				if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+				if (m_dynamic_resources)
+					m_utility_texture_gpu = m_utility_texture_cpu;
+				else
 				{
-					Console.Warning("D3D12: Skipping ImGui draw because of no descriptors");
-					return;
+					if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+					{
+						Console.Warning("D3D12: Skipping ImGui draw because of no descriptors");
+						return;
+					}
 				}
 			}
 
@@ -2695,6 +2707,7 @@ void GSDevice12::ClearSamplerCache()
 bool GSDevice12::GetTextureGroupDescriptors(
 	D3D12DescriptorHandle* gpu_handle, const D3D12DescriptorHandle* cpu_handles, u32 count)
 {
+	pxAssert(!m_dynamic_resources);
 	if (!GetDescriptorAllocator().Allocate(count, gpu_handle))
 		return false;
 
@@ -2824,14 +2837,29 @@ bool GSDevice12::CreateRootSignatures()
 	rsb.AddCBVParameter(1, D3D12_SHADER_VISIBILITY_PIXEL);
 	rsb.AddSRVParameter(0, D3D12_SHADER_VISIBILITY_VERTEX);
 	rsb.AddSRVParameter(5, D3D12_SHADER_VISIBILITY_VERTEX);
-	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL); // Source (t0) / Palette (t2)
-	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
-	// RT (t2) / PrimID (t3) / Depth (t4) / RT UAV (u0) / Depth UAV (u1)
-	D3D12_DESCRIPTOR_RANGE_TYPE rt_types[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV };
-	u32 rt_start_regs[2] = { 2, 0 };
-	u32 rt_num_regs[2] = { 3, 2 };
-	rsb.AddDescriptorTableMultiRange(2, rt_types, rt_start_regs, rt_num_regs, D3D12_SHADER_VISIBILITY_PIXEL);
+
+	if (m_dynamic_resources)
+	{
+		rsb.SetViewHeapIndexedFlag();
+		// Source (0), Palette (1), RT (2), PrimID (3) Depth(4) RT UAV (5) Depth UAV (6)
+		rsb.Add32BitConstants(2, NUM_TOTAL_TFX_TEXTURES, D3D12_SHADER_VISIBILITY_PIXEL);
+		// TODO: also make bindless?
+		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
+		rsb.Add32BitConstants(3, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Pad
+	}
+	else
+	{
+		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL); // Source (t0) / Palette (t2)
+		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
+		// RT (t2) / PrimID (t3) / Depth (t4) / RT UAV (u0) / Depth UAV (u1)
+		D3D12_DESCRIPTOR_RANGE_TYPE rt_types[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV };
+		u32 rt_start_regs[2] = { 2, 0 };
+		u32 rt_num_regs[2] = { 3, 2 };
+		rsb.AddDescriptorTableMultiRange(2, rt_types, rt_start_regs, rt_num_regs, D3D12_SHADER_VISIBILITY_PIXEL);
+	}
+
 	rsb.Add32BitConstants(2, sizeof(m_vs_pc_cache) / sizeof(u32), D3D12_SHADER_VISIBILITY_VERTEX);
+
 	if (!(m_tfx_root_signature = rsb.Create()))
 		return false;
 	D3D12::SetObjectName(m_tfx_root_signature.get(), "TFX root signature");
@@ -3259,6 +3287,8 @@ const ID3DBlob* GSDevice12::GetTFXPixelShader(const GSHWDrawConfig::PSSelector& 
 		return it->second.get();
 
 	ShaderMacro sm;
+	if (m_dynamic_resources)
+		sm.AddMacro("BINDLESS", 1);
 	sm.AddMacro("PIXEL_SHADER", 1);
 	sm.AddMacro("PS_HAS_CONSERVATIVE_DEPTH", 1);
 	sm.AddMacro("PS_DEPTH_FEEDBACK_SUPPORT", 2);
@@ -3759,11 +3789,16 @@ void GSDevice12::SetUtilityTexture(GSTexture* dtex, const D3D12DescriptorHandle&
 		m_utility_texture_cpu = handle;
 		m_dirty_flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 
-		if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+		if (m_dynamic_resources)
+			m_utility_texture_gpu = handle;
+		else
 		{
-			ExecuteCommandListAndRestartRenderPass(false, "Ran out of utility texture descriptors");
-			SetUtilityTexture(dtex, sampler);
-			return;
+			if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+			{
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of utility texture descriptors");
+				SetUtilityTexture(dtex, sampler);
+				return;
+			}
 		}
 	}
 
@@ -4150,26 +4185,29 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		flags |= DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE;
 	}
 
-	if (flags & DIRTY_FLAG_TFX_TEXTURES)
+	if (!m_dynamic_resources)
 	{
-		if (!GetTextureGroupDescriptors(&m_tfx_textures_handle_gpu, m_tfx_textures.data(), 2))
+		if (flags & DIRTY_FLAG_TFX_TEXTURES)
 		{
-			ExecuteCommandListAndRestartRenderPass(false, "Ran out of TFX texture descriptor groups");
-			return ApplyTFXState(true);
+			if (!GetTextureGroupDescriptors(&m_tfx_textures_handle_gpu, m_tfx_textures.data(), 2))
+			{
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of TFX texture descriptor groups");
+				return ApplyTFXState(true);
+			}
+
+			flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 		}
 
-		flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
-	}
-
-	if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
-	{
-		if (!GetTextureGroupDescriptors(&m_tfx_rt_textures_handle_gpu, m_tfx_textures.data() + 2, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES))
+		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
 		{
-			ExecuteCommandListAndRestartRenderPass(false, "Ran out of TFX RT descriptor descriptor groups");
-			return ApplyTFXState(true);
-		}
+			if (!GetTextureGroupDescriptors(&m_tfx_rt_textures_handle_gpu, m_tfx_textures.data() + 2, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES))
+			{
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of TFX RT descriptor descriptor groups");
+				return ApplyTFXState(true);
+			}
 
-		flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2;
+			flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2;
+		}
 	}
 
 	ID3D12GraphicsCommandList* cmdlist = GetCommandList().list4.get();
@@ -4197,12 +4235,31 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		cmdlist->SetGraphicsRootShaderResourceView(TFX_ROOT_SIGNATURE_PARAM_VS_IB_SRV,
 			m_expand_index_stream_buffer.GetGPUPointer());
 	}
-	if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE)
-		cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, m_tfx_textures_handle_gpu);
-	if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
-		cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_samplers_handle_gpu);
-	if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2)
-		cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_RT_TEXTURES, m_tfx_rt_textures_handle_gpu);
+	if (m_dynamic_resources)
+	{
+		if (flags & DIRTY_FLAG_TFX_TEXTURES)
+		{
+			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
+			cmdlist->SetGraphicsRoot32BitConstants(4, NUM_TFX_TEXTURES, texIndices.data(), 0);
+		}
+		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
+		{
+			std::array<u32, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index, m_tfx_textures[4].index, m_tfx_textures[5].index, m_tfx_textures[6].index};
+			cmdlist->SetGraphicsRoot32BitConstants(4, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
+		}
+
+		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_samplers_handle_gpu);
+	}
+	else
+	{
+		if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE)
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, m_tfx_textures_handle_gpu);
+		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_samplers_handle_gpu);
+		if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2)
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_RT_TEXTURES, m_tfx_rt_textures_handle_gpu);
+	}
 
 	ApplyBaseState(flags, cmdlist);
 	return true;
