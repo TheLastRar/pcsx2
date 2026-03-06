@@ -387,7 +387,7 @@ bool GSDevice12::CreateDescriptorHeaps()
 	static constexpr size_t MAX_DSVS = 16384;
 	static constexpr size_t MAX_CPU_SAMPLERS = 1024;
 
-	if (!m_descriptor_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRVS, false) ||
+	if (!m_descriptor_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRVS, m_dynamic_resources) ||
 		!m_rtv_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, MAX_RTVS, false) ||
 		!m_dsv_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, MAX_DSVS, false) ||
 		!m_sampler_heap_manager.Create(m_device.get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, MAX_CPU_SAMPLERS, false))
@@ -485,7 +485,6 @@ void GSDevice12::MoveToNextCommandList()
 	res.command_allocators[1]->Reset();
 	res.command_lists[1].list4->Reset(res.command_allocators[1].get(), nullptr);
 	res.descriptor_allocator.Reset();
-	res.descriptor_cache.clear();
 	if (res.sampler_allocator.ShouldReset())
 		res.sampler_allocator.Reset();
 
@@ -521,7 +520,7 @@ void GSDevice12::MoveToNextCommandList()
 	}
 
 	ID3D12DescriptorHeap* heaps[2] = {
-		res.descriptor_allocator.GetDescriptorHeap(), res.sampler_allocator.GetDescriptorHeap()};
+		GetDescriptorHeapManager().GetDescriptorHeap(), res.sampler_allocator.GetDescriptorHeap()};
 	res.command_lists[1].list4->SetDescriptorHeaps(std::size(heaps), heaps);
 
 	m_allocator->SetCurrentFrameIndex(static_cast<UINT>(m_current_fence_value));
@@ -2293,10 +2292,15 @@ void GSDevice12::RenderImGui()
 				m_utility_texture_cpu = handle;
 				m_dirty_flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 
-				if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+				if (m_dynamic_resources)
+					m_utility_texture_gpu = m_utility_texture_cpu;
+				else
 				{
-					Console.Warning("D3D12: Skipping ImGui draw because of no descriptors");
-					return;
+					if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+					{
+						Console.Warning("D3D12: Skipping ImGui draw because of no descriptors");
+						return;
+					}
 				}
 			}
 
@@ -2506,6 +2510,7 @@ void GSDevice12::ClearSamplerCache()
 bool GSDevice12::GetTextureGroupDescriptors(
 	D3D12DescriptorHandle* gpu_handle, const D3D12DescriptorHandle* cpu_handles, u32 count)
 {
+	pxAssert(!m_dynamic_resources);
 	if (!GetDescriptorAllocator().Allocate(count, gpu_handle))
 		return false;
 
@@ -3507,11 +3512,16 @@ void GSDevice12::SetUtilityTexture(GSTexture* dtex, const D3D12DescriptorHandle&
 		m_utility_texture_cpu = handle;
 		m_dirty_flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
 
-		if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+		if (m_dynamic_resources)
+			m_utility_texture_gpu = handle;
+		else
 		{
-			ExecuteCommandListAndRestartRenderPass(false, "Ran out of utility texture descriptors");
-			SetUtilityTexture(dtex, sampler);
-			return;
+			if (!GetTextureGroupDescriptors(&m_utility_texture_gpu, &handle, 1))
+			{
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of utility texture descriptors");
+				SetUtilityTexture(dtex, sampler);
+				return;
+			}
 		}
 	}
 
@@ -3901,25 +3911,8 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		if (flags & (DIRTY_FLAG_TFX_TEXTURES | DIRTY_FLAG_TFX_RT_TEXTURES))
 		{
 			std::array<u32, NUM_TOTAL_TFX_TEXTURES> texIndices;
-			auto& descriptor_cache = GetDescriptorCache();
 			for (int i = 0; i < NUM_TOTAL_TFX_TEXTURES; i++)
-			{
-				const auto it = descriptor_cache.find(m_tfx_textures[i].index);
-				if (it != descriptor_cache.end())
-					texIndices[i] = it->second.index;
-				else
-				{
-					D3D12DescriptorHandle gpu_handle;
-					if (!GetDescriptorAllocator().Allocate(1, &gpu_handle))
-						pxAssert(false);
-
-					m_device.get()->CopyDescriptorsSimple(
-						1, gpu_handle, m_tfx_textures[i], D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-					descriptor_cache.emplace(m_tfx_textures[i].index, gpu_handle);
-					texIndices[i] = gpu_handle.index;
-				}
-			}
+				texIndices[i] = m_tfx_textures[i].index;
 
 			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TOTAL_TFX_TEXTURES, texIndices.data(), 0);
 		}

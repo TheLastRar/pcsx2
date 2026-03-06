@@ -81,12 +81,6 @@ public:
 		return m_command_lists[m_current_command_list].descriptor_allocator;
 	}
 
-	/// Returns the per-frame SRV/CBV/UAV descriptor cache.
-	std::unordered_map<u32, D3D12DescriptorHandle>& GetDescriptorCache()
-	{
-		return m_command_lists[m_current_command_list].descriptor_cache;
-	}
-
 	/// Returns the per-frame sampler allocator.
 	D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE>& GetSamplerAllocator()
 	{
@@ -161,7 +155,6 @@ private:
 		std::array<ComPtr<ID3D12CommandAllocator>, 2> command_allocators;
 		std::array<D3D12CommandList, 2> command_lists;
 		D3D12DescriptorAllocator descriptor_allocator;
-		std::unordered_map<u32, D3D12DescriptorHandle> descriptor_cache;
 		D3D12GroupedSamplerAllocator<SAMPLER_GROUP_SIZE> sampler_allocator;
 		std::vector<std::pair<D3D12MA::Allocation*, ID3D12DeviceChild*>> pending_resources;
 		std::vector<std::pair<D3D12DescriptorHeapManager&, u32>> pending_descriptors;
