@@ -3908,13 +3908,15 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 	}
 	if (m_dynamic_resources)
 	{
-		if (flags & (DIRTY_FLAG_TFX_TEXTURES | DIRTY_FLAG_TFX_RT_TEXTURES))
+		if (flags & DIRTY_FLAG_TFX_TEXTURES)
 		{
-			std::array<u32, NUM_TOTAL_TFX_TEXTURES> texIndices;
-			for (int i = 0; i < NUM_TOTAL_TFX_TEXTURES; i++)
-				texIndices[i] = m_tfx_textures[i].index;
-
-			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TOTAL_TFX_TEXTURES, texIndices.data(), 0);
+			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
+			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_TEXTURES, texIndices.data(), 0);
+		}
+		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
+		{
+			std::array<u32, NUM_TFX_RT_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index};
+			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_RT_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
 		}
 
 		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
