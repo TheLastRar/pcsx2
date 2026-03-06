@@ -157,6 +157,11 @@ Texture2D<float4> Texture : register(t0);
 Texture2D<float4> Palette : register(t1);
 Texture2D<float4> RtTexture : register(t2);
 Texture2D<float> PrimMinTexture : register(t3);
+#else
+static Texture2D<float4> Texture;
+static Texture2D<float4> Palette;
+static Texture2D<float4> RtTexture;
+static Texture2D<float> PrimMinTexture;
 #endif
 SamplerState TextureSampler : register(s0);
 
@@ -200,24 +205,6 @@ cbuffer cb2 : register(b2)
 
 float4 sample_c(float2 uv, float uv_w, int2 xy)
 {
-#ifdef BINDLESS
-#if PS_TEX_IS_FB == 1
-    Texture2D<float4> Texture = ResourceDescriptorHeap[TexIdx];
-#else
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#endif
-    //Texture2D<float> PrimMinTexture = ResourceDescriptorHeap[PrimIdx];
-    //SamplerState TextureSampler = SamplerDescriptorHeap[SampIdx];
-#endif
-	
-#ifdef BINDLESS
-#if PS_TEX_IS_FB == 1
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#else
-	Texture2D<float4> Texture = ResourceDescriptorHeap[TexIdx];
-#endif
-#endif
-	
 #if PS_TEX_IS_FB == 1
 	return RtTexture.Load(int3(int2(xy), 0));
 #elif PS_REGION_RECT == 1
@@ -271,9 +258,6 @@ float4 sample_c(float2 uv, float uv_w, int2 xy)
 
 float4 sample_p(uint u)
 {
-#ifdef BINDLESS
-    Texture2D<float4> Palette = ResourceDescriptorHeap[PalIdx];
-#endif
 	return Palette.Load(int3(int(u), 0, 0));
 }
 
@@ -425,14 +409,6 @@ float4x4 sample_4p(uint4 u)
 
 uint fetch_raw_depth(int2 xy)
 {
-#ifdef BINDLESS
-#if PS_TEX_IS_FB == 1
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#else
-	Texture2D<float4> Texture = ResourceDescriptorHeap[TexIdx];
-#endif
-#endif
-
 #if PS_TEX_IS_FB == 1
 	float4 col = RtTexture.Load(int3(xy, 0));
 #else
@@ -443,14 +419,6 @@ uint fetch_raw_depth(int2 xy)
 
 float4 fetch_raw_color(int2 xy)
 {
-#ifdef BINDLESS
-#if PS_TEX_IS_FB == 1
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#else
-	Texture2D<float4> Texture = ResourceDescriptorHeap[TexIdx];
-#endif
-#endif
-
 #if PS_TEX_IS_FB == 1	
 	return RtTexture.Load(int3(xy, 0));
 #else
@@ -460,14 +428,6 @@ float4 fetch_raw_color(int2 xy)
 
 float4 fetch_c(int2 uv)
 {
-#ifdef BINDLESS
-#if PS_TEX_IS_FB == 1
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#else
-	Texture2D<float4> Texture = ResourceDescriptorHeap[TexIdx];
-#endif
-#endif
-
 #if PS_TEX_IS_FB == 1
 	return RtTexture.Load(int3(uv, 0));
 #else
@@ -517,12 +477,6 @@ int2 clamp_wrap_uv_depth(int2 uv)
 
 float4 sample_depth(float2 st, float2 pos)
 {
-#ifdef BINDLESS
-//#if (PS_TALES_OF_ABYSS_HLE == 1) || (PS_URBAN_CHAOS_HLE == 1)
-    Texture2D<float4> Palette = ResourceDescriptorHeap[PalIdx];
-//#endif
-#endif
-	
 	float2 uv_f = (float2)clamp_wrap_uv_depth(int2(st)) * (float2)ScaledScaleFactor;
 
 #if PS_REGION_RECT == 1
@@ -880,9 +834,6 @@ void ps_fbmask(inout float4 C, float2 pos_xy)
 {
 	if (PS_FBMASK)
 	{
-#ifdef BINDLESS
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#endif
 		float multi = PS_COLCLIP_HW ? 65535.0f : 255.0f;
 		float4 RT = trunc(RtTexture.Load(int3(pos_xy, 0)) * multi + 0.1f);
 		C = (float4)(((uint4)C & ~FbMask) | ((uint4)RT & FbMask));
@@ -946,9 +897,6 @@ void ps_blend(inout float4 Color, inout float4 As_rgba, float2 pos_xy)
 
 	if (SW_BLEND)
 	{
-#ifdef BINDLESS
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-#endif
 		// PABE
 		if (PS_PABE)
 		{
@@ -1099,12 +1047,10 @@ void ps_blend(inout float4 Color, inout float4 As_rgba, float2 pos_xy)
 PS_OUTPUT ps_main(PS_INPUT input)
 {
 #ifdef BINDLESS
-//#if SW_AD_TO_HW || (PS_DATE >= 5) || (PS_AFAIL == 3 && PS_NO_COLOR1 && NEEDS_RT_FOR_AFAIL)
-    Texture2D<float4> RtTexture = ResourceDescriptorHeap[RtIdx];
-//#endif
-//#if PS_DATE == 3
-	Texture2D<float> PrimMinTexture = ResourceDescriptorHeap[PrimIdx];
-//#endif
+    Texture = ResourceDescriptorHeap[TexIdx];
+    Palette = ResourceDescriptorHeap[PalIdx];
+    RtTexture = ResourceDescriptorHeap[RtIdx];
+	PrimMinTexture = ResourceDescriptorHeap[PrimIdx];
 #endif
 	
 	float4 C = ps_color(input);
