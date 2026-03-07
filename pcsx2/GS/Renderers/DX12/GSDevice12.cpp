@@ -2635,10 +2635,10 @@ bool GSDevice12::CreateRootSignatures()
 	if (m_dynamic_resources)
 	{
 		rsb.SetViewHeapIndexedFlag();
-		//rsb.AddCBVParameter(2, D3D12_SHADER_VISIBILITY_PIXEL);
-		rsb.Add32BitConstants(2, 4, D3D12_SHADER_VISIBILITY_PIXEL);
+		rsb.AddCBVParameter(2, D3D12_SHADER_VISIBILITY_PIXEL);
 		// TODO: also make bindless?
 		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
+		rsb.AddCBVParameter(3, D3D12_SHADER_VISIBILITY_PIXEL);
 	}
 	else
 	{
@@ -3861,7 +3861,55 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		flags |= DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE;
 	}
 
-	if (!m_dynamic_resources)
+	if (m_dynamic_resources)
+	{
+		if (flags & DIRTY_FLAG_TFX_TEXTURES)
+		{
+			if (!m_pixel_constant_buffer.ReserveMemory(
+					sizeof(u32) * NUM_TFX_TEXTURES, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT))
+			{
+				if (already_execed)
+				{
+					Console.Error("D3D12: Failed to reserve texture uniform space");
+					return false;
+				}
+
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of texture uniform space");
+				return ApplyTFXState(true);
+			}
+
+			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
+			std::memcpy(m_pixel_constant_buffer.GetCurrentHostPointer(), &texIndices, sizeof(texIndices));
+			m_tfx_constant_buffers[2] = m_pixel_constant_buffer.GetCurrentGPUPointer();
+			m_pixel_constant_buffer.CommitMemory(sizeof(texIndices));
+
+			flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE;
+		}
+
+		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
+		{
+			if (!m_pixel_constant_buffer.ReserveMemory(
+					sizeof(u32) * NUM_TFX_RT_TEXTURES, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT))
+			{
+				if (already_execed)
+				{
+					Console.Error("D3D12: Failed to reserve RT texture uniform space");
+					return false;
+				}
+
+				ExecuteCommandListAndRestartRenderPass(false, "Ran out of RT texture uniform space");
+				return ApplyTFXState(true);
+			}
+
+			std::array<u32, NUM_TFX_RT_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index};
+			std::memcpy(m_pixel_constant_buffer.GetCurrentHostPointer(), &texIndices, sizeof(texIndices));
+			m_tfx_constant_buffers[3] = m_pixel_constant_buffer.GetCurrentGPUPointer();
+			m_pixel_constant_buffer.CommitMemory(sizeof(texIndices));
+
+			flags |= DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2;
+		}
+	}
+	else
 	{
 		if (flags & DIRTY_FLAG_TFX_TEXTURES)
 		{
@@ -3908,19 +3956,12 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 	}
 	if (m_dynamic_resources)
 	{
-		if (flags & DIRTY_FLAG_TFX_TEXTURES)
-		{
-			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
-			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_TEXTURES, texIndices.data(), 0);
-		}
-		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
-		{
-			std::array<u32, NUM_TFX_RT_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index};
-			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_RT_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
-		}
-
+		if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE)
+			cmdlist->SetGraphicsRootConstantBufferView(3, m_tfx_constant_buffers[2]);
 		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
 			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_samplers_handle_gpu);
+		if (flags & DIRTY_FLAG_TEXTURES_DESCRIPTOR_TABLE_2)
+			cmdlist->SetGraphicsRootConstantBufferView(5, m_tfx_constant_buffers[3]);
 	}
 	else
 	{
