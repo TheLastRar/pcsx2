@@ -197,9 +197,11 @@ cbuffer cb2 : register(b2)
 {
     uint TexIdx;
     uint PalIdx;
+};
+cbuffer cb3 : register(b3)
+{
     uint RtIdx;
     uint PrimIdx;
-    uint SampIdx;
 };
 #endif
 

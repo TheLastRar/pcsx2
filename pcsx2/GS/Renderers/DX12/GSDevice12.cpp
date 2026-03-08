@@ -2635,10 +2635,10 @@ bool GSDevice12::CreateRootSignatures()
 	if (m_dynamic_resources)
 	{
 		rsb.SetViewHeapIndexedFlag();
-		//rsb.AddCBVParameter(2, D3D12_SHADER_VISIBILITY_PIXEL);
-		rsb.Add32BitConstants(2, 4, D3D12_SHADER_VISIBILITY_PIXEL);
+		rsb.Add32BitConstants(2, 2, D3D12_SHADER_VISIBILITY_PIXEL);
 		// TODO: also make bindless?
 		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
+		rsb.Add32BitConstants(3, 2, D3D12_SHADER_VISIBILITY_PIXEL);
 	}
 	else
 	{
@@ -3911,12 +3911,12 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		if (flags & DIRTY_FLAG_TFX_TEXTURES)
 		{
 			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
-			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_TEXTURES, texIndices.data(), 0);
+			cmdlist->SetGraphicsRoot32BitConstants(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, NUM_TFX_TEXTURES, texIndices.data(), 0);
 		}
 		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
 		{
 			std::array<u32, NUM_TFX_RT_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index};
-			cmdlist->SetGraphicsRoot32BitConstants(3, NUM_TFX_RT_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
+			cmdlist->SetGraphicsRoot32BitConstants(TFX_ROOT_SIGNATURE_PARAM_PS_RT_TEXTURES, NUM_TFX_RT_TEXTURES, texIndices.data(), 0);
 		}
 
 		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
