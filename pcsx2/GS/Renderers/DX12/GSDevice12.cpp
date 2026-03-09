@@ -1426,6 +1426,11 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		m_enhanced_barriers = false;
 	}
 
+	D3D12_FEATURE_DATA_D3D12_OPTIONS19 device_options19 = {};
+	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS19, &device_options19, sizeof(device_options19));
+	m_ansio_mip_point = SUCCEEDED(hr) && device_options19.AnisoFilterWithPointMipSupported;
+	Console.WriteLnFmt("D3D12: Ansotropic Filtering with Mipmap Filtering: {}", device_options19.AnisoFilterWithPointMipSupported ? "Supported" : "Not Supported");
+
 	return true;
 }
 
@@ -2437,11 +2442,19 @@ bool GSDevice12::GetSampler(D3D12DescriptorHandle* cpu_handle, GSHWDrawConfig::S
 		return true;
 	}
 
+	const u8 index = (static_cast<u8>(ss.IsMipFilterLinear()) << 2) |
+	                 (static_cast<u8>(ss.IsMagFilterLinear()) << 1) | static_cast<u8>(ss.IsMinFilterLinear());
+
 	D3D12_SAMPLER_DESC sd = {};
 	const int anisotropy = GSConfig.MaxAnisotropy;
-	if (anisotropy > 1 && ss.aniso)
+	// DX12 dosn't support AF with point filtering (except on mipmaps)
+	// Disable AF when mag filter is point, enable otherwise.
+	if (anisotropy > 1 && ss.aniso && ss.IsMagFilterLinear())
 	{
-		sd.Filter = D3D12_FILTER_ANISOTROPIC;
+		if (!ss.IsMipFilterLinear() && m_ansio_mip_point)
+			sd.Filter = D3D12_FILTER_MIN_MAG_ANISOTROPIC_MIP_POINT;
+		else
+			sd.Filter = D3D12_FILTER_ANISOTROPIC;
 	}
 	else
 	{
@@ -2456,8 +2469,6 @@ bool GSDevice12::GetSampler(D3D12DescriptorHandle* cpu_handle, GSHWDrawConfig::S
 			D3D12_FILTER_MIN_MAG_MIP_LINEAR, // 111 / min=linear,mag=linear,mip=linear
 		}};
 
-		const u8 index = (static_cast<u8>(ss.IsMipFilterLinear()) << 2) |
-		                 (static_cast<u8>(ss.IsMagFilterLinear()) << 1) | static_cast<u8>(ss.IsMinFilterLinear());
 		sd.Filter = filters[index];
 	}
 

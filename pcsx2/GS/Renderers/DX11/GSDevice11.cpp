@@ -1850,7 +1850,9 @@ void GSDevice11::SetupPS(const PSSelector& sel, const GSHWDrawConfig::PSConstant
 			D3D11_SAMPLER_DESC sd = {};
 
 			const int anisotropy = GSConfig.MaxAnisotropy;
-			if (anisotropy > 1 && ssel.aniso)
+			// DX11 dosn't support AF with point filtering.
+			// Disable AF when mag filter is point, enable otherwise.
+			if (anisotropy > 1 && ssel.aniso && ssel.IsMagFilterLinear())
 			{
 				sd.Filter = D3D11_FILTER_ANISOTROPIC;
 			}
