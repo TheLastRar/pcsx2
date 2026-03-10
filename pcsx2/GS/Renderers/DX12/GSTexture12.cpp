@@ -202,7 +202,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			return {};
 		}
 
-		hr = dev->GetAllocator()->CreateAliasingResource(allocation.get(), 0, &desc, state,
+		hr = dev->GetAllocator()->CreateAliasingResource(allocation.get(), 0, &desc, D3D12_RESOURCE_STATE_COMMON,
 			(type == Type::RenderTarget || type == Type::DepthStencil) ? &optimized_clear_value : nullptr,
 			IID_PPV_ARGS(resource.put()));
 		if (FAILED(hr))
@@ -214,7 +214,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			return {};
 		}
 
-		hr = dev->GetAllocator()->CreateAliasingResource(allocation.get(), 0, &desc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		hr = dev->GetAllocator()->CreateAliasingResource(allocation.get(), 0, &desc, D3D12_RESOURCE_STATE_COMMON,
 			(type == Type::RenderTarget || type == Type::DepthStencil) ? &optimized_clear_value : nullptr,
 			IID_PPV_ARGS(resource_fbl.put()));
 		if (FAILED(hr))
