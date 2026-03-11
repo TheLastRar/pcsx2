@@ -86,6 +86,10 @@
 #define SW_AD_TO_HW (PS_BLEND_C == 1 && PS_A_MASKED)
 #define NEEDS_RT_FOR_AFAIL (PS_AFAIL == 3 && PS_NO_COLOR1)
 
+#define PIXEL_SHADER
+
+#define ANISOTROPIC_FILTERING 16
+
 struct VS_INPUT
 {
 	float2 st : TEXCOORD0;
@@ -180,6 +184,172 @@ cbuffer cb1
 	float RcpScaleFactor;
 };
 
+#if PS_AUTOMATIC_LOD != 0 && PS_MANUAL_LOD == 1
+float manual_lod(float uv_w)
+{
+	// FIXME add LOD: K - ( LOG2(Q) * (1 << L))
+	float K = LODParams.x;
+	float L = LODParams.y;
+	float bias = LODParams.z;
+	float max_lod = LODParams.w;
+
+	float gs_lod = K - log2(abs(uv_w)) * L;
+	// FIXME max useful ?
+	//float lod = max(min(gs_lod, max_lod) - bias, 0.0f);
+	return lod = min(gs_lod, max_lod) - bias;
+}
+#endif
+
+bool atst(float4 C)
+{
+    float a = C.a;
+
+    if (PS_ATST == 1)
+    {
+        return (a <= AREF);
+    }
+    else if (PS_ATST == 2)
+    {
+        return (a >= AREF);
+    }
+    else if (PS_ATST == 3)
+    {
+        return (abs(a - AREF) <= 0.5f);
+    }
+    else if (PS_ATST == 4)
+    {
+        return (abs(a - AREF) >= 0.5f);
+    }
+    else
+    {
+		// nothing to do
+        return true;
+    }
+}
+
+#if ANISOTROPIC_FILTERING > 1
+float4 sample_c_af(float2 uv, float uv_w)
+{
+	// Below taken from https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#7.18.11%20LOD%20Calculations
+	// With modifications from https://registry.khronos.org/OpenGL/extensions/EXT/EXT_texture_filter_anisotropic.txt
+	float2 sz;
+    Texture.GetDimensions(sz.x, sz.y);
+    float2 dX = ddx(uv) * sz;
+    float2 dY = ddy(uv) * sz;
+	
+	// Calculate Ellipse Transform
+    bool dZero = length(dX) == 0 || length(dY) == 0;
+    bool dPar = (dX.x * dY.y - dY.x * dX.y) == 0;
+    bool dPer = dot(dX, dY) == 0;
+    bool2 dInfNan = isinf(dX) || isinf(dY) || isnan(dX) || isnan(dY);
+	// TODO: check if we might cause inf/nan
+    if (!(dZero || dPar || dPer || dInfNan.x || dInfNan.y))
+    {
+        float A = dX.y * dX.y + dY.y * dY.y;
+        float B = -2 * (dX.x * dX.y + dY.x * dY.y);
+        float C = dX.x * dX.x + dY.x * dY.x;
+        float f = (dX.x * dY.y - dY.x * dX.y);
+        float F = f * f;
+
+        float p = A - C;
+        float q = A + C;
+        float t = sqrt(p * p + B * B);
+
+        float2 new_dX = float2(
+			sqrt(F * (t + p) / (t * (q + t))),
+			sqrt(F * (t - p) / (t * (q + t))) * sign(B)
+		);
+		
+        float2 new_dY = float2(
+			sqrt(F * (t - p) / (t * (q - t))) * -sign(B),
+			sqrt(F * (t + p) / (t * (q - t)))
+		);
+		
+        bool2 new_dInfNan = isinf(new_dX) || isinf(new_dY) || isnan(new_dX) || isnan(new_dY);
+        if (!(new_dInfNan.x || new_dInfNan.y))
+        {
+            dX = new_dX;
+            dY = new_dY;
+        }
+    }
+
+	// Compute AF values
+    float squaredLengthX = dX.x * dX.x + dX.y * dX.y;
+    float squaredLengthY = dY.x * dY.x + dY.y * dY.y;
+    float determinant = abs(dX.x * dY.y - dX.y * dY.x);
+    bool isMajorX = squaredLengthX > squaredLengthY;
+    float squaredLengthMajor = isMajorX ? squaredLengthX : squaredLengthY;
+    float lengthMajor = sqrt(squaredLengthMajor);
+    float normMajor = 1.0f / lengthMajor;
+	
+    float2 anisoLineDirection = float2(
+		(isMajorX ? dX.x : dY.x) * normMajor,
+		(isMajorX ? dX.y : dY.y) * normMajor
+	);
+	
+    float ratioOfAnisotropy = squaredLengthMajor / determinant;
+
+    // clamp ratio and compute LOD
+    float lengthMinor;
+
+    if (ratioOfAnisotropy > ANISOTROPIC_FILTERING)
+    {
+        // ratio is clamped - LOD is based on ratio (preserves area)
+        ratioOfAnisotropy = ANISOTROPIC_FILTERING;
+        lengthMinor = lengthMajor / ratioOfAnisotropy;
+    }
+    else
+    {
+        // ratio not clamped - LOD is based on area
+        lengthMinor = determinant / lengthMajor;
+    }
+
+    // clamp to top LOD
+    if (lengthMinor < 1.0)
+        ratioOfAnisotropy = max(1.0, ratioOfAnisotropy * lengthMinor);
+
+    ratioOfAnisotropy = ceil(ratioOfAnisotropy);
+	
+#if PS_AUTOMATIC_LOD == 1	
+	float lod = log2(lengthMinor);
+#elif PS_MANUAL_LOD == 1
+	float lod = manual_lod(uv_w);
+#else
+    float lod = 0; // No Lod
+#endif
+	
+	if (ratioOfAnisotropy == 1.0)
+        return Texture.SampleLevel(TextureSampler, uv, lod);
+	
+	#define HAS_AFAIL (PS_AFAIL == 0 && (PS_ATST > 0 && PS_ATST < 5) && false)
+	#if HAS_AFAIL
+	int n = 0;
+	#endif
+	
+    float4 colour = float4(0, 0, 0, 0);
+    float2 anisoLine = anisoLineDirection * 0.5 * ratioOfAnisotropy * (1.0 / sz);
+    for (int i = 0; i < ratioOfAnisotropy; i++)
+    {
+        float2 uv_sample = uv - anisoLine + i * (2.0 * anisoLine) / (ratioOfAnisotropy - 1.0);
+        float4 sample_colour = Texture.SampleLevel(TextureSampler, uv_sample, lod);
+#if HAS_AFAIL
+        bool atst_pass = atst(sample_colour);
+		if (!atst_pass)
+            continue;
+        n++;
+#endif
+        colour += sample_colour;
+    }
+
+#if HAS_AFAIL
+	colour /= n;
+#else
+    colour /= ratioOfAnisotropy;
+#endif
+    return colour;
+}
+#endif
+
 float4 sample_c(float2 uv, float uv_w, int2 xy)
 {
 #if PS_TEX_IS_FB == 1
@@ -212,21 +382,12 @@ float4 sample_c(float2 uv, float uv_w, int2 xy)
 	#endif
 #endif
 
-#if PS_AUTOMATIC_LOD == 1
+#if ANISOTROPIC_FILTERING > 1
+    return sample_c_af(uv, uv_w);
+#elif PS_AUTOMATIC_LOD == 1
 	return Texture.Sample(TextureSampler, uv);
 #elif PS_MANUAL_LOD == 1
-	// FIXME add LOD: K - ( LOG2(Q) * (1 << L))
-	float K = LODParams.x;
-	float L = LODParams.y;
-	float bias = LODParams.z;
-	float max_lod = LODParams.w;
-
-	float gs_lod = K - log2(abs(uv_w)) * L;
-	// FIXME max useful ?
-	//float lod = max(min(gs_lod, max_lod) - bias, 0.0f);
-	float lod = min(gs_lod, max_lod) - bias;
-
-	return Texture.SampleLevel(TextureSampler, uv, lod);
+	return Texture.SampleLevel(TextureSampler, uv, manual_lod(uv_w));
 #else
 	return Texture.SampleLevel(TextureSampler, uv, 0); // No lod
 #endif
@@ -712,33 +873,6 @@ float4 tfx(float4 T, float4 C)
 #endif
 
 	return C_out;
-}
-
-bool atst(float4 C)
-{
-	float a = C.a;
-
-	if(PS_ATST == 1)
-	{
-		return (a <= AREF);
-	}
-	else if(PS_ATST == 2)
-	{
-		return (a >= AREF);
-	}
-	else if(PS_ATST == 3)
-	{
-		 return (abs(a - AREF) <= 0.5f);
-	}
-	else if(PS_ATST == 4)
-	{
-		return (abs(a - AREF) >= 0.5f);
-	}
-	else
-	{
-		// nothing to do
-		return true;
-	}
 }
 
 float4 fog(float4 c, float f)
@@ -1235,7 +1369,7 @@ float depth_value = input.p.z;
 //////////////////////////////////////////////////////////////////////
 // Vertex Shader
 //////////////////////////////////////////////////////////////////////
-
+#define VERTEX_SHADER
 #ifdef VERTEX_SHADER
 
 #ifdef DX12
