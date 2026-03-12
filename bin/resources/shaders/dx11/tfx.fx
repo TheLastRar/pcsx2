@@ -86,9 +86,9 @@
 #define SW_AD_TO_HW (PS_BLEND_C == 1 && PS_A_MASKED)
 #define NEEDS_RT_FOR_AFAIL (PS_AFAIL == 3 && PS_NO_COLOR1)
 
-#define PIXEL_SHADER
+//#define PIXEL_SHADER
 
-#define ANISOTROPIC_FILTERING 16
+//#define PS_ANISOTROPIC_FILTERING 16
 
 struct VS_INPUT
 {
@@ -227,11 +227,11 @@ bool atst(float4 C)
     }
 }
 
-#if ANISOTROPIC_FILTERING > 1
+#if PS_ANISOTROPIC_FILTERING > 1
 float4 sample_c_af(float2 uv, float uv_w)
 {
 	// Below taken from https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#7.18.11%20LOD%20Calculations
-	// With modifications from https://registry.khronos.org/OpenGL/extensions/EXT/EXT_texture_filter_anisotropic.txt
+	// With guidance from https://pema.dev/2025/05/09/mipmaps-too-much-detail/ 
 	float2 sz;
     Texture.GetDimensions(sz.x, sz.y);
     float2 dX = ddx(uv) * sz;
@@ -292,10 +292,10 @@ float4 sample_c_af(float2 uv, float uv_w)
     // clamp ratio and compute LOD
     float lengthMinor;
 
-    if (ratioOfAnisotropy > ANISOTROPIC_FILTERING)
+    if (ratioOfAnisotropy > PS_ANISOTROPIC_FILTERING)
     {
         // ratio is clamped - LOD is based on ratio (preserves area)
-        ratioOfAnisotropy = ANISOTROPIC_FILTERING;
+        ratioOfAnisotropy = PS_ANISOTROPIC_FILTERING;
         lengthMinor = lengthMajor / ratioOfAnisotropy;
     }
     else
@@ -308,7 +308,7 @@ float4 sample_c_af(float2 uv, float uv_w)
     if (lengthMinor < 1.0)
         ratioOfAnisotropy = max(1.0, ratioOfAnisotropy * lengthMinor);
 
-    ratioOfAnisotropy = ceil(ratioOfAnisotropy);
+    ratioOfAnisotropy = round(ratioOfAnisotropy);
 	
 #if PS_AUTOMATIC_LOD == 1	
 	float lod = log2(lengthMinor);
@@ -320,33 +320,51 @@ float4 sample_c_af(float2 uv, float uv_w)
 	
 	if (ratioOfAnisotropy == 1.0)
         return Texture.SampleLevel(TextureSampler, uv, lod);
+
+    float2 anisoLine = anisoLineDirection * 0.5 * ratioOfAnisotropy * (1.0 / sz);
 	
 	#define HAS_AFAIL (PS_AFAIL == 0 && (PS_ATST > 0 && PS_ATST < 5) && false)
 	#if HAS_AFAIL
 	int n = 0;
 	#endif
-	
-    float4 colour = float4(0, 0, 0, 0);
-    float2 anisoLine = anisoLineDirection * 0.5 * ratioOfAnisotropy * (1.0 / sz);
+
+    float4 num = float4(0, 0, 0, 0);
+    float den = 0;
+
+
+	// Maybe we should position samples based on weight, rather then weighting the sample result
     for (int i = 0; i < ratioOfAnisotropy; i++)
     {
-        float2 uv_sample = uv - anisoLine + i * (2.0 * anisoLine) / (ratioOfAnisotropy - 1.0);
-        float4 sample_colour = Texture.SampleLevel(TextureSampler, uv_sample, lod);
-#if HAS_AFAIL
-        bool atst_pass = atst(sample_colour);
-		if (!atst_pass)
-            continue;
-        n++;
-#endif
-        colour += sample_colour;
-    }
+        float2 d = -anisoLine + i * (2.0 * anisoLine) / (ratioOfAnisotropy - 1.0);
+        float squaredR = d.x * d.x + d.y * d.y;
+		
+        const float alpha = 1;
+		
+        float weight = exp(-alpha * squaredR);
 
-#if HAS_AFAIL
-	colour /= n;
-#else
-    colour /= ratioOfAnisotropy;
-#endif
-    return colour;
+        float2 uv_sample = uv + d;
+        float4 sample_colour = Texture.SampleLevel(TextureSampler, uv_sample, lod);
+        num += sample_colour;
+        den += weight;
+    }
+	
+//    float4 colour = float4(0, 0, 0, 0);
+//    float2 anisoLine = anisoLineDirection * 0.5 * ratioOfAnisotropy * (1.0 / sz);
+//    for (int i = 0; i < ratioOfAnisotropy; i++)
+//    {
+//        float2 uv_sample = uv - anisoLine + i * (2.0 * anisoLine) / (ratioOfAnisotropy - 1.0);
+//        float4 sample_colour = Texture.SampleLevel(TextureSampler, uv_sample, lod);
+//#if HAS_AFAIL
+//        bool atst_pass = atst(sample_colour);
+//		if (!atst_pass)
+//            continue;
+//        n++;
+//#endif
+//        colour += sample_colour;
+//    }
+
+    num /= den;
+    return num;
 }
 #endif
 
@@ -382,7 +400,7 @@ float4 sample_c(float2 uv, float uv_w, int2 xy)
 	#endif
 #endif
 
-#if ANISOTROPIC_FILTERING > 1
+#if PS_ANISOTROPIC_FILTERING > 1
     return sample_c_af(uv, uv_w);
 #elif PS_AUTOMATIC_LOD == 1
 	return Texture.Sample(TextureSampler, uv);

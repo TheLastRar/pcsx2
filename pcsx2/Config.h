@@ -834,6 +834,7 @@ struct Pcsx2Config
 		GSCASMode CASMode = GSCASMode::Disabled;
 		u8 Dithering = 2;
 		u8 MaxAnisotropy = 0;
+		bool SWAnisotropy = true;
 		u8 TVShader = 0;
 		s16 GetSkipCountFunctionId = -1;
 		s16 BeforeDrawFunctionId = -1;

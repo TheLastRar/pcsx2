@@ -827,6 +827,7 @@ bool Pcsx2Config::GSOptions::OptionsAreEqual(const GSOptions& right) const
 		OpEqu(CASMode) &&
 		OpEqu(Dithering) &&
 		OpEqu(MaxAnisotropy) &&
+		OpEqu(SWAnisotropy) &&
 		OpEqu(SWExtraThreads) &&
 		OpEqu(SWExtraThreadsHeight) &&
 		OpEqu(TriFilter) &&
@@ -1034,6 +1035,7 @@ void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapBitfieldEx(CAS_Sharpness, "CASSharpness");
 	SettingsWrapBitfieldEx(Dithering, "dithering_ps2");
 	SettingsWrapBitfieldEx(MaxAnisotropy, "MaxAnisotropy");
+	SettingsWrapBitBool(SWAnisotropy);
 	SettingsWrapBitfieldEx(SWExtraThreads, "extrathreads");
 	SettingsWrapBitfieldEx(SWExtraThreadsHeight, "extrathreads_height");
 	SettingsWrapBitfieldEx(TVShader, "TVShader");
