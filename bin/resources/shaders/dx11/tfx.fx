@@ -184,7 +184,7 @@ cbuffer cb1
 	float RcpScaleFactor;
 };
 
-#if PS_AUTOMATIC_LOD != 0 && PS_MANUAL_LOD == 1
+#if (PS_AUTOMATIC_LOD != 1) && (PS_MANUAL_LOD == 1)
 float manual_lod(float uv_w)
 {
 	// FIXME add LOD: K - ( LOG2(Q) * (1 << L))
@@ -195,8 +195,8 @@ float manual_lod(float uv_w)
 
 	float gs_lod = K - log2(abs(uv_w)) * L;
 	// FIXME max useful ?
-	//float lod = max(min(gs_lod, max_lod) - bias, 0.0f);
-	return lod = min(gs_lod, max_lod) - bias;
+	//return max(min(gs_lod, max_lod) - bias, 0.0f);
+	return min(gs_lod, max_lod) - bias;
 }
 #endif
 
@@ -296,7 +296,7 @@ float4 sample_c_af(float2 uv, float uv_w)
     {
         // ratio is clamped - LOD is based on ratio (preserves area)
         ratioOfAnisotropy = PS_ANISOTROPIC_FILTERING;
-        lengthMinor = lengthMajor / ratioOfAnisotropy;
+        lengthMinor = lengthMajor / PS_ANISOTROPIC_FILTERING;
     }
     else
     {
@@ -310,7 +310,7 @@ float4 sample_c_af(float2 uv, float uv_w)
 
     ratioOfAnisotropy = round(ratioOfAnisotropy);
 	
-#if PS_AUTOMATIC_LOD == 1	
+#if PS_AUTOMATIC_LOD == 1
 	float lod = log2(lengthMinor);
 #elif PS_MANUAL_LOD == 1
 	float lod = manual_lod(uv_w);
@@ -1387,7 +1387,6 @@ float depth_value = input.p.z;
 //////////////////////////////////////////////////////////////////////
 // Vertex Shader
 //////////////////////////////////////////////////////////////////////
-#define VERTEX_SHADER
 #ifdef VERTEX_SHADER
 
 #ifdef DX12
