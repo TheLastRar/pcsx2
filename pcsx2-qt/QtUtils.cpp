@@ -50,6 +50,7 @@
 #include "QtHost.h"
 
 #if defined(_WIN32)
+#include <QtCore/QDir>
 #include "common/RedtapeWindows.h"
 #include "common/RedtapeWilCom.h"
 #include <Shlobj.h>
