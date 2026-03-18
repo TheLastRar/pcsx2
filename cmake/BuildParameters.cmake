@@ -201,9 +201,16 @@ endif()
 
 if(MSVC)
 	# Enable PDB generation in release builds
-	add_compile_options(
-		$<$<AND:${CONFIG_REL_NO_DEB},$<COMPILE_LANGUAGE:C,CXX,ASM_MASM>>:/Zi>
-	)
+	# ccache wants Z7 over Zi
+	if (DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
+		add_compile_options(
+			$<$<AND:${CONFIG_REL_NO_DEB},$<COMPILE_LANGUAGE:C,CXX,ASM_MASM>>:/Z7>
+		)
+	else()
+		add_compile_options(
+			$<$<AND:${CONFIG_REL_NO_DEB},$<COMPILE_LANGUAGE:C,CXX,ASM_MASM>>:/Zi>
+		)
+	endif()
 	add_compile_options(
 		$<$<AND:${CONFIG_REL_NO_DEB},$<COMPILE_LANGUAGE:ASM_MARMASM>>:-g>
 	)
