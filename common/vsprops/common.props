@@ -37,7 +37,8 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <ExceptionHandling>false</ExceptionHandling>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(PCSX2ClToolLauncher)'==''">ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'$(PCSX2ClToolLauncher)'!=''">OldStyle</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <DisableSpecificWarnings>4063;4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -71,4 +72,19 @@
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+
+  <Target Name="CompilerLauncher"
+    BeforeTargets="ClCompile"
+    Condition="$(PCSX2ClToolLauncher)!=''">
+    <PropertyGroup>
+      <CLEffectiveToolPath Condition="'$(CLToolExe)'==''">$(CLToolPath)cl.exe</CLEffectiveToolPath>
+      <CLEffectiveToolPath Condition="'$(CLToolExe)'!=''">$(CLToolPath)$(CLToolExe)</CLEffectiveToolPath>
+      <CLToolExe>ClToolLauncher.bat</CLToolExe>
+      <CLToolPath>$(IntDir)</CLToolPath>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(IntDir)ClToolLauncher.bat"
+      Lines="@echo off;set PATH=$([MSBuild]::Escape($(ExecutablePath)));$(PCSX2ClToolLauncher) $(CLEffectiveToolPath) %*" 
+      Overwrite="true"/>
+  </Target>
 </Project>
