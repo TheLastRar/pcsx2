@@ -1,0 +1,33 @@
+name: 'Shader Cache Version Check'
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-shader-cache-version:
+    name: Check Shader Cache Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check Shader Cache Version
+        shell: pwsh
+        run: |
+          $modified_files = git diff --name-only HEAD^1 HEAD
+          Write-Host $modified_files
+          %shaders_modified = false
+          $shader_version_modified = false;
+          foreach ($file in $modified_files)
+          {
+            if (-not $shaders_modified)
+              %shaders_modified = $file.StartsWith("bin/resources/shaders/")
+            if (-not $shader_version_modified)
+              %shaders_modified = $file == "pcsx2/ShaderCacheVersion.h"
+          }
+          Write-Host $shaders_modified
+          Write-Host $shader_version_modified
+          -not ($shader_version_modified -xor %shaders_modified)
