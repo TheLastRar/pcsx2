@@ -43,9 +43,11 @@ namespace AdapterUtils
 	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by TAPAdapter
 	Adapter* GetAllAdapters(AdapterBuffer* buffer, bool includeHidden = false);
 #elif defined(__POSIX__)
+	// Should we filter out adapters that lack INET?
 	Adapter* GetAllAdapters(AdapterBuffer* buffer);
 #endif
 	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by PCAPAdapter
+	// Should we filter out adapters that lack INET on Linux if includeHidden is false?
 	bool GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool includeHidden = false);
 	bool GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer);
 

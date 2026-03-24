@@ -21,14 +21,22 @@
 #include <sys/ioctl.h>
 #include <string.h>
 
-#if defined(__FreeBSD__) || (__APPLE__)
+#ifdef __linux__
+#include <linux/if_arp.h>
+#include <linux/if_packet.h>
+#define IF_TYPE AF_PACKET
+#elif defined(__FreeBSD__) || (__APPLE__)
 #include <sys/types.h>
 #include <net/if_dl.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/sockio.h>
 #include <net/route.h>
+#include <net/if_types.h>
 #include <net/if_var.h>
+#define IF_TYPE AF_LINK
+#else
+#define IF_TYPE AF_INET
 #endif
 #endif
 
@@ -202,12 +210,21 @@ bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, Adapter
 	do
 	{
 		if (pAdapter->ifa_addr != nullptr &&
-			ReadAddressFamily(pAdapter->ifa_addr) == AF_INET &&
+			ReadAddressFamily(pAdapter->ifa_addr) == IF_TYPE &&
 			name == pAdapter->ifa_name)
 		{
-			*adapter = *pAdapter;
-			buffer->swap(adapterInfo);
-			return true;
+#if IF_TYPE == AF_PACKET
+			const sockaddr_ll* ll = reinterpret_cast<sockaddr_ll*>(pAdapter->ifa_addr);
+			if (ll->sll_hatype == ARPHRD_ETHER)
+#elif IF_TYPE == AF_LINK
+			const sockaddr_dl* dl = reinterpret_cast<sockaddr_dl*>(pAdapter->ifa_addr);
+			if (dl->sdl_type == IFT_ETHER)
+#endif
+			{
+				*adapter = *pAdapter;
+				buffer->swap(adapterInfo);
+				return true;
+			}
 		}
 
 		pAdapter = pAdapter->ifa_next;
@@ -272,7 +289,13 @@ std::optional<MAC_Address> AdapterUtils::GetAdapterMAC(const Adapter* adapter)
 std::optional<MAC_Address> AdapterUtils::GetAdapterMAC(const Adapter* adapter)
 {
 	MAC_Address macAddr{};
-#if defined(AF_LINK)
+#if IF_TYPE == AF_PACKET
+	std::memcpy(&macAddr, reinterpret_cast<sockaddr_ll*>(adapter->ifa_addr)->sll_addr, sizeof(macAddr));
+	return macAddr;
+#elif IF_TYPE == AF_LINK
+	std::memcpy(&macAddr, LLADDR(reinterpret_cast<sockaddr_dl*>(po->ifa_addr)), sizeof(macAddr));
+	return macAddr;
+#elif defined(AF_LINK)
 	ifaddrs* adapterInfo;
 	const int error = getifaddrs(&adapterInfo);
 	if (error)
@@ -358,8 +381,36 @@ std::optional<IP_Address> AdapterUtils::GetAdapterIP(const Adapter* adapter)
 	sockaddr_in* address = nullptr;
 	if (adapter != nullptr)
 	{
-		if (adapter->ifa_addr != nullptr && ReadAddressFamily(adapter->ifa_addr) == AF_INET)
+#if IF_TYPE == AF_INET
+		pxAssert(adapter->ifa_addr != nullptr && ReadAddressFamily(adapter->ifa_addr) == AF_INET)
+		address = reinterpret_cast<sockaddr_in*>(adapter->ifa_addr);
+#else
+		ifaddrs* adapterInfo;
+		const int error = getifaddrs(&adapterInfo);
+		if (error)
+		{
+			Console.Error("DEV9: Failed to get adapter information %s", error);
+			return std::nullopt;
+		}
+
+		const ScopedGuard adapterInfoGuard = [&adapterInfo]() {
+			freeifaddrs(adapterInfo);
+		};
+
+		for (const ifaddrs* po = adapterInfo; po; po = po->ifa_next)
+		{
+			if (strcmp(po->ifa_name, adapter->ifa_name))
+				continue;
+
+			if (ReadAddressFamily(po->ifa_addr) != AF_INET)
+				continue;
+
 			address = reinterpret_cast<sockaddr_in*>(adapter->ifa_addr);
+			break;
+		}
+		if (address == nullptr)
+			Console.Error("DEV9: Failed to get IP address for adapter using AF_INET");
+#endif
 	}
 
 	if (address != nullptr)
