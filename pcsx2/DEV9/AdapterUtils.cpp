@@ -112,10 +112,10 @@ AdapterUtils::Adapter* AdapterUtils::GetAllAdapters(AdapterBuffer* buffer, bool 
 	// Trigger implicit object creation.
 	return std::launder(reinterpret_cast<PIP_ADAPTER_ADDRESSES>(buffer->get()));
 }
-bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer)
+bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool includeHidden)
 {
 	std::unique_ptr<std::byte[]> adapterInfo;
-	PIP_ADAPTER_ADDRESSES pAdapter = GetAllAdapters(&adapterInfo);
+	PIP_ADAPTER_ADDRESSES pAdapter = GetAllAdapters(&adapterInfo, includeHidden);
 	if (pAdapter == nullptr)
 		return false;
 
@@ -192,7 +192,7 @@ AdapterUtils::Adapter* AdapterUtils::GetAllAdapters(AdapterBuffer* buffer)
 
 	return buffer->get();
 }
-bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer)
+bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool unused)
 {
 	std::unique_ptr<ifaddrs, IfAdaptersDeleter> adapterInfo;
 	ifaddrs* pAdapter = GetAllAdapters(&adapterInfo);

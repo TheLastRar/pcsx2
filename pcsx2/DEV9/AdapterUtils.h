@@ -45,7 +45,8 @@ namespace AdapterUtils
 #elif defined(__POSIX__)
 	Adapter* GetAllAdapters(AdapterBuffer* buffer);
 #endif
-	bool GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer);
+	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by PCAPAdapter
+	bool GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool includeHidden = false);
 	bool GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer);
 
 	std::optional<PacketReader::MAC_Address> GetAdapterMAC(const Adapter* adapter);

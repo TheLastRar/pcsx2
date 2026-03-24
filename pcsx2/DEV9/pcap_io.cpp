@@ -59,7 +59,8 @@ PCAPAdapter::PCAPAdapter()
 	AdapterUtils::Adapter adapter;
 	AdapterUtils::AdapterBuffer buffer;
 	std::optional<MAC_Address> adMAC = std::nullopt;
-	const bool foundAdapter = AdapterUtils::GetAdapter(EmuConfig.DEV9.EthDevice, &adapter, &buffer);
+	// pcap can fetch and open hidden adapters.
+	const bool foundAdapter = AdapterUtils::GetAdapter(EmuConfig.DEV9.EthDevice, &adapter, &buffer, true);
 	if (foundAdapter)
 		adMAC = AdapterUtils::GetAdapterMAC(&adapter);
 	else
@@ -183,7 +184,7 @@ void PCAPAdapter::reloadSettings()
 {
 	AdapterUtils::Adapter adapter;
 	AdapterUtils::AdapterBuffer buffer;
-	if (AdapterUtils::GetAdapter(EmuConfig.DEV9.EthDevice, &adapter, &buffer))
+	if (AdapterUtils::GetAdapter(EmuConfig.DEV9.EthDevice, &adapter, &buffer, true))
 		ReloadInternalServer(&adapter);
 	else
 		ReloadInternalServer(nullptr);
@@ -233,7 +234,8 @@ std::vector<AdapterEntry> PCAPAdapter::GetAdapters()
 		IP_ADAPTER_ADDRESSES adapterInfo;
 		AdapterUtils::AdapterBuffer buffer;
 
-		if (AdapterUtils::GetAdapter(entry.guid, &adapterInfo, &buffer))
+		// pcap can fetch and open hidden adapters.
+		if (AdapterUtils::GetAdapter(entry.guid, &adapterInfo, &buffer, true))
 			entry.name = StringUtil::WideStringToUTF8String(std::wstring(adapterInfo.FriendlyName));
 		else
 		{
