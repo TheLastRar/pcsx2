@@ -242,7 +242,9 @@ bool AdapterUtils::GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer)
 	do
 	{
 		if ((pAdapter->ifa_flags & IFF_LOOPBACK) == 0 &&
-			(pAdapter->ifa_flags & IFF_UP) != 0)
+			(pAdapter->ifa_flags & IFF_UP) != 0 &&
+			pAdapter->ifa_addr != nullptr &&
+			AdapterUtils::ReadAddressFamily(pAdapter->ifa_addr) == AF_INET)
 		{
 			// Search for an adapter with;
 			// IPv4 Address,
