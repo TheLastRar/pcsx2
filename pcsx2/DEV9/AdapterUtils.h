@@ -40,14 +40,13 @@ namespace AdapterUtils
 	// We need to return this buffer the caller can free it after it's finished with Adapter.
 	// AdapterBuffer is a unique_ptr, so will be freed when it leaves scope.
 #ifdef _WIN32
-	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by TAPAdapter
+	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by TAPAdapter.
 	Adapter* GetAllAdapters(AdapterBuffer* buffer, bool includeHidden = false);
 #elif defined(__POSIX__)
-	// Should we filter out adapters that lack INET?
 	Adapter* GetAllAdapters(AdapterBuffer* buffer);
 #endif
-	// includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES, used by PCAPAdapter
-	// Should we filter out adapters that lack INET on Linux if includeHidden is false?
+	// On Windows, includeHidden sets GAA_FLAG_INCLUDE_ALL_INTERFACES.
+	// On supported Unix platforms, includeHidden will fetch the link layer ifa instead of the internet layer ifa.
 	bool GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool includeHidden = false);
 	bool GetAdapterAuto(Adapter* adapter, AdapterBuffer* buffer);
 

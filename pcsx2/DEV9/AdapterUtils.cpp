@@ -24,7 +24,7 @@
 #ifdef __linux__
 #include <linux/if_arp.h>
 #include <linux/if_packet.h>
-#define IF_TYPE AF_PACKET
+#define LL_IFA_AF AF_PACKET
 #elif defined(__FreeBSD__) || (__APPLE__)
 #include <sys/types.h>
 #include <net/if_dl.h>
@@ -34,9 +34,9 @@
 #include <net/route.h>
 #include <net/if_types.h>
 #include <net/if_var.h>
-#define IF_TYPE AF_LINK
+#define LL_IFA_AF AF_LINK
 #else
-#define IF_TYPE AF_INET
+#define LL_IFA_AF AF_INET
 #endif
 #endif
 
@@ -200,7 +200,7 @@ AdapterUtils::Adapter* AdapterUtils::GetAllAdapters(AdapterBuffer* buffer)
 
 	return buffer->get();
 }
-bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool unused)
+bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, AdapterBuffer* buffer, bool ll_ifa)
 {
 	std::unique_ptr<ifaddrs, IfAdaptersDeleter> adapterInfo;
 	ifaddrs* pAdapter = GetAllAdapters(&adapterInfo);
@@ -209,22 +209,29 @@ bool AdapterUtils::GetAdapter(const std::string& name, Adapter* adapter, Adapter
 
 	do
 	{
+		const u16 find_af = ll_ifa ? LL_IFA_AF : AF_INET;
 		if (pAdapter->ifa_addr != nullptr &&
-			ReadAddressFamily(pAdapter->ifa_addr) == IF_TYPE &&
+			ReadAddressFamily(pAdapter->ifa_addr) == find_af &&
 			name == pAdapter->ifa_name)
 		{
-#if IF_TYPE == AF_PACKET
-			const sockaddr_ll* ll = reinterpret_cast<sockaddr_ll*>(pAdapter->ifa_addr);
-			if (ll->sll_hatype == ARPHRD_ETHER)
-#elif IF_TYPE == AF_LINK
-			const sockaddr_dl* dl = reinterpret_cast<sockaddr_dl*>(pAdapter->ifa_addr);
-			if (dl->sdl_type == IFT_ETHER)
-#endif
+			if (find_af != AF_INET)
 			{
-				*adapter = *pAdapter;
-				buffer->swap(adapterInfo);
-				return true;
+#if LL_IFA_AF == AF_PACKET
+				const sockaddr_ll* ll = reinterpret_cast<sockaddr_ll*>(pAdapter->ifa_addr);
+				if (ll->sll_hatype != ARPHRD_ETHER)
+					continue;
+#elif LL_IFA_AF == AF_LINK
+				const sockaddr_dl* dl = reinterpret_cast<sockaddr_dl*>(pAdapter->ifa_addr);
+				if (dl->sdl_type != IFT_ETHER)
+					continue;
+#else
+				pxAssert(false);
+#endif
 			}
+
+			*adapter = *pAdapter;
+			buffer->swap(adapterInfo);
+			return true;
 		}
 
 		pAdapter = pAdapter->ifa_next;
@@ -291,38 +298,37 @@ std::optional<MAC_Address> AdapterUtils::GetAdapterMAC(const Adapter* adapter)
 std::optional<MAC_Address> AdapterUtils::GetAdapterMAC(const Adapter* adapter)
 {
 	MAC_Address macAddr{};
-#if IF_TYPE == AF_PACKET
-	std::memcpy(&macAddr, reinterpret_cast<sockaddr_ll*>(adapter->ifa_addr)->sll_addr, sizeof(macAddr));
-	return macAddr;
-#elif IF_TYPE == AF_LINK
-	std::memcpy(&macAddr, LLADDR(reinterpret_cast<sockaddr_dl*>(po->ifa_addr)), sizeof(macAddr));
-	return macAddr;
-#elif defined(AF_LINK)
-	ifaddrs* adapterInfo;
-	const int error = getifaddrs(&adapterInfo);
-	if (error)
+#if LL_IFA_AF != AF_INET
+
+#if LL_IFA_AF == AF_PACKET
+	auto sock_mac_addr = [](const Adapter* a) { return reinterpret_cast<sockaddr_ll*>(a->ifa_addr)->sll_addr; };
+#elif LL_IFA_AF == AF_LINK
+	auto sock_mac_addr = [](const Adapter* a) { return LLADDR(reinterpret_cast<sockaddr_dl*>(a->ifa_addr)); };
+#endif
+
+	if (AdapterUtils::ReadAddressFamily(adapter->ifa_addr) != LL_IFA_AF)
 	{
-		Console.Error("DEV9: Failed to get adapter information %s", error);
-		return std::nullopt;
+		// Fetch the LL ifa
+		Adapter ll_adapter;
+		AdapterBuffer buffer;
+		if (GetAdapter(adapter->ifa_name, &ll_adapter, &buffer, true))
+		{
+			pxAssert(AdapterUtils::ReadAddressFamily(ll_adapter.ifa_addr) == LL_IFA_AF);
+
+			std::memcpy(&macAddr, sock_mac_addr(&ll_adapter), sizeof(macAddr));
+			return macAddr;
+		}
+		else
+		{
+			Console.Error("DEV9: Failed to get MAC address for adapter using LL ifa");
+			return std::nullopt;
+		}
 	}
-
-	const ScopedGuard adapterInfoGuard = [&adapterInfo]() {
-		freeifaddrs(adapterInfo);
-	};
-
-	for (const ifaddrs* po = adapterInfo; po; po = po->ifa_next)
+	else
 	{
-		if (strcmp(po->ifa_name, adapter->ifa_name))
-			continue;
-
-		if (ReadAddressFamily(po->ifa_addr) != AF_LINK)
-			continue;
-
-		// We have a valid MAC address.
-		std::memcpy(&macAddr, LLADDR(reinterpret_cast<sockaddr_dl*>(po->ifa_addr)), sizeof(macAddr));
+		std::memcpy(&macAddr, sock_mac_addr(adapter), sizeof(macAddr));
 		return macAddr;
 	}
-	Console.Error("DEV9: Failed to get MAC address for adapter using AF_LINK");
 #else
 	const int sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	if (sd < 0)
@@ -383,36 +389,36 @@ std::optional<IP_Address> AdapterUtils::GetAdapterIP(const Adapter* adapter)
 	sockaddr_in* address = nullptr;
 	if (adapter != nullptr)
 	{
-#if IF_TYPE == AF_INET
-		pxAssert(adapter->ifa_addr != nullptr && ReadAddressFamily(adapter->ifa_addr) == AF_INET)
-		address = reinterpret_cast<sockaddr_in*>(adapter->ifa_addr);
-#else
-		ifaddrs* adapterInfo;
-		const int error = getifaddrs(&adapterInfo);
-		if (error)
-		{
-			Console.Error("DEV9: Failed to get adapter information %s", error);
-			return std::nullopt;
-		}
-
-		const ScopedGuard adapterInfoGuard = [&adapterInfo]() {
-			freeifaddrs(adapterInfo);
-		};
-
-		for (const ifaddrs* po = adapterInfo; po; po = po->ifa_next)
-		{
-			if (strcmp(po->ifa_name, adapter->ifa_name))
-				continue;
-
-			if (ReadAddressFamily(po->ifa_addr) != AF_INET)
-				continue;
-
+		if (adapter->ifa_addr != nullptr && ReadAddressFamily(adapter->ifa_addr) == AF_INET)
 			address = reinterpret_cast<sockaddr_in*>(adapter->ifa_addr);
-			break;
+		else
+		{
+			ifaddrs* adapterInfo;
+			const int error = getifaddrs(&adapterInfo);
+			if (error)
+			{
+				Console.Error("DEV9: Failed to get adapter information %s", error);
+				return std::nullopt;
+			}
+
+			const ScopedGuard adapterInfoGuard = [&adapterInfo]() {
+				freeifaddrs(adapterInfo);
+			};
+
+			for (const ifaddrs* po = adapterInfo; po; po = po->ifa_next)
+			{
+				if (strcmp(po->ifa_name, adapter->ifa_name))
+					continue;
+
+				if (ReadAddressFamily(po->ifa_addr) != AF_INET)
+					continue;
+
+				address = reinterpret_cast<sockaddr_in*>(adapter->ifa_addr);
+				break;
+			}
+			if (address == nullptr)
+				Console.Error("DEV9: Failed to get IP address for adapter using AF_INET");
 		}
-		if (address == nullptr)
-			Console.Error("DEV9: Failed to get IP address for adapter using AF_INET");
-#endif
 	}
 
 	if (address != nullptr)
