@@ -8,6 +8,7 @@ struct VS_INPUT
 	float4 c : COLOR;
 };
 
+
 struct VS_OUTPUT
 {
 	float4 p : SV_Position;
