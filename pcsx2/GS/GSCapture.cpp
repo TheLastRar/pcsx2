@@ -20,6 +20,11 @@
 #include "common/StringUtil.h"
 #include "common/Threading.h"
 
+#ifdef _WIN32
+#include "GS/Renderers/DX12/GSDevice12.h"
+#include "common/FileSystem.h"
+#endif
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -469,6 +474,12 @@ bool GSCapture::BeginCapture(float fps, GSVector2i recommendedResolution, float 
 
 		if (sw_pix_fmt == AV_PIX_FMT_VAAPI)
 			sw_pix_fmt = AV_PIX_FMT_NV12;
+
+		if (sw_pix_fmt == AV_PIX_FMT_D3D12)
+		{
+			GSDevice12::LoadAgilitySDK();
+			sw_pix_fmt = AV_PIX_FMT_NV12;
+		}
 
 		s_video_codec_context->pix_fmt = sw_pix_fmt;
 
