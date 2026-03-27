@@ -250,13 +250,14 @@ if %BUILD_FFMPEG%==1 (
     --extra-cflags="-MD -GL -I!VULKAN_INCLUDE!" --extra-cxxflags="-MD -GL -I!VULKAN_INCLUDE!" --optflags="-O1" ^
     --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale ^
     --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl --enable-amf ^
-    --enable-d3d11va --enable-mediafoundation ^
+    --enable-d3d11va --enable-mediafoundation --enable-d3d12va ^
     --enable-encoder=ffv1,qtrle,libx264*,libsvtav1,aac,flac,libopus,pcm_s16be,pcm_s16le ^
     --enable-encoder=h264_qsv,hevc_qsv,av1_qsv ^
     --enable-encoder=h264_nvenc,hevc_nvenc,av1_nvenc ^
     --enable-encoder=h264_amf,hevc_amf,av1_amf ^
     --enable-encoder=h264_vulkan,hevc_vulkan,av1_vulkan ^
     --enable-encoder=h264_mf,hevc_mf,av1_mf ^
+    --enable-encoder=h264_d3d12va,hevc_d3d12va,av1_d3d12va ^
     --enable-parser=hevc ^
     --enable-muxer=avi,matroska,mov,mp3,mp4,wav ^
     --enable-protocol=file || goto error
