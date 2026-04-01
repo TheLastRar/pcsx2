@@ -2549,6 +2549,10 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 	}
 
 	m_display_surface = new DisplaySurface();
+	const int monitor_index = Host::GetBaseIntSettingValue("UI", "DisplayMonitor", 0);
+	const QList<QScreen*> screens = QGuiApplication::screens();
+	QScreen* target_screen = (monitor_index > 0 && monitor_index <= screens.size()) ? screens[monitor_index - 1] : QGuiApplication::primaryScreen();
+
 	if (fullscreen || !render_to_main)
 	{
 #ifdef DISPLAY_SURFACE_WINDOW
@@ -2571,8 +2575,8 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 		// Other platforms can position windows fine, but the only thing that matters here is the screen.
 
 #ifdef DISPLAY_SURFACE_WINDOW
-		if (isVisible() && g_emu_thread->shouldRenderToMain())
-			m_display_surface->setPosition(screen()->availableGeometry().topLeft());
+		if (monitor_index > 0 || (isVisible() && g_emu_thread->shouldRenderToMain()))
+			m_display_surface->setPosition(target_screen->availableGeometry().topLeft());
 		else
 			restoreDisplayWindowGeometryFromConfig();
 
@@ -2581,8 +2585,8 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 		else
 			m_display_surface->showNormal();
 #else
-		if (isVisible() && g_emu_thread->shouldRenderToMain())
-			m_display_container->move(screen()->availableGeometry().topLeft());
+		if (monitor_index > 0 || (isVisible() && g_emu_thread->shouldRenderToMain()))
+			m_display_container->move(target_screen->availableGeometry().topLeft());
 		else
 			restoreDisplayWindowGeometryFromConfig();
 
