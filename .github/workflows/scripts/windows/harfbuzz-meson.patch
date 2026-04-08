@@ -1,0 +1,22 @@
+diff --git a/meson.build b/meson.build
+index 15adc6ba3..6e30386bc 100644
+--- a/meson.build
++++ b/meson.build
+@@ -16,7 +16,7 @@ cairo_min_version = '>= 1.10.0'
+ chafa_min_version = '>= 1.6.0'
+ icu_min_version = '>= 49.0'
+ graphite2_min_version = '>= 1.2.0'
+-freetype_min_version = '>= 12.0.6'
++freetype_min_version = '>= 2.4.2'
+ 
+ hb_version_arr = meson.project_version().split('.')
+ hb_version_major = hb_version_arr[0].to_int()
+@@ -107,7 +107,7 @@ check_funcs = [
+ 
+ m_dep = cpp.find_library('m', required: false)
+ 
+-freetype_dep = dependency('freetype2', version: freetype_min_version, required: get_option('freetype'), default_options: ['harfbuzz=disabled'])
++freetype_dep = dependency('freetype', version: freetype_min_version, required: get_option('freetype'), default_options: ['harfbuzz=disabled'])
+ glib_dep = dependency('glib-2.0', version: glib_min_version, required: get_option('glib'))
+ gobject_dep = dependency('gobject-2.0', version: glib_min_version, required: get_option('gobject'))
+ graphite2_dep = dependency('graphite2', version: graphite2_min_version, required: get_option('graphite2'))

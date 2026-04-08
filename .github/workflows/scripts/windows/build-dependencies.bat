@@ -61,12 +61,13 @@ set "PATH=%PATH%;%INSTALLDIR%\bin"
 
 cd "%BUILDDIR%"
 
+set MESON=1.10.2
+
 set QT=6.11.0
 set QTMINOR=6.11
 set QTAPNG=1.3.0
 
 set FFMPEG=8.1
-set MESON=1.10.2
 set PKGCONF=2.5.1
 set AMF=1.5.0
 set LIBVPL=2.16.0
@@ -98,6 +99,8 @@ set SHADERC_SPIRVTOOLS=fbe4f3ad913c44fe8700545f8ffe35d1382b7093
 
 set AGILITYSDK=1.619.0
 
+call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" 7890287d911dd4ee1ebd0efb61ed0321bfcd87c725df923a837cf90c6508f96b || goto error
+
 call :downloadfile "qtbase-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtbase-everywhere-src-%QT%.zip" 590d5ae246c85fa14d6458a36ff75a11236acfe8987c2475090aab1770acbdf8 || goto error
 call :downloadfile "qtimageformats-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtimageformats-everywhere-src-%QT%.zip" 5dfb3c0cb84d2c935c1716b3b86358ca496fb9216676e7e28fee1357fb4a050e || goto error
 call :downloadfile "qtsvg-everywhere-src-%QT%.zip" "https://download.qt.io/official_releases/qt/%QTMINOR%/%QT%/submodules/qtsvg-everywhere-src-%QT%.zip" c92e1b46170b8671bbd46c783939f0c2dba4986882c5ebd37aaa9eba5b224fbe || goto error
@@ -106,7 +109,6 @@ call :downloadfile "qttranslations-everywhere-src-%QT%.zip" "https://download.qt
 call :downloadfile "QtApng-%QTAPNG%.zip" "https://github.com/jurplel/QtApng/archive/refs/tags/%QTAPNG%.zip" 5176082cdd468047a7eb1ec1f106b032f57df207aa318d559b29606b00d159ac || goto error
 
 call :downloadfile "ffmpeg-%FFMPEG%.tar.xz" "https://ffmpeg.org/releases/ffmpeg-%FFMPEG%.tar.xz" b072aed6871998cce9b36e7774033105ca29e33632be5b6347f3206898e0756a || goto error
-call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" 7890287d911dd4ee1ebd0efb61ed0321bfcd87c725df923a837cf90c6508f96b || goto error
 call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-%PKGCONF%.zip" c5b5f88a2ca2324dc5d857e35bb145e24290e326357ea94a86d47b8d7fa15477 || goto error
 call :downloadfile "amf-headers-v%AMF%.tar.gz" "https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v%AMF%/AMF-headers-v%AMF%.tar.gz" d569647fa26f289affe81a206259fa92f819d06db1e80cc334559953e82a3f01 || goto error
 call :downloadfile "libvpl-%LIBVPL%.zip" "https://github.com/intel/libvpl/archive/v%LIBVPL%.zip" 0b2ee8da8b9ef07ed4b52bf9ddee05008ec999b7c3c41944d7a9f804631c398e || goto error
@@ -143,6 +145,13 @@ if %DEBUG%==1 (
 )
 
 set FORCEPDB=-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_SHARED_LINKER_FLAGS_MINSIZEREL="/DEBUG" -DCMAKE_MODULE_LINKER_FLAGS_MINSIZEREL="/DEBUG"
+
+echo "Extracting meson"
+rmdir /S /Q "meson-%MESON%"
+tar xf "meson-%MESON%.tar.gz" || goto error
+set MESON_PY=python "%BUILDDIR%\meson-%MESON%\meson.py"
+%MESON_PY% -v || goto error
+echo.
 
 if %BUILD_FFMPEG%==1 (
   if not "%INSTALLDIR%"=="%INSTALLDIR: =%" (
@@ -192,20 +201,13 @@ if %BUILD_FFMPEG%==1 (
   ninja -C build install || goto error
   cd .. || goto error
 
-  echo "Extracting meson"
-  rmdir /S /Q "meson-%MESON%"
-  tar xf "meson-%MESON%.tar.gz" || goto error
-  set MASON_PY=python "%BUILDDIR%\meson-%MESON%\meson.py"
-  !MASON_PY! -v || goto error
-  echo.
-
   rem Alternatively we could grab pkg-config-lite from chocolatey or WinGet.
   echo "Installing pkgconf"
   rmdir /S /Q "pkgconf-pkgconf-%PKGCONF%"
   %SEVENZIP% x "pkgconf-pkgconf-%PKGCONF%.zip" || goto error
   cd "pkgconf-pkgconf-%PKGCONF%" || goto error
-  !MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
-  !MASON_PY! compile -C build || goto error
+  %MESON_PY% setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
+  %MESON_PY% compile -C build || goto error
   ninja -C build install || goto error
   set PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
   set PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
@@ -330,8 +332,9 @@ echo Building HarfBuzz...
 rmdir /S /Q "harfbuzz-%HARFBUZZ%"
 %SEVENZIP% x "-x^!harfbuzz-%HARFBUZZ%\README" "harfbuzz-%HARFBUZZ%.zip" || goto error
 cd "harfbuzz-%HARFBUZZ%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DHB_BUILD_UTILS=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\harfbuzz-meson.patch" || goto error
+%MESON_PY% setup --buildtype=release --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Dfreetype=enabled -Dutilities=disabled -Dtests=disabled build --backend=ninja || goto error
+%MESON_PY% compile -C build || goto error
 ninja -C build install || goto error
 cd .. || goto error
 
