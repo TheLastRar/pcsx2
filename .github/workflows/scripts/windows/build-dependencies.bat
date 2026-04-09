@@ -323,8 +323,9 @@ echo Building FreeType without HarfBuzz...
 rmdir /S /Q "freetype-%FREETYPE%"
 tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
 cd "freetype-%FREETYPE%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_DISABLE_HARFBUZZ=TRUE -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\freetype-meson.patch" || goto error
+%MESON_PY% setup --buildtype=release --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Dzlib=disabled -Dpng=enabled -Dbzip2=disabled -Dbrotli=disabled -Dharfbuzz=disabled -Dtests=disabled build --backend=ninja || goto error
+%MESON_PY% compile -C build || goto error
 ninja -C build install || goto error
 cd .. || goto error
 
@@ -342,8 +343,9 @@ echo Building FreeType with HarfBuzz...
 rmdir /S /Q "freetype-%FREETYPE%"
 tar -xf "freetype-%FREETYPE%.tar.gz" || goto error
 cd "freetype-%FREETYPE%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DFT_REQUIRE_ZLIB=TRUE -DFT_REQUIRE_PNG=TRUE -DFT_DISABLE_BZIP2=TRUE -DFT_DISABLE_BROTLI=TRUE -DFT_REQUIRE_HARFBUZZ=TRUE -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\freetype-meson.patch" || goto error
+%MESON_PY% setup --buildtype=release --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Dzlib=system -Dpng=enabled -Dbzip2=disabled -Dbrotli=disabled -Dharfbuzz=enabled -Dtests=disabled build --backend=ninja || goto error
+%MESON_PY% compile -C build || goto error
 ninja -C build install || goto error
 cd .. || goto error
 

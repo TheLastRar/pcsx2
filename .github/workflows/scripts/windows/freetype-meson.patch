@@ -1,0 +1,19 @@
+diff --git a/meson.build b/meson.build
+index 09382fbef..34b103735 100644
+--- a/meson.build
++++ b/meson.build
+@@ -495,6 +495,14 @@ pkgconfig.generate(ft2_lib,
+   version: ft2_pkgconfig_version,
+ )
+ 
++cmake = import('cmake')
++
++cmake.write_basic_package_version_file(
++  name: 'freetype',
++  version: meson.project_version(),
++  compatibility: 'SameMajorVersion',
++)
++
+ if get_option('tests').enabled()
+   subdir('tests')
+ endif
