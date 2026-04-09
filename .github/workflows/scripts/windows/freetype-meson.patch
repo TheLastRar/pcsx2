@@ -1,7 +1,16 @@
 diff --git a/meson.build b/meson.build
-index 09382fbef..34b103735 100644
+index 09382fbef..743676f61 100644
 --- a/meson.build
 +++ b/meson.build
+@@ -339,7 +339,7 @@ if bzip2_dep.found()
+ endif
+ 
+ # PNG support.
+-libpng_dep = dependency('libpng',
++libpng_dep = dependency('png',
+   required: get_option('png'),
+   fallback: 'libpng')
+ 
 @@ -495,6 +495,14 @@ pkgconfig.generate(ft2_lib,
    version: ft2_pkgconfig_version,
  )
