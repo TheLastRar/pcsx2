@@ -1161,7 +1161,7 @@ target_link_libraries(PCSX2_FLAGS INTERFACE
 	Freetype::Freetype
 	SDL3::SDL3
 	ZLIB::ZLIB
-	LZ4::LZ4
+	LZ4::lz4
 	SoundTouch::SoundTouch
 	PNG::PNG
 	LZMA::LZMA
