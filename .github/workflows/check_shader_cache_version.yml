@@ -24,16 +24,17 @@ jobs:
           foreach ($file in $modified_files)
           {
             if (-not $shaders_modified)
+            {
               %shaders_modified = $file.StartsWith("bin/resources/shaders/")
+            }
             if (-not $shader_version_modified)
+            {
               %shaders_modified = $file == "pcsx2/ShaderCacheVersion.h"
+              $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
+              Write-Host $modified_cache
+            }
           }
           Write-Host $shaders_modified
           Write-Host $shader_version_modified
-          if ($shader_version_modified)
-          {
-            $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
-            Write-Host $modified_cache
-          }
           
           -not ($shader_version_modified -xor $shaders_modified)
