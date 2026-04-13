@@ -29,7 +29,7 @@ jobs:
             }
             if (-not $shader_version_modified)
             {
-              $shaders_modified = $file == "pcsx2/ShaderCacheVersion.h"
+              $shaders_modified = $file -eq "pcsx2/ShaderCacheVersion.h"
               $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
               Write-Host $modified_cache
             }
