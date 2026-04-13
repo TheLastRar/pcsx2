@@ -18,6 +18,7 @@ jobs:
         shell: pwsh
         run: |
           $modified_files = git diff --name-only HEAD^1 HEAD
+          $shader_cache_version_path = "pcsx2/ShaderCacheVersion.h"
           Write-Host $modified_files
           $shaders_modified = false
           $shader_version_modified = false;
@@ -30,23 +31,23 @@ jobs:
             }
             if (-not $shader_version_modified)
             {
-              $shader_version_modified = $file -eq "pcsx2/ShaderCacheVersion.h"
+              $shader_version_modified = $file -eq $shader_cache_version_path
             }
           }
           if ($shader_version_modified)
           {
-              $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
+              $modified_cache = git diff HEAD^1 HEAD -- "$shader_cache_version_path"
               $modified_cache = $modified_cache -join "`n"
               $old_ver = if ($modified_cache -match "`n\-static constexpr u32 SHADER_CACHE_VERSION = (\d+);") { $Matches.1 } else { -1 }
               $new_ver = if ($modified_cache -match "`n\+static constexpr u32 SHADER_CACHE_VERSION = (\d+);") { $Matches.1 } else { -1 }
               if (($old_ver -eq -1) -or ($new_ver -eq -1) -or ($old_ver -eq $new_ver))
               {
-                Write-Host "ShaderCacheVersion.h was modified, but version was unchanged."
+                Write-Host """$shader_cache_version_path"" was modified, but version was unchanged."
                 $shader_version_modified = false
               }
               else
               {
-                Write-Host "ShaderCacheVersion.h was modified"
+                Write-Host """$shader_cache_version_path"" was modified."
                 Write-Host "Old shader cache version: $old_ver."
                 Write-Host "New shader cache version: $new_ver."
               }
@@ -55,4 +56,11 @@ jobs:
           Write-Host $shaders_modified
           Write-Host $shader_version_modified
           
-          -not ($shader_version_modified -xor $shaders_modified)
+          if ($shaders_modified -and (-not shader_version_modified)
+          {
+            Write-Output "::error::Shaders modified without updating ""$shader_cache_version_path""."
+          }
+          elseif ($shader_version_modified -and (-not shaders_modified)
+          {
+            Write-Output "::error::""$shader_cache_version_path"" was modified, but no shaders where changed."
+          }
