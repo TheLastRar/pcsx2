@@ -30,7 +30,6 @@ jobs:
             }
             if (-not $shader_version_modified)
             {
-              Write-Host "
               $shader_version_modified = $file -eq "pcsx2/ShaderCacheVersion.h"
             }
           }
@@ -47,8 +46,8 @@ jobs:
               else
               {
                 Write-Host "ShaderCacheVersion.h was modified"
-                Write-Host "Old shader cache version: $($old_ver)."
-                Write-Host "New shader cache version: $($new_ver)."
+                Write-Host "Old shader cache version: $old_ver."
+                Write-Host "New shader cache version: $new_ver."
               }
           }
           
