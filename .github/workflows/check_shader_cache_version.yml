@@ -37,8 +37,8 @@ jobs:
           {
               $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
               $modified_cache = $modified_cache -join "`n"
-              $old_ver = if ($modified_cache -match '`n\-static constexpr u32 SHADER_CACHE_VERSION = (\d+);') { $Matches.1 } else { -1 }
-              $new_ver = if ($modified_cache -match '`n\+static constexpr u32 SHADER_CACHE_VERSION = (\d+);') { $Matches.1 } else { -1 }
+              $old_ver = if ($modified_cache -match "`n\-static constexpr u32 SHADER_CACHE_VERSION = (\d+);") { $Matches.1 } else { -1 }
+              $new_ver = if ($modified_cache -match "`n\+static constexpr u32 SHADER_CACHE_VERSION = (\d+);") { $Matches.1 } else { -1 }
               if (($old_ver -eq -1) -or ($new_ver -eq -1) -or ($old_ver -eq $new_ver))
               {
                 Write-Host "ShaderCacheVersion.h was modified, but version was unchanged."
