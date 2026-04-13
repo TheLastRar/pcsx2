@@ -25,11 +25,13 @@ jobs:
           {
             if (-not $shaders_modified)
             {
+              Write-Host "Shader: ""$file"" was modified"
               $shaders_modified = $file.StartsWith("bin/resources/shaders/")
             }
             if (-not $shader_version_modified)
             {
-              $shaders_modified = $file -eq "pcsx2/ShaderCacheVersion.h"
+              Write-Host "
+              $shader_version_modified = $file -eq "pcsx2/ShaderCacheVersion.h"
             }
           }
           if ($shader_version_modified)
@@ -40,12 +42,13 @@ jobs:
               if (($old_ver -eq -1) -or ($new_ver -eq -1) -or ($old_ver -eq $new_ver))
               {
                 Write-Host "ShaderCacheVersion.h was modified, but version was unchanged"
-                $shader_version_modified = false;
+                $shader_version_modified = false
               }
               else
               {
-                Write-Host "Old shader cache version: $($old_ver)"
-                Write-Host "New shader cache version: $($new_ver)"
+                Write-Host "ShaderCacheVersion.h was modified"
+                Write-Host "Old shader cache version: $old_ver"
+                Write-Host "New shader cache version: $new_ver"
               }
           }
           
