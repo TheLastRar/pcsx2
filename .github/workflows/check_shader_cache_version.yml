@@ -47,8 +47,8 @@ jobs:
               else
               {
                 Write-Host "ShaderCacheVersion.h was modified"
-                Write-Host "Old shader cache version: $old_ver."
-                Write-Host "New shader cache version: $new_ver."
+                Write-Host "Old shader cache version: $($old_ver)."
+                Write-Host "New shader cache version: $($new_ver)."
               }
           }
           
