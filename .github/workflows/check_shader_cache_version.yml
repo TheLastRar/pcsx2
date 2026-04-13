@@ -19,7 +19,7 @@ jobs:
         run: |
           $modified_files = git diff --name-only HEAD^1 HEAD
           Write-Host $modified_files
-          %shaders_modified = false
+          $shaders_modified = false
           $shader_version_modified = false;
           foreach ($file in $modified_files)
           {
@@ -29,7 +29,7 @@ jobs:
             }
             if (-not $shader_version_modified)
             {
-              %shaders_modified = $file == "pcsx2/ShaderCacheVersion.h"
+              $shaders_modified = $file == "pcsx2/ShaderCacheVersion.h"
               $modified_cache = git diff HEAD^1 HEAD -- "pcsx2/ShaderCacheVersion.h"
               Write-Host $modified_cache
             }
