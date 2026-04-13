@@ -25,7 +25,7 @@ jobs:
           {
             if (-not $shaders_modified)
             {
-              %shaders_modified = $file.StartsWith("bin/resources/shaders/")
+              $shaders_modified = $file.StartsWith("bin/resources/shaders/")
             }
             if (-not $shader_version_modified)
             {
