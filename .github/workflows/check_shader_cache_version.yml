@@ -25,7 +25,7 @@ jobs:
           {
             if (-not $shaders_modified)
             {
-              Write-Host "Shader: ""$file"" was modified"
+              Write-Host "Shader: ""$file"" was modified."
               $shaders_modified = $file.StartsWith("bin/resources/shaders/")
             }
             if (-not $shader_version_modified)
@@ -41,14 +41,14 @@ jobs:
               $new_ver = if ($modified_cache -match '^\+static constexpr u32 SHADER_CACHE_VERSION = (\d+);') { $Matches.1 } else { -1 }
               if (($old_ver -eq -1) -or ($new_ver -eq -1) -or ($old_ver -eq $new_ver))
               {
-                Write-Host "ShaderCacheVersion.h was modified, but version was unchanged"
+                Write-Host "ShaderCacheVersion.h was modified, but version was unchanged."
                 $shader_version_modified = false
               }
               else
               {
                 Write-Host "ShaderCacheVersion.h was modified"
-                Write-Host "Old shader cache version: $old_ver"
-                Write-Host "New shader cache version: $new_ver"
+                Write-Host "Old shader cache version: $old_ver."
+                Write-Host "New shader cache version: $new_ver."
               }
           }
           
