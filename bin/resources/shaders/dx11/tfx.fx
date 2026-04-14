@@ -239,6 +239,7 @@ float4 sample_c(float2 uv, float uv_w, int2 xy)
 #if !PS_ADJS && !PS_ADJT
 	uv *= STScale;
 #else
+
 	#if PS_ADJS
 		uv.x = (uv.x - STRange.x) * STRange.z;
 	#else

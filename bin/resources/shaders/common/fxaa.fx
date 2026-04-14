@@ -214,6 +214,7 @@ float4 FxaaPixelShader(float2 pos, FxaaTex tex, float2 fxaaRcpFrame, float fxaaS
 	float edgeHorz = abs(edgeHorz3) + edgeHorz4;
 	float edgeVert = abs(edgeVert3) + edgeVert4;
 
+	
 	float subpixNWSWNESE = lumaNWSW + lumaNESE;
 	float lengthSign = fxaaRcpFrame.x;
 	bool horzSpan = edgeHorz >= edgeVert;
