@@ -53,11 +53,11 @@ jobs:
               }
           }
           
-          if ($shaders_modified -and (-not $shader_version_modified)
+          if ($shaders_modified -and -not $shader_version_modified)
           {
             Write-Output "::error::Shaders modified without updating ""$shader_cache_version_path""."
           }
-          elseif ($shader_version_modified -and (-not $shaders_modified)
+          elseif ($shader_version_modified -and -not $shaders_modified)
           {
             Write-Output "::error::""$shader_cache_version_path"" was modified, but no shaders where changed."
           }
