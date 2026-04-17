@@ -42,6 +42,8 @@ if(APPLE)
 	option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
 endif()
 
+option(USE_LIBRASHADER "Enable librashader dependency discovery" ON)
+
 #-------------------------------------------------------------------------------
 # Compiler extra
 #-------------------------------------------------------------------------------
@@ -228,6 +230,10 @@ endif()
 
 if(USE_VULKAN)
 	list(APPEND PCSX2_DEFS ENABLE_VULKAN)
+endif()
+
+if(USE_LIBRASHADER)
+	list(APPEND PCSX2_DEFS ENABLE_LIBRASHADER)
 endif()
 
 if(X11_API)
