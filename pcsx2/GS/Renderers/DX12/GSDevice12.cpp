@@ -1455,6 +1455,8 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		m_enhanced_barriers = false;
 	}
 
+	Console.WriteLnFmt("D3D12: Tight Alignment: {}", m_allocator->IsTightAlignmentSupported() ? "Supported" : "Not Supported");
+
 	return true;
 }
 
