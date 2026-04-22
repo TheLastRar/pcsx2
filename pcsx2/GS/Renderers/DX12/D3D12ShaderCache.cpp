@@ -12,6 +12,7 @@
 #include "common/Console.h"
 #include "common/MD5Digest.h"
 #include "common/Path.h"
+#include "common/Timer.h"
 
 #include <d3dcompiler.h>
 
@@ -493,6 +494,7 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 {
 	ComPtr<ID3DBlob> blob;
 
+	Common::Timer timer;
 	switch (key.type)
 	{
 		case EntryType::VertexShader:
@@ -510,6 +512,7 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 		default:
 			break;
 	}
+	Console.WriteLn("Time to compile shader without caching: %.2fms", timer.GetTimeMilliseconds());
 
 	if (!blob)
 		return {};
