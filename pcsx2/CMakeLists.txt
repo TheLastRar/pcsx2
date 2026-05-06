@@ -24,18 +24,19 @@ if(MSVC)
 	if (NOT USE_CLANG_CL AND MSVC_VERSION GREATER_EQUAL 1930)
 		target_compile_options(PCSX2_FLAGS INTERFACE /fp:contract)
 	endif()
-	target_compile_options(PCSX2_FLAGS INTERFACE /GS-)
+	target_compile_options(PCSX2_FLAGS INTERFACE /GS- -fsanitize=undefined)
+	target_link_options(PCSX2_FLAGS INTERFACE -fsanitize=undefined)
 else()
 	target_compile_options(PCSX2_FLAGS INTERFACE
 		-ffp-contract=fast
 		-fno-strict-aliasing
-  		-fsanitize=undefined
+		-fsanitize=undefined
 		-Wstrict-aliasing # Allow to track strict aliasing issue.
 		-Wno-parentheses
 		-Wno-missing-braces
 		-Wno-unknown-pragmas
 	)
- 	target_link_options(PCSX2_FLAGS INTERFACE -fsanitize=undefined)
+	target_link_options(PCSX2_FLAGS INTERFACE -fsanitize=undefined)
 endif()
 
 if(USE_LINKED_FFMPEG)
