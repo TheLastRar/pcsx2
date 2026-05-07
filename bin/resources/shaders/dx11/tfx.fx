@@ -307,9 +307,11 @@ float4 sample_c_af(float2 uv, float uv_w)
 
 		if (!(d_zero || d_par || d_per || d_inf_nan))
 		{
-			float A = dX.y * dX.y + dY.y * dY.y;
-			float B = -2 * (dX.x * dX.y + dY.x * dY.y);
-			float C = dX.x * dX.x + dY.x * dY.x;
+			float2 dXYy = float2(dX.y, dY.y);
+			float2 dXYx = float2(dX.x, dY.x);
+			float A = dot(dXYy, dXYy);
+			float B = -2 * dot(dXYx, dXYy);
+			float C = dot(dXYx, dXYx);
 			float f = (dX.x * dY.y - dY.x * dX.y);
 			float F = f * f;
 
@@ -336,8 +338,8 @@ float4 sample_c_af(float2 uv, float uv_w)
 		}
 
 		// Compute AF values
-		float squared_length_x = dX.x * dX.x + dX.y * dX.y;
-		float squared_length_y = dY.x * dY.x + dY.y * dY.y;
+		float squared_length_x = dot(dX, dX);
+		float squared_length_y = dot(dY, dY);
 		float determinant = abs(dX.x * dY.y - dX.y * dY.x);
 		bool is_major_x = squared_length_x > squared_length_y;
 		float squared_length_major = is_major_x ? squared_length_x : squared_length_y;
