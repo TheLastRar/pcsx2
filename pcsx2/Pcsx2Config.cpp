@@ -864,6 +864,8 @@ bool Pcsx2Config::GSOptions::OptionsAreEqual(const GSOptions& right) const
 		OpEqu(ShadeBoost_Contrast) &&
 		OpEqu(ShadeBoost_Saturation) &&
 		OpEqu(ShadeBoost_Gamma) &&
+		OpEqu(LibrashaderPreset) &&
+		OpEqu(LibrashaderPresetParams) &&
 		OpEqu(PNGCompressionLevel) &&
 		OpEqu(SaveDrawStart) &&
 		OpEqu(SaveDrawCount) &&
@@ -912,6 +914,21 @@ bool Pcsx2Config::GSOptions::RestartOptionsAreEqual(const GSOptions& right) cons
 		   OpEqu(DepthFeedbackMode) &&
 		   OpEqu(HWAA1) &&
 		   OpEqu(ExclusiveFullscreenControl);
+}
+
+std::string Pcsx2Config::GSOptions::GetLibrashaderParamsSectionName(const std::string& preset_path)
+{
+	uint32_t h = 2166136261u;
+	for (unsigned char c : preset_path)
+		h = (h ^ c) * 16777619u;
+	char buf[16];
+	std::snprintf(buf, sizeof(buf), "%08x", h);
+	return buf;
+}
+
+std::string Pcsx2Config::GSOptions::GetLibrashaderParamsFilePath()
+{
+	return Path::Combine(EmuFolders::Settings, "librashader_params.ini");
 }
 
 void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
@@ -1002,6 +1019,7 @@ void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapBitBoolEx(UserHacks_DrawBuffering, "UserHacks_DrawBuffering");
 	SettingsWrapBitBoolEx(FXAA, "fxaa");
 	SettingsWrapBitBool(ShadeBoost);
+	SettingsWrapBitBool(LibrashaderEnabled);
 	SettingsWrapBitBoolEx(DumpGSData, "DumpGSData");
 	SettingsWrapBitBoolEx(SaveRT, "SaveRT");
 	SettingsWrapBitBoolEx(SaveFrame, "SaveFrame");
@@ -1076,6 +1094,7 @@ void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
 	SettingsWrapBitfield(ShadeBoost_Contrast);
 	SettingsWrapBitfield(ShadeBoost_Saturation);
 	SettingsWrapBitfield(ShadeBoost_Gamma);
+	SettingsWrapEntry(LibrashaderPreset);
 	SettingsWrapBitfield(ExclusiveFullscreenControl);
 	SettingsWrapBitfieldEx(PNGCompressionLevel, "png_compression_level");
 	SettingsWrapBitfieldEx(SaveDrawStart, "SaveDrawStart");
@@ -1110,6 +1129,24 @@ void Pcsx2Config::GSOptions::LoadSave(SettingsWrapper& wrap)
 		Console.Error("Draw dumping is enabled but directory is unconfigured, please set one.");
 		DumpGSData = false;
 	}
+}
+
+void Pcsx2Config::GSOptions::LoadLibrashaderPresetParams(SettingsInterface& si)
+{
+#ifdef ENABLE_LIBRASHADER
+	LibrashaderPresetParams.clear();
+	if (LibrashaderPreset.empty())
+		return;
+
+	const std::string section = GetLibrashaderParamsSectionName(LibrashaderPreset);
+	for (const auto& [key, val] : si.GetKeyValueList(section.c_str()))
+	{
+		char* end;
+		const float f = std::strtof(val.c_str(), &end);
+		if (end != val.c_str())
+			LibrashaderPresetParams.emplace_back(key, f);
+	}
+#endif
 }
 
 void Pcsx2Config::GSOptions::MaskUserHacks()

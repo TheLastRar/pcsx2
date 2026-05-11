@@ -661,6 +661,16 @@ void VMManager::LoadCoreSettings(SettingsInterface& si)
 	EmuConfig.GS.MaskUserHacks();
 	EmuConfig.GS.MaskUpscalingHacks();
 
+#ifdef ENABLE_LIBRASHADER
+	EmuConfig.GS.LibrashaderPresetParams.clear();
+	if (!EmuConfig.GS.LibrashaderPreset.empty())
+	{
+		INISettingsInterface params_si(Pcsx2Config::GSOptions::GetLibrashaderParamsFilePath());
+		if (params_si.Load())
+			EmuConfig.GS.LoadLibrashaderPresetParams(params_si);
+	}
+#endif
+
 	// Force MTVU off when playing back GS dumps, it doesn't get used.
 	if (GSDumpReplayer::IsReplayingDump())
 		EmuConfig.Speedhacks.vuThread = false;

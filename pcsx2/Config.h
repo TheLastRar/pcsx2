@@ -808,6 +808,7 @@ struct Pcsx2Config
 					UserHacks_DrawBuffering : 1,
 					FXAA : 1,
 					ShadeBoost : 1,
+					LibrashaderEnabled : 1,
 					DumpGSData : 1,
 					SaveRT : 1,
 					SaveFrame : 1,
@@ -898,6 +899,9 @@ struct Pcsx2Config
 		u8 ShadeBoost_Gamma = DEFAULT_SHADEBOOST_GAMMA;
 		u8 PNGCompressionLevel = 1;
 
+		std::string LibrashaderPreset;
+		std::vector<std::pair<std::string, float>> LibrashaderPresetParams;
+
 		u16 SWExtraThreads = 2;
 		u16 SWExtraThreadsHeight = 4;
 
@@ -931,6 +935,14 @@ struct Pcsx2Config
 		GSOptions();
 
 		void LoadSave(SettingsWrapper& wrap);
+
+		/// Loads the parameters for the currently selected librashader preset into LibrashaderPresetParams.
+		void LoadLibrashaderPresetParams(SettingsInterface& si);
+
+		/// Returns the INI section name used to store parameters for a given preset path.
+		static std::string GetLibrashaderParamsSectionName(const std::string& preset_path);
+		/// Returns the path to the per-user file that stores librashader preset parameters.
+		static std::string GetLibrashaderParamsFilePath();
 
 		/// Sets user hack values to defaults when user hacks are not enabled.
 		void MaskUserHacks();
