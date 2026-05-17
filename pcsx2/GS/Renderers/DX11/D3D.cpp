@@ -26,6 +26,7 @@
 #include <fstream>
 
 #include "fmt/format.h"
+#include "fmt/xchar.h"
 
 static u32 s_next_bad_shader_id = 1;
 
@@ -492,10 +493,165 @@ const char* D3D::ShaderModelToCacheString(D3D::ShaderModel shader_model)
 	}
 }
 
+// Not COM
+// Untested
+struct FxcResourceIncludeHandler final : ID3DInclude
+{
+private:
+	std::unordered_map<std::string, std::string> includes;
+	std::map<const char*, std::string> file_dir;
+	std::vector<std::unique_ptr<const char[]>> opened_files;
+
+public:
+	FxcResourceIncludeHandler(const std::unordered_map<std::string, std::string>& include)
+	{
+		this->includes = includes;
+	}
+	virtual ~FxcResourceIncludeHandler() = default;
+
+	virtual HRESULT Open(D3D_INCLUDE_TYPE, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
+	{
+		if (ppData == nullptr || pBytes == nullptr)
+			return E_POINTER;
+
+		std::optional<std::string> source;
+		std::string filename = Path::Canonicalize(pFileName);
+		std::string file_path;
+
+		std::unordered_map<std::string, std::string>::const_iterator iter;
+		if (pParentData != nullptr)
+		{
+			// Search same directory as file.
+			std::string path = Path::Combine(file_dir[reinterpret_cast<const char*>(pParentData)], filename);
+			
+			iter = includes.find(path);
+			if (iter != includes.end())
+			{
+				// Search root directory.
+				iter = includes.find(filename);
+			}
+		}
+		else
+			iter = includes.find(file_path);
+
+		if (iter != includes.end())
+		{
+			std::unique_ptr<char[]> source_data = std::make_unique_for_overwrite<char[]>(iter->second.length());
+			std::memcpy(source_data.get(), iter->second.c_str(), iter->second.length());
+			*ppData = source_data.get();
+			*pBytes = source.value().length();
+
+			file_dir.emplace(source_data.get(), Path::GetDirectory(iter->first));
+			opened_files.push_back(std::move(source_data));
+			return S_OK;
+		}
+
+		*ppData = nullptr;
+		*pBytes = 0;
+		return E_FAIL;
+	}
+
+	virtual HRESULT Close(LPCVOID pData) override
+	{
+		for (std::vector<std::unique_ptr<const char[]>>::iterator it = opened_files.begin(); it != opened_files.end();)
+		{
+			if (pData == it->get())
+			{
+				file_dir.erase(it->get());
+				opened_files.erase(it);
+				return S_OK;
+			}
+		}
+
+		return E_FAIL;
+	}
+};
+
+// COM
+struct DxcResourceIncludeHandler final : IDxcIncludeHandler
+{
+private:
+	std::unordered_map<std::string, std::string> includes;
+	wil::com_ptr_nothrow<IDxcUtils> utils;
+	u32 ref_count;
+
+public:
+	DxcResourceIncludeHandler(const std::unordered_map<std::string, std::string>& includes)
+	{
+		this->includes = includes;
+		const HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(utils.put()));
+		if (FAILED(hr))
+			utils = nullptr;
+		ref_count = 1;
+	}
+	virtual ~DxcResourceIncludeHandler() = default;
+
+	virtual HRESULT QueryInterface(REFIID riid, void** ppvObject) override
+	{
+		if (ppvObject == nullptr)
+			return E_POINTER;
+
+		if (riid == IID_IUnknown || riid == __uuidof(IDxcIncludeHandler))
+		{
+			*ppvObject = this;
+			AddRef();
+			return S_OK;
+		}
+		else
+		{
+			*ppvObject = nullptr;
+			return E_NOINTERFACE;
+		}
+	}
+
+	virtual ULONG AddRef() override
+	{
+		ref_count++;
+		return ref_count;
+	}
+
+	virtual ULONG Release() override
+	{
+		const u32 ret = ref_count--;
+		if (ref_count == 0)
+			delete this;
+		return ret;
+	}
+
+	virtual HRESULT LoadSource(LPCWSTR pFilename, IDxcBlob** ppIncludeSource) override
+	{
+		if (ppIncludeSource == nullptr)
+			return E_POINTER;
+
+		if (utils != nullptr)
+		{
+			std::string filename = StringUtil::WideStringToUTF8String(pFilename);
+			Path::Canonicalize(&filename);
+
+			const auto iter = includes.find(filename);
+			if (iter != includes.end())
+			{
+				IDxcBlobEncoding* source_blob;
+				const HRESULT hr = utils->CreateBlob(iter->second.c_str(), iter->second.length(), CP_UTF8, &source_blob);
+				if (SUCCEEDED(hr))
+				{
+					*ppIncludeSource = source_blob;
+					return S_OK;
+				}
+			}
+		}
+
+		*ppIncludeSource = nullptr;
+		return E_FAIL;
+	}
+};
+
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
 	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
-	const char* entry_point /* = "main" */)
+	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
+	pxAssert(type != D3D::ShaderType::Libary);
+
 	const char* target;
 	switch (shader_model)
 	{
@@ -532,9 +688,14 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D:
 	static constexpr UINT flags_non_debug = D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_IEEE_STRICTNESS;
 	static constexpr UINT flags_debug = D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG | D3DCOMPILE_DEBUG_NAME_FOR_SOURCE | D3DCOMPILE_IEEE_STRICTNESS;
 
+	// Untested
+	std::unique_ptr<ID3DInclude> pInclude{nullptr};
+	if (!includes.empty())
+		pInclude = std::make_unique<FxcResourceIncludeHandler>(includes);
+
 	wil::com_ptr_nothrow<ID3DBlob> blob;
 	wil::com_ptr_nothrow<ID3DBlob> error_blob;
-	const HRESULT hr = D3DCompile(code.data(), code.size(), "0", macros, nullptr, entry_point, target,
+	const HRESULT hr = D3DCompile(code.data(), code.size(), "0", macros, pInclude.get(), entry_point, target,
 		debug ? flags_debug : flags_non_debug, 0, blob.put(), error_blob.put());
 
 	std::string error_string;
@@ -575,8 +736,11 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D:
 
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
 	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
-	const char* entry_point /* = "main" */)
+	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
+	// Note: The libarary is only supported in SM 6_3+, be can be linked down to SM6_0
+	// Note: Linking libaries together breaks source mapping for all but the entry lib
+
 	const wchar_t* target;
 	switch (shader_model)
 	{
@@ -590,18 +754,21 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 		case ShaderModel::SM65:
 		default:
 		{
-			static constexpr std::array<const wchar_t*, 4> targets = {{L"vs_6_5", L"ps_6_5", L"cs_6_5"}};
+			static constexpr std::array<const wchar_t*, 5> targets = {{L"vs_6_5", L"ps_6_5", L"cs_6_5", L"lib_6_5"}};
 			target = targets[static_cast<int>(type)];
 		}
 		break;
 	}
 
 	// Build args
-	std::wstring wentry_point = StringUtil::UTF8StringToWideString(entry_point);
-
 	std::vector<const wchar_t*> args;
-	args.push_back(L"-E");
-	args.push_back(wentry_point.c_str());
+	std::wstring wentry_point;
+	if (entry_point)
+	{
+		wentry_point = StringUtil::UTF8StringToWideString(entry_point);
+		args.push_back(L"-E");
+		args.push_back(wentry_point.c_str());
+	}
 	args.push_back(L"-T");
 	args.push_back(target);
 	args.push_back(L"-Gis");
@@ -632,13 +799,17 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 		}
 	}
 
+	wil::com_ptr_nothrow<IDxcIncludeHandler> pInclude;
+	if (!includes.empty())
+		*pInclude.put() = new DxcResourceIncludeHandler(includes);
+
 	// Compile Shader
 	wil::com_ptr_nothrow<IDxcCompiler3> pCompiler;
 	DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(pCompiler.put()));
 
 	const DxcBuffer source{code.data(), code.length(), DXC_CP_UTF8};
 	wil::com_ptr_nothrow<IDxcResult> pResults;
-	HRESULT hr = pCompiler->Compile(&source, args.data(), args.size(), nullptr, IID_PPV_ARGS(pResults.put()));
+	HRESULT hr = pCompiler->Compile(&source, args.data(), args.size(), pInclude.get(), IID_PPV_ARGS(pResults.put()));
 
 	if (FAILED(hr))
 	{
@@ -647,7 +818,7 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 	}
 
 	wil::com_ptr_nothrow<IDxcBlobUtf8> error_string = nullptr;
-	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&error_string), nullptr);
+	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(error_string.put()), nullptr);
 
 	pResults->GetStatus(&hr);
 	if (FAILED(hr))
@@ -685,12 +856,94 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
 	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
-	const char* entry_point /* = "main" */)
+	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
 	const GSShaderCompileIndicator::CompileTimer compile_timer;
 
 	if (static_cast<int>(shader_model) < 0x65)
-		return CompileShaderDXBC(type, shader_model, debug, code, macros, entry_point);
+		return CompileShaderDXBC(type, shader_model, debug, code, macros, entry_point, includes);
 	else
-		return CompileShaderDXIL(type, shader_model, debug, code, macros, entry_point);
+		return CompileShaderDXIL(type, shader_model, debug, code, macros, entry_point, includes);
+}
+
+wil::com_ptr_nothrow<ID3DBlob> D3D::LinkShaderDXIL(ShaderType type, ShaderModel shader_model, bool debug,
+	const std::vector<wil::com_ptr_nothrow<ID3DBlob>>& modules, const char* entry_point /* = "main" */)
+{
+	const GSShaderCompileIndicator::CompileTimer compile_timer;
+	pxAssert(type != D3D::ShaderType::Libary);
+
+	const wchar_t* target;
+	switch (shader_model)
+	{
+		case ShaderModel::SM60:
+		case ShaderModel::SM61:
+		case ShaderModel::SM62:
+		case ShaderModel::SM63:
+		case ShaderModel::SM64:
+			pxAssert(false);
+			break;
+		case ShaderModel::SM65:
+		default:
+		{
+			static constexpr std::array<const wchar_t*, 5> targets = {{L"vs_6_5", L"ps_6_5", L"cs_6_5"}};
+			target = targets[static_cast<int>(type)];
+		}
+		break;
+	}
+
+	wil::com_ptr_nothrow<IDxcLinker> pLinker;
+	DxcCreateInstance(CLSID_DxcLinker, IID_PPV_ARGS(pLinker.put()));
+
+	wil::com_ptr_nothrow<IDxcUtils> pUtils;
+	DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(pUtils.put()));
+
+	std::vector<std::wstring> names;
+
+	names.reserve(modules.size());
+	for (int i = 0; i < modules.size(); i++)
+	{
+		std::wstring name = fmt::format(L"lib{}", i);
+		// ID3DBlob and IDxcBlob are essentially identical, including the GUID.
+		// C++ common initial sequence might not apply to COM types?
+
+		pLinker->RegisterLibrary(name.c_str(), reinterpret_cast<IDxcBlob*>(modules[i].get()));
+		names.push_back(std::move(name));
+	}
+
+	std::vector<const wchar_t*> name_cstr;
+	name_cstr.reserve(modules.size());
+	for (int i = 0; i < modules.size(); i++)
+		name_cstr.push_back(names[i].c_str());
+
+	wil::com_ptr_nothrow<IDxcOperationResult> pResults;
+	HRESULT hr = pLinker->Link(StringUtil::UTF8StringToWideString(entry_point).c_str(), target, name_cstr.data(), name_cstr.size(), nullptr, 0, pResults.put());
+
+	if (FAILED(hr))
+	{
+		Console.WriteLn("Link Failed");
+		return {};
+	}
+
+	wil::com_ptr_nothrow<IDxcBlobEncoding> error_string;
+	pResults->GetErrorBuffer(error_string.put());
+	wil::com_ptr_nothrow<IDxcBlobUtf8> error_utf8;
+	pUtils->GetBlobAsUtf8(error_string.get(), error_utf8.put());
+
+	pResults->GetStatus(&hr);
+	if (FAILED(hr))
+	{
+		std::string target_utf8 = StringUtil::WideStringToUTF8String(target);
+		Console.WriteLn("Failed to link '%s':\n%s", target_utf8.c_str(), error_utf8->GetStringPointer());
+		return {};
+	}
+
+	if (error_utf8->GetStringLength() != 0)
+		Console.Warning("'%s' linked with warnings:\n%s", StringUtil::WideStringToUTF8String(target).c_str(), error_utf8->GetStringPointer());
+
+	wil::com_ptr_nothrow<ID3DBlob> blob = nullptr;
+	wil::com_ptr_nothrow<IDxcBlob> dxcBlob = nullptr;
+	pResults->GetResult(dxcBlob.put());
+	// Do we need to addref?
+	blob = reinterpret_cast<ID3DBlob*>(dxcBlob.get());
+	return blob;
 }

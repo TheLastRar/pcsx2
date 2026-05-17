@@ -375,6 +375,8 @@ private:
 	D3D12ShaderCache m_shader_cache;
 	ComPtr<ID3DBlob> m_convert_vs;
 	std::string m_tfx_source;
+	std::vector<std::string> m_tfx_lib_source;
+	std::unordered_map<std::string, std::string> m_tfx_includes;
 
 	void LookupNativeFormat(GSTexture::Format format, DXGI_FORMAT* d3d_format, DXGI_FORMAT* srv_format,
 		DXGI_FORMAT* rtv_format, DXGI_FORMAT* dsv_format) const;
