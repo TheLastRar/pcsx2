@@ -892,6 +892,110 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 		m_tfx_source = std::move(*shader);
 	}
 
+	{
+		std::optional<std::string> shader;
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_main.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_main.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_atst.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_atst.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_blend.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_blend.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_color.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_color.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_fetch.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_fetch.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_fog.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_fog.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_sample.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_sample.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_sample_af.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_sample_af.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_tfx.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_tfx.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_someotherstuff.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_someotherstuff.hlsl.");
+			return false;
+		}
+		m_tfx_lib_source.push_back(std::move(*shader));
+	}
+
+	{
+		std::optional<std::string> shader;
+
+		shader = ReadShaderSource("shaders/dx11/tfx_defines.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_defines.hlsl.");
+			return false;
+		}
+		m_tfx_includes.emplace("tfx_defines.hlsl", std::move(*shader));
+
+		shader = ReadShaderSource("shaders/dx11/tfx_ps_resources.hlsl");
+		if (!shader.has_value())
+		{
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_resources.hlsl.");
+			return false;
+		}
+		m_tfx_includes.emplace("tfx_ps_resources.hlsl", std::move(*shader));
+	}
+
 	if (!m_shader_cache.Open(static_cast<D3D::ShaderModel>(m_shader_model), GSConfig.UseDebugDevice))
 		Console.Warning("D3D12: Shader cache failed to open.");
 
@@ -1886,8 +1990,8 @@ void GSDevice12::DoMultiStretchRects(
 
 	pxAssert(HasVariableWriteMask(shader) || rects[0].wmask.wrgba == 0xf);
 	SetPipeline((rects[0].wmask.wrgba != 0xf) ?
-		m_color_copy[GetShaderIndexForMask(shader, rects[0].wmask.wrgba)].get() :
-		m_convert[static_cast<int>(shader)].get());
+					m_color_copy[GetShaderIndexForMask(shader, rects[0].wmask.wrgba)].get() :
+					m_convert[static_cast<int>(shader)].get());
 
 	if (ApplyUtilityState())
 		DrawIndexedPrimitive();
@@ -2002,7 +2106,7 @@ void GSDevice12::DoMerge(GSTexture* sTex[3], GSVector4* sRect, GSTexture* dTex, 
 						(sTex[0]->GetState() == GSTexture::State::Cleared || sTex[0]->GetClearColor() != 0)));
 	const bool has_input_1 = (PMODE.SLBG == 0 || feedback_write_2_but_blend_bg) && sTex[1] &&
 	                         (sTex[1]->GetState() == GSTexture::State::Dirty ||
-	                             (sTex[1]->GetState() == GSTexture::State::Cleared || sTex[1]->GetClearColor() != 0));
+								 (sTex[1]->GetState() == GSTexture::State::Cleared || sTex[1]->GetClearColor() != 0));
 	if (has_input_0)
 	{
 		static_cast<GSTexture12*>(sTex[0])->CommitClear();
@@ -2696,7 +2800,7 @@ bool GSDevice12::CreateRootSignatures()
 	rsb.AddCBVParameter(1, D3D12_SHADER_VISIBILITY_PIXEL);
 	rsb.AddSRVParameter(0, D3D12_SHADER_VISIBILITY_VERTEX);
 	rsb.AddSRVParameter(5, D3D12_SHADER_VISIBILITY_VERTEX);
-	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL); // Source / Palette 
+	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL); // Source / Palette
 	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
 	rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 3, D3D12_SHADER_VISIBILITY_PIXEL); // RT / PrimID / Depth
 	rsb.Add32BitConstants(2, sizeof(m_vs_pc_cache) / sizeof(u32), D3D12_SHADER_VISIBILITY_VERTEX);
@@ -2811,7 +2915,7 @@ bool GSDevice12::CompileConvertPipelines()
 					return false;
 
 				D3D12::SetObjectName(m_color_copy[j].get(), TinyString::from_format("Color copy pipeline (r={}, g={}, b={}, a={})",
-					j & 1u, (j >> 1) & 1u, (j >> 2) & 1u, (j >> 3) & 1u));
+																j & 1u, (j >> 1) & 1u, (j >> 2) & 1u, (j >> 3) & 1u));
 			}
 		}
 		else if (i == ShaderConvert::RTA_CORRECTION)
@@ -3218,7 +3322,8 @@ const ID3DBlob* GSDevice12::GetTFXPixelShader(const GSHWDrawConfig::PSSelector& 
 	sm.AddMacro("PS_ABE", sel.abe);
 	sm.AddMacro("PS_ANISOTROPIC_FILTERING", sel.sw_aniso);
 
-	ComPtr<ID3DBlob> ps(m_shader_cache.GetPixelShader(m_tfx_source, sm.GetPtr(), "ps_main"));
+	ComPtr<ID3DBlob> ps(m_shader_cache.GetPixelShader(m_tfx_lib_source, sm.GetPtr(), "ps_main", m_tfx_includes));
+
 	it = m_tfx_pixel_shaders.emplace(sel, std::move(ps)).first;
 	return it->second.get();
 }
@@ -3879,8 +3984,8 @@ __ri void GSDevice12::ApplyBaseState(u32 flags, ID3D12GraphicsCommandList* cmdli
 		{
 			cmdlist->OMSetRenderTargets(num_rts, rt.data(), FALSE,
 				m_current_depth_target ?
-				(m_current_depth_read_only ? &m_current_depth_target->GetReadDepthViewDescriptor().cpu_handle : &m_current_depth_target->GetWriteDescriptor().cpu_handle) :
-				nullptr);
+					(m_current_depth_read_only ? &m_current_depth_target->GetReadDepthViewDescriptor().cpu_handle : &m_current_depth_target->GetWriteDescriptor().cpu_handle) :
+					nullptr);
 		}
 		else if (m_current_depth_target)
 		{
@@ -4353,7 +4458,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 
 	// Clear texture binding when it's bound to RT or DS.
 	if (!config.tex && ((draw_rt && static_cast<GSTexture12*>(draw_rt)->GetSRVDescriptor() == m_tfx_textures[0]) ||
-		(draw_ds && static_cast<GSTexture12*>(draw_ds)->GetSRVDescriptor() == m_tfx_textures[0])))
+						   (draw_ds && static_cast<GSTexture12*>(draw_ds)->GetSRVDescriptor() == m_tfx_textures[0])))
 		PSSetShaderResource(0, nullptr, false);
 
 	if (InRenderPass() && (m_current_render_target == draw_rt || m_current_depth_target == draw_ds))
@@ -4377,7 +4482,8 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 	GSTexture12* draw_ds_as_rt = static_cast<GSTexture12*>(m_ds_as_rt);
 
 	const bool feedback_rt = draw_rt && (((config.require_one_barrier || (config.require_full_barrier && m_features.texture_barrier)) && (config.ps.IsFeedbackLoopRT() ||
-		config.alpha_second_pass.ps.IsFeedbackLoopRT())) || (config.tex && config.tex == config.rt));
+																																			 config.alpha_second_pass.ps.IsFeedbackLoopRT())) ||
+											(config.tex && config.tex == config.rt));
 	const bool feedback_depth = draw_ds_as_rt != nullptr;
 
 	if (feedback_rt && !m_features.texture_barrier)
@@ -4400,7 +4506,7 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		else
 			Console.Warning("D3D12: Failed to allocate temp texture for RT copy.");
 	}
-	
+
 	// For depth testing and sampling, use a read only dsv, otherwise use a write dsv
 	OMSetRenderTargets(draw_rt, draw_ds_as_rt, draw_ds, config.scissor,
 		config.tex && (config.tex == config.ds || config.ps.IsFeedbackLoopDepth()) && !config.depth.zwe);
@@ -4562,7 +4668,7 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 			PSSetShaderResource(0, draw_rt, false, true);
 		if ((one_barrier || full_barrier) && feedback_depth)
 			PSSetShaderResource(4, draw_ds, false, true);
-		
+
 		if (full_barrier)
 		{
 			pxAssert(config.drawlist && !config.drawlist->empty());
@@ -4622,7 +4728,7 @@ void GSDevice12::UpdateHWPipelineSelector(GSHWDrawConfig& config)
 void GSDevice12::UploadHWDrawVerticesAndIndices(GSHWDrawConfig& config)
 {
 	IASetVertexBuffer(config.verts, sizeof(GSVertex), config.nverts);
-	
+
 	if (config.vs.UseFixedExpandIndexBuffer())
 	{
 		m_index.start = 0;
