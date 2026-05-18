@@ -895,97 +895,21 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 	{
 		std::optional<std::string> shader;
 
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_main.hlsl");
+		shader = ReadShaderSource("shaders/dx11/tfx_SC.fx");
 		if (!shader.has_value())
 		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_main.hlsl.");
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_SC.fx.");
 			return false;
 		}
 		m_tfx_lib_source.push_back(std::move(*shader));
 
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_atst.hlsl");
+		shader = ReadShaderSource("shaders/dx11/tfx_SC_functions.fx");
 		if (!shader.has_value())
 		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_atst.hlsl.");
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_SC_functions.fx.");
 			return false;
 		}
 		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_blend.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_blend.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_fetch.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_fetch.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_fog.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_fog.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_sample.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_sample.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_sample_af.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_sample_af.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_tfx.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_tfx.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_someotherstuff.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_someotherstuff.hlsl.");
-			return false;
-		}
-		m_tfx_lib_source.push_back(std::move(*shader));
-	}
-
-	{
-		std::optional<std::string> shader;
-
-		shader = ReadShaderSource("shaders/dx11/tfx_defines.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_defines.hlsl.");
-			return false;
-		}
-		m_tfx_includes.emplace("tfx_defines.hlsl", std::move(*shader));
-
-		shader = ReadShaderSource("shaders/dx11/tfx_ps_resources.hlsl");
-		if (!shader.has_value())
-		{
-			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_ps_resources.hlsl.");
-			return false;
-		}
-		m_tfx_includes.emplace("tfx_ps_resources.hlsl", std::move(*shader));
 	}
 
 	if (!m_shader_cache.Open(static_cast<D3D::ShaderModel>(m_shader_model), GSConfig.UseDebugDevice))

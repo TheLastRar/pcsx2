@@ -1,0 +1,55 @@
+// SPDX-FileCopyrightText: 2002-2026 PCSX2 Dev Team
+// SPDX-License-Identifier: GPL-3.0+
+
+export uint ps_sc_fst                  () { return PS_FST                  ; }
+export uint ps_sc_wms                  () { return PS_WMS                  ; }
+export uint ps_sc_wmt                  () { return PS_WMT                  ; }
+export uint ps_sc_adjs                 () { return PS_ADJS                 ; }
+export uint ps_sc_adjt                 () { return PS_ADJT                 ; }
+export uint ps_sc_aem_fmt              () { return PS_AEM_FMT              ; }
+export uint ps_sc_aem                  () { return PS_AEM                  ; }
+export uint ps_sc_tfx                  () { return PS_TFX                  ; }
+export uint ps_sc_tcc                  () { return PS_TCC                  ; }
+export uint ps_sc_atst                 () { return PS_ATST                 ; }
+export uint ps_sc_fog                  () { return PS_FOG                  ; }
+export uint ps_sc_blend_hw             () { return PS_BLEND_HW             ; }
+export uint ps_sc_a_masked             () { return PS_A_MASKED             ; }
+export uint ps_sc_fba                  () { return PS_FBA                  ; }
+export uint ps_sc_fbmask               () { return PS_FBMASK               ; }
+export uint ps_sc_ltf                  () { return PS_LTF                  ; }
+export uint ps_sc_tcoffsethack         () { return PS_TCOFFSETHACK         ; }
+export uint ps_sc_point_sampler        () { return PS_POINT_SAMPLER        ; }
+export uint ps_sc_region_rect          () { return PS_REGION_RECT          ; }
+export uint ps_sc_shuffle              () { return PS_SHUFFLE              ; }
+export uint ps_sc_shuffle_same         () { return PS_SHUFFLE_SAME         ; }
+export uint ps_sc_process_ba           () { return PS_PROCESS_BA           ; }
+export uint ps_sc_process_rg           () { return PS_PROCESS_RG           ; }
+export uint ps_sc_shuffle_across       () { return PS_SHUFFLE_ACROSS       ; }
+export uint ps_sc_read16_src           () { return PS_READ16_SRC           ; }
+export uint ps_sc_write_rg             () { return PS_WRITE_RG             ; }
+export uint ps_sc_dst_fmt              () { return PS_DST_FMT              ; }
+export uint ps_sc_depth_fmt            () { return PS_DEPTH_FMT            ; }
+export uint ps_sc_pal_fmt              () { return PS_PAL_FMT              ; }
+export uint ps_sc_channel_fetch        () { return PS_CHANNEL_FETCH        ; }
+export uint ps_sc_tales_of_abyss_hle   () { return PS_TALES_OF_ABYSS_HLE   ; }
+export uint ps_sc_urban_chaos_hle      () { return PS_URBAN_CHAOS_HLE      ; }
+export uint ps_sc_colclip_hw           () { return PS_COLCLIP_HW           ; }
+export uint ps_sc_rta_correction       () { return PS_RTA_CORRECTION       ; }
+export uint ps_sc_rta_src_correction   () { return PS_RTA_SRC_CORRECTION   ; }
+export uint ps_sc_colclip              () { return PS_COLCLIP              ; }
+export uint ps_sc_blend_a              () { return PS_BLEND_A              ; }
+export uint ps_sc_blend_b              () { return PS_BLEND_B              ; }
+export uint ps_sc_blend_c              () { return PS_BLEND_C              ; }
+export uint ps_sc_blend_d              () { return PS_BLEND_D              ; }
+export uint ps_sc_blend_mix            () { return PS_BLEND_MIX            ; }
+export uint ps_sc_round_inv            () { return PS_ROUND_INV            ; }
+export uint ps_sc_fixed_one_a          () { return PS_FIXED_ONE_A          ; }
+export uint ps_sc_pabe                 () { return PS_PABE                 ; }
+export uint ps_sc_dither               () { return PS_DITHER               ; }
+export uint ps_sc_dither_adjust        () { return PS_DITHER_ADJUST        ; }
+export uint ps_sc_scanmsk              () { return PS_SCANMSK              ; }
+export uint ps_sc_automatic_lod        () { return PS_AUTOMATIC_LOD        ; }
+export uint ps_sc_manual_lod           () { return PS_MANUAL_LOD           ; }
+export uint ps_sc_tex_is_fb            () { return PS_TEX_IS_FB            ; }
+export uint ps_sc_abe                  () { return PS_ABE                  ; }
+export uint ps_sc_anisotropic_filtering() { return PS_ANISOTROPIC_FILTERING; }

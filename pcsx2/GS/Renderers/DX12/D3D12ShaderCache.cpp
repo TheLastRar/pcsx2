@@ -540,7 +540,6 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 	struct MacroList
 	{
 		std::unordered_map<std::string, bool> hits;
-		int hit_count;
 	};
 
 	static std::unordered_map<MD5Hash, MacroList, MD5HashHasher> define_map;
@@ -575,7 +574,6 @@ D3D12ShaderCache::ComPtr<ID3DBlob> D3D12ShaderCache::CompileAndAddShaderBlob(
 						if (StringUtil::ContainsSubString(lib_code, c_macro->Name))
 						{
 							hit = true;
-							macro_iter->second.hit_count++;
 						}
 					}
 					// TODO: search includes

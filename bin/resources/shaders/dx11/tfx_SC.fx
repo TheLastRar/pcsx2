@@ -1,0 +1,1834 @@
+// SPDX-FileCopyrightText: 2002-2026 PCSX2 Dev Team
+// SPDX-License-Identifier: GPL-3.0+
+
+#define FMT_32 0
+#define FMT_24 1
+#define FMT_16 2
+
+#define SHUFFLE_READ  1
+#define SHUFFLE_WRITE 2
+#define SHUFFLE_READWRITE 3
+
+#ifndef VS_TME
+#define VS_IIP 0
+#define VS_TME 1
+#define VS_FST 1
+#endif
+
+#ifndef GS_IIP
+#define GS_IIP 0
+#define GS_PRIM 3
+#define GS_FORWARD_PRIMID 0
+#endif
+
+#ifndef ZTST_GEQUAL
+#define ZTST_GEQUAL 2
+#define ZTST_GREATER 3
+#endif
+
+#ifndef AFAIL_KEEP
+#define AFAIL_KEEP 0
+#define AFAIL_FB_ONLY 1
+#define AFAIL_ZB_ONLY 2
+#define AFAIL_RGB_ONLY 3
+#define AFAIL_RGB_ONLY_DSB 4
+#define AFAIL_RGB_ONLY_SW_Z 5
+#endif
+
+#ifndef ATST_NONE
+#define ATST_NONE 0
+#define ATST_LEQUAL 1
+#define ATST_GEQUAL 2
+#define ATST_EQUAL 3
+#define ATST_NOTEQUAL 4
+#endif
+
+#ifndef PS_AA1_NONE
+#define PS_AA1_NONE 0
+#define PS_AA1_LINE 1
+#define PS_AA1_TRIANGLE 2
+#define PS_AA1_TRIANGLE_SW_Z 3
+#endif
+
+#ifndef PS_IIP
+// Impacts PS_INPUT
+#define PS_IIP 0
+#define PS_HAS_CONSERVATIVE_DEPTH 1
+// Impacts PS_OUTPUT
+#define PS_NO_COLOR 0
+#define PS_NO_COLOR1 0
+#define PS_DATE 0
+// ZWRITE
+#define PS_ZCLAMP 0
+#define PS_ZFLOOR 0
+// SW_DEPTH
+#define PS_AFAIL AFAIL_KEEP
+#define PS_ZTST 0
+#define PS_AA1 PS_AA1_NONE
+
+// ??
+#define PS1 0
+#endif
+
+//#ifdef PIXEL_SHADER
+uint ps_sc_fst                  ();
+uint ps_sc_wms                  ();
+uint ps_sc_wmt                  ();
+uint ps_sc_adjs                 ();
+uint ps_sc_adjt                 ();
+uint ps_sc_aem_fmt              ();
+uint ps_sc_aem                  ();
+uint ps_sc_tfx                  ();
+uint ps_sc_tcc                  ();
+uint ps_sc_atst                 ();
+uint ps_sc_fog                  ();
+uint ps_sc_blend_hw             ();
+uint ps_sc_a_masked             ();
+uint ps_sc_fba                  ();
+uint ps_sc_fbmask               ();
+uint ps_sc_ltf                  ();
+uint ps_sc_tcoffsethack         ();
+uint ps_sc_point_sampler        ();
+uint ps_sc_region_rect          ();
+uint ps_sc_shuffle              ();
+uint ps_sc_shuffle_same         ();
+uint ps_sc_process_ba           ();
+uint ps_sc_process_rg           ();
+uint ps_sc_shuffle_across       ();
+uint ps_sc_read16_src           ();
+uint ps_sc_write_rg             ();
+uint ps_sc_dst_fmt              ();
+uint ps_sc_depth_fmt            ();
+uint ps_sc_pal_fmt              ();
+uint ps_sc_channel_fetch        ();
+uint ps_sc_tales_of_abyss_hle   ();
+uint ps_sc_urban_chaos_hle      ();
+uint ps_sc_colclip_hw           ();
+uint ps_sc_rta_correction       ();
+uint ps_sc_rta_src_correction   ();
+uint ps_sc_colclip              ();
+uint ps_sc_blend_a              ();
+uint ps_sc_blend_b              ();
+uint ps_sc_blend_c              ();
+uint ps_sc_blend_d              ();
+uint ps_sc_blend_mix            ();
+uint ps_sc_round_inv            ();
+uint ps_sc_fixed_one_a          ();
+uint ps_sc_pabe                 ();
+uint ps_sc_dither               ();
+uint ps_sc_dither_adjust        ();
+uint ps_sc_scanmsk              ();
+uint ps_sc_automatic_lod        ();
+uint ps_sc_manual_lod           ();
+uint ps_sc_tex_is_fb            ();
+uint ps_sc_abe                  ();
+uint ps_sc_anisotropic_filtering();
+
+#define PS_SC_FST                   ps_sc_fst                  ()
+#define PS_SC_WMS                   ps_sc_wms                  ()
+#define PS_SC_WMT                   ps_sc_wmt                  ()
+#define PS_SC_ADJS                  ps_sc_adjs                 ()
+#define PS_SC_ADJT                  ps_sc_adjt                 ()
+#define PS_SC_AEM_FMT               ps_sc_aem_fmt              ()
+#define PS_SC_AEM                   ps_sc_aem                  ()
+#define PS_SC_TFX                   ps_sc_tfx                  ()
+#define PS_SC_TCC                   ps_sc_tcc                  ()
+#define PS_SC_ATST                  ps_sc_atst                 ()
+#define PS_SC_FOG                   ps_sc_fog                  ()
+#define PS_SC_BLEND_HW              ps_sc_blend_hw             ()
+#define PS_SC_A_MASKED              ps_sc_a_masked             ()
+#define PS_SC_FBA                   ps_sc_fba                  ()
+#define PS_SC_FBMASK                ps_sc_fbmask               ()
+#define PS_SC_LTF                   ps_sc_ltf                  ()
+#define PS_SC_TCOFFSETHACK          ps_sc_tcoffsethack         ()
+#define PS_SC_POINT_SAMPLER         ps_sc_point_sampler        ()
+#define PS_SC_REGION_RECT           ps_sc_region_rect          ()
+#define PS_SC_SHUFFLE               ps_sc_shuffle              ()
+#define PS_SC_SHUFFLE_SAME          ps_sc_shuffle_same         ()
+#define PS_SC_PROCESS_BA            ps_sc_process_ba           ()
+#define PS_SC_PROCESS_RG            ps_sc_process_rg           ()
+#define PS_SC_SHUFFLE_ACROSS        ps_sc_shuffle_across       ()
+#define PS_SC_READ16_SRC            ps_sc_read16_src           ()
+#define PS_SC_WRITE_RG              ps_sc_write_rg             ()
+#define PS_SC_DST_FMT               ps_sc_dst_fmt              ()
+#define PS_SC_DEPTH_FMT             ps_sc_depth_fmt            ()
+#define PS_SC_PAL_FMT               ps_sc_pal_fmt              ()
+#define PS_SC_CHANNEL_FETCH         ps_sc_channel_fetch        ()
+#define PS_SC_TALES_OF_ABYSS_HLE    ps_sc_tales_of_abyss_hle   ()
+#define PS_SC_URBAN_CHAOS_HLE       ps_sc_urban_chaos_hle      ()
+#define PS_SC_COLCLIP_HW            ps_sc_colclip_hw           ()
+#define PS_SC_RTA_CORRECTION        ps_sc_rta_correction       ()
+#define PS_SC_RTA_SRC_CORRECTION    ps_sc_rta_src_correction   ()
+#define PS_SC_COLCLIP               ps_sc_colclip              ()
+#define PS_SC_BLEND_A               ps_sc_blend_a              ()
+#define PS_SC_BLEND_B               ps_sc_blend_b              ()
+#define PS_SC_BLEND_C               ps_sc_blend_c              ()
+#define PS_SC_BLEND_D               ps_sc_blend_d              ()
+#define PS_SC_BLEND_MIX             ps_sc_blend_mix            ()
+#define PS_SC_ROUND_INV             ps_sc_round_inv            ()
+#define PS_SC_FIXED_ONE_A           ps_sc_fixed_one_a          ()
+#define PS_SC_PABE                  ps_sc_pabe                 ()
+#define PS_SC_DITHER                ps_sc_dither               ()
+#define PS_SC_DITHER_ADJUST         ps_sc_dither_adjust        ()
+#define PS_SC_SCANMSK               ps_sc_scanmsk              ()
+#define PS_SC_AUTOMATIC_LOD         ps_sc_automatic_lod        ()
+#define PS_SC_MANUAL_LOD            ps_sc_manual_lod           ()
+#define PS_SC_TEX_IS_FB             ps_sc_tex_is_fb            ()
+#define PS_SC_ABE                   ps_sc_abe                  ()
+#define PS_SC_ANISOTROPIC_FILTERING ps_sc_anisotropic_filtering()
+//#endif
+
+#ifndef VS_EXPAND_NONE
+#define VS_EXPAND_NONE 0
+#define VS_EXPAND_POINT 1
+#define VS_EXPAND_LINE 2
+#define VS_EXPAND_SPRITE 3
+#define VS_EXPAND_LINE_AA1 4
+#define VS_EXPAND_TRIANGLE_AA1 5
+#endif
+
+#define SW_BLEND (PS_SC_BLEND_A || PS_SC_BLEND_B || PS_SC_BLEND_D)
+#define SW_BLEND_NEEDS_RT (SW_BLEND && (PS_SC_BLEND_A == 1 || PS_SC_BLEND_B == 1 || PS_SC_BLEND_C == 1 || PS_SC_BLEND_D == 1))
+#define SW_AD_TO_HW (PS_SC_BLEND_C == 1 && PS_SC_A_MASKED)
+#define NEEDS_RT_FOR_AFAIL (PS_AFAIL == AFAIL_ZB_ONLY || PS_AFAIL == AFAIL_RGB_ONLY || PS_AFAIL == AFAIL_RGB_ONLY_SW_Z)
+#define NEEDS_DEPTH_FOR_AFAIL (PS_AFAIL == AFAIL_FB_ONLY || PS_AFAIL == AFAIL_RGB_ONLY_SW_Z)
+#define NEEDS_DEPTH_FOR_ZTST (PS_ZTST == ZTST_GEQUAL || PS_ZTST == ZTST_GREATER)
+#define NEEDS_DEPTH_FOR_AA1 (PS_AA1 == PS_AA1_TRIANGLE_SW_Z)
+#define SW_DEPTH (NEEDS_DEPTH_FOR_AFAIL || NEEDS_DEPTH_FOR_ZTST || NEEDS_DEPTH_FOR_AA1)
+#define ZWRITE (PS_ZFLOOR || PS_ZCLAMP || SW_DEPTH)
+
+struct VS_INPUT
+{
+	float2 st : TEXCOORD0;
+	uint4 c : COLOR0;
+	float q : TEXCOORD1;
+	uint2 p : POSITION0;
+	uint z : POSITION1;
+	uint2 uv : TEXCOORD2;
+	float4 f : COLOR1;
+};
+
+struct VS_OUTPUT
+{
+	float4 p : SV_Position;
+	float4 t : TEXCOORD0;
+	float4 ti : TEXCOORD2;
+
+#if VS_IIP != 0 || GS_IIP != 0 || PS_IIP != 0
+	float4 c : COLOR0;
+#else
+	nointerpolation float4 c : COLOR0;
+#endif
+
+	float inv_cov : COLOR1; // We use the inverse to make it simpler to interpolate.
+	nointerpolation uint interior : COLOR2; // 1 for triangle interior; 0 for edge;
+};
+
+struct PS_INPUT
+{
+	noperspective centroid float4 p : SV_Position;
+	float4 t : TEXCOORD0;
+	float4 ti : TEXCOORD2;
+#if VS_IIP != 0 || GS_IIP != 0 || PS_IIP != 0
+	float4 c : COLOR0;
+#else
+	nointerpolation float4 c : COLOR0;
+#endif
+	float inv_cov : COLOR1; // We use the inverse to make it simpler to interpolate.
+	nointerpolation uint interior : COLOR2; // 1 for triangle interior; 0 for edge;
+#if (PS_DATE >= 1 && PS_DATE <= 3) || GS_FORWARD_PRIMID
+	uint primid : SV_PrimitiveID;
+#endif
+};
+
+#ifdef PIXEL_SHADER
+
+struct PS_OUTPUT
+{
+#define NUM_RTS 0
+#if !PS_NO_COLOR
+	#if PS_DATE == 1 || PS_DATE == 2
+		float c : SV_Target;
+	#else
+		float4 c0 : SV_Target0;
+		#undef NUM_RTS
+		#define NUM_RTS 1
+		#if !PS_NO_COLOR1
+			float4 c1 : SV_Target1;
+		#endif
+	#endif
+#endif
+#if ZWRITE
+	// In DX12 we do depth feedback loops with a color copy.
+	#if SW_DEPTH && PS_NO_COLOR1 && DX12
+		#if NUM_RTS > 0
+			float depth_color : SV_Target1;
+		#else
+			float depth_color : SV_Target0;
+		#endif
+	#endif
+	#if PS_HAS_CONSERVATIVE_DEPTH && !SW_DEPTH
+		float depth : SV_DepthLessEqual;
+	#else
+		float depth : SV_Depth;
+	#endif
+#endif
+#undef NUM_RTS
+};
+
+Texture2D<float4> Texture : register(t0);
+Texture2D<float4> Palette : register(t1);
+Texture2D<float4> RtTexture : register(t2);
+Texture2D<float> PrimMinTexture : register(t3);
+Texture2D<float> DepthTexture : register(t4);
+SamplerState TextureSampler : register(s0);
+
+#ifdef DX12
+cbuffer cb1 : register(b1)
+#else
+cbuffer cb1
+#endif
+{
+	float3 FogColor;
+	float AREF;
+	float4 WH;
+	float2 TA;
+	float MaxDepthPS;
+	float Af;
+	uint4 FbMask;
+	float4 HalfTexel;
+	float4 MinMax;
+	float4 LODParams;
+	float4 STRange;
+	int4 ChannelShuffle;
+	float2 ChannelShuffleOffset;
+	float2 TC_OffsetHack;
+	float2 STScale;
+	float4x4 DitherMatrix;
+	float ScaledScaleFactor;
+	float RcpScaleFactor;
+};
+
+float manual_lod(float uv_w)
+{
+	// FIXME add LOD: K - ( LOG2(Q) * (1 << L))
+	float K = LODParams.x;
+	float L = LODParams.y;
+	float bias = LODParams.z;
+	float max_lod = LODParams.w;
+
+	float gs_lod = K - log2(abs(uv_w)) * L;
+	// FIXME max useful ?
+	//return max(min(gs_lod, max_lod) - bias, 0.0f);
+	return min(gs_lod, max_lod) - bias;
+}
+
+float4 sample_c_af(float2 uv, float uv_w)
+{
+	// HW sampler will reject bad UVs, match that here.
+	uv = any(isnan(uv) | isinf(uv)) ? float2(0, 0) : uv;
+
+	// Large floating point values risk NaN/Inf values.
+	// Above this value floats lose decimal precision, so seems a resonable limit for UVs.
+	uv = clamp(uv, -8388608.0f, 8388608.0f);
+
+	// Below taken from https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#7.18.11%20LOD%20Calculations
+	// With guidance from https://pema.dev/2025/05/09/mipmaps-too-much-detail/ 
+	float2 sz;
+	Texture.GetDimensions(sz.x, sz.y);
+	float2 dX = ddx(uv) * sz;
+	float2 dY = ddy(uv) * sz;
+
+	// Calculate Ellipse Transform
+	bool d_zero = length(dX) == 0 || length(dY) == 0;
+	bool d_par = (dX.x * dY.y - dY.x * dX.y) == 0;
+	bool d_per = dot(dX, dY) == 0;
+	bool d_inf_nan = any(isinf(dX) | isinf(dY) | isnan(dX) | isnan(dY));
+
+	if (!(d_zero || d_par || d_per || d_inf_nan))
+	{
+		float A = dX.y * dX.y + dY.y * dY.y;
+		float B = -2 * (dX.x * dX.y + dY.x * dY.y);
+		float C = dX.x * dX.x + dY.x * dY.x;
+		float f = (dX.x * dY.y - dY.x * dX.y);
+		float F = f * f;
+
+		float p = A - C;
+		float q = A + C;
+		float t = sqrt(p * p + B * B);
+
+		float2 new_dX = float2(
+			sqrt(F * (t + p) / (t * (q + t))),
+			sqrt(F * (t - p) / (t * (q + t))) * sign(B)
+		);
+		
+		float2 new_dY = float2(
+			sqrt(F * (t - p) / (t * (q - t))) * -sign(B),
+			sqrt(F * (t + p) / (t * (q - t)))
+		);
+		
+		d_inf_nan = any(isinf(new_dX) | isinf(new_dY) | isnan(new_dX) | isnan(new_dY));
+		if (!d_inf_nan)
+		{
+			dX = new_dX;
+			dY = new_dY;
+		}
+	}
+
+	// Compute AF values
+	float squared_length_x = dX.x * dX.x + dX.y * dX.y;
+	float squared_length_y = dY.x * dY.x + dY.y * dY.y;
+	float determinant = abs(dX.x * dY.y - dX.y * dY.x);
+	bool is_major_x = squared_length_x > squared_length_y;
+	float squared_length_major = is_major_x ? squared_length_x : squared_length_y;
+	float length_major = sqrt(squared_length_major);
+
+	float aniso_ratio;
+	float length_lod;
+	float2 aniso_line;
+	if (length_major <= 1.0f)
+	{
+		// A zero length_major would result in NaN Lod and break sampling.
+		// A small length_major would result in aniso_ratio getting clamped to 1.
+		// Perform isotropic filtering instead.
+		aniso_ratio = 1.0f;
+		length_lod = length_major;
+		aniso_line = float2(0, 0);
+	}
+	else
+	{
+		float norm_major = 1.0f / length_major;
+	
+		float2 aniso_line_dir = float2(
+			(is_major_x ? dX.x : dY.x) * norm_major,
+			(is_major_x ? dX.y : dY.y) * norm_major
+		);
+	
+		aniso_ratio = squared_length_major / determinant;
+
+		// Calculate the minor length of the ellipse for Lod, while also clamping the ratio of anisotropy.
+		if (aniso_ratio > PS_SC_ANISOTROPIC_FILTERING)
+		{
+			// ratio is clamped - Lod is based on ratio (preserves area)
+			aniso_ratio = PS_SC_ANISOTROPIC_FILTERING;
+			length_lod = length_major / PS_SC_ANISOTROPIC_FILTERING;
+		}
+		else
+		{
+			// ratio not clamped - Lod is based on area
+			length_lod = determinant / length_major;
+		}
+
+		// clamp to top Lod
+		if (length_lod < 1.0f)
+			aniso_ratio = max(1.0f, aniso_ratio * length_lod);
+
+		aniso_ratio = round(aniso_ratio);
+		aniso_line = aniso_line_dir * 0.5f * length_major * (1.0f / sz);
+	}
+
+	float lod;
+	if (PS_SC_AUTOMATIC_LOD == 1)
+		lod = log2(length_lod);
+	else if (PS_SC_MANUAL_LOD == 1)
+		lod = manual_lod(uv_w);
+	else
+		lod = 0; // No Lod
+	
+	float4 colour;
+	if (aniso_ratio == 1.0f)
+		colour = Texture.SampleLevel(TextureSampler, uv, lod);
+	else
+	{
+		float4 num = float4(0, 0, 0, 0);
+		for (int i = 0; i < aniso_ratio; i++)
+		{
+			float2 d = -aniso_line + (0.5f + i) * (2.0f * aniso_line) / aniso_ratio;
+			float2 uv_sample = uv + d;
+			float4 sample_colour = Texture.SampleLevel(TextureSampler, uv_sample, lod);
+			num += sample_colour;
+		}
+
+		colour = num / aniso_ratio;
+	}
+	return colour;
+}
+
+float4 sample_c(float2 uv, float uv_w, int2 xy)
+{
+	if (PS_SC_TEX_IS_FB == 1)
+		return RtTexture.Load(int3(int2(xy), 0));
+	else if (PS_SC_REGION_RECT == 1)
+		return Texture.Load(int3(int2(uv), 0));
+
+	if (PS_SC_POINT_SAMPLER)
+	{
+		// Weird issue with ATI/AMD cards,
+		// it looks like they add 127/128 of a texel to sampling coordinates
+		// occasionally causing point sampling to erroneously round up.
+		// I'm manually adjusting coordinates to the centre of texels here,
+		// though the centre is just paranoia, the top left corner works fine.
+		// As of 2018 this issue is still present.
+		uv = (trunc(uv * WH.zw) + float2(0.5, 0.5)) / WH.zw;
+	}
+	if (!PS_SC_ADJS && !PS_SC_ADJT)
+	{
+		uv *= STScale;
+	}
+	else
+	{
+		if (PS_SC_ADJS)
+			uv.x = (uv.x - STRange.x) * STRange.z;
+		else
+			uv.x = uv.x * STScale.x;
+
+		if (PS_SC_ADJT)
+			uv.y = (uv.y - STRange.y) * STRange.w;
+		else
+			uv.y = uv.y * STScale.y;
+	}
+
+	if (PS_SC_ANISOTROPIC_FILTERING > 1)
+		return sample_c_af(uv, uv_w);
+	else if (PS_SC_AUTOMATIC_LOD == 1)
+		return Texture.Sample(TextureSampler, uv);
+	else if (PS_SC_MANUAL_LOD == 1)
+		return Texture.SampleLevel(TextureSampler, uv, manual_lod(uv_w));
+	else
+		return Texture.SampleLevel(TextureSampler, uv, 0); // No lod
+}
+
+float4 sample_p(uint u)
+{
+	return Palette.Load(int3(int(u), 0, 0));
+}
+
+float4 sample_p_norm(float u)
+{
+	return sample_p(uint(u * 255.5f));
+}
+
+float4 clamp_wrap_uv(float4 uv)
+{
+	float4 tex_size = WH.xyxy;
+
+	if(PS_SC_WMS == PS_SC_WMT)
+	{
+		if(PS_SC_REGION_RECT != 0 && PS_SC_WMS == 0)
+		{
+			uv = frac(uv);
+		}
+		else if(PS_SC_REGION_RECT != 0 && PS_SC_WMS == 1)
+		{
+			uv = saturate(uv);
+		}
+		else if(PS_SC_WMS == 2)
+		{
+			uv = clamp(uv, MinMax.xyxy, MinMax.zwzw);
+		}
+		else if(PS_SC_WMS == 3)
+		{
+			if (PS_SC_FST == 0)
+			{
+				// wrap negative uv coords to avoid an off by one error that shifted
+				// textures. Fixes Xenosaga's hair issue.
+				uv = frac(uv);
+			}
+			uv = (float4)(((uint4)(uv * tex_size) & asuint(MinMax.xyxy)) | asuint(MinMax.zwzw)) / tex_size;
+		}
+	}
+	else
+	{
+		if(PS_SC_REGION_RECT != 0 && PS_SC_WMS == 0)
+		{
+			uv.xz = frac(uv.xz);
+		}
+		else if(PS_SC_REGION_RECT != 0 && PS_SC_WMS == 1)
+		{
+			uv.xz = saturate(uv.xz);
+		}
+		else if(PS_SC_WMS == 2)
+		{
+			uv.xz = clamp(uv.xz, MinMax.xx, MinMax.zz);
+		}
+		else if(PS_SC_WMS == 3)
+		{
+			if (PS_SC_FST == 0)
+				uv.xz = frac(uv.xz);
+			uv.xz = (float2)(((uint2)(uv.xz * tex_size.xx) & asuint(MinMax.xx)) | asuint(MinMax.zz)) / tex_size.xx;
+		}
+		if(PS_SC_REGION_RECT != 0 && PS_SC_WMT == 0)
+		{
+			uv.yw = frac(uv.yw);
+		}
+		else if(PS_SC_REGION_RECT != 0 && PS_SC_WMT == 1)
+		{
+			uv.yw = saturate(uv.yw);
+		}
+		else if(PS_SC_WMT == 2)
+		{
+			uv.yw = clamp(uv.yw, MinMax.yy, MinMax.ww);
+		}
+		else if(PS_SC_WMT == 3)
+		{
+			if (PS_SC_FST == 0)
+				uv.yw = frac(uv.yw);
+			uv.yw = (float2)(((uint2)(uv.yw * tex_size.yy) & asuint(MinMax.yy)) | asuint(MinMax.ww)) / tex_size.yy;
+		}
+	}
+
+	if(PS_SC_REGION_RECT != 0)
+	{
+		// Normalized -> Integer Coordinates.
+		uv = clamp(uv * WH.zwzw + STRange.xyxy, STRange.xyxy, STRange.zwzw);
+	}
+
+	return uv;
+}
+
+float4x4 sample_4c(float4 uv, float uv_w, int2 xy)
+{
+	float4x4 c;
+
+	c[0] = sample_c(uv.xy, uv_w, xy);
+	c[1] = sample_c(uv.zy, uv_w, xy);
+	c[2] = sample_c(uv.xw, uv_w, xy);
+	c[3] = sample_c(uv.zw, uv_w, xy);
+
+	return c;
+}
+
+uint4 sample_4_index(float4 uv, float uv_w, int2 xy)
+{
+	float4 c;
+
+	c.x = sample_c(uv.xy, uv_w, xy).a;
+	c.y = sample_c(uv.zy, uv_w, xy).a;
+	c.z = sample_c(uv.xw, uv_w, xy).a;
+	c.w = sample_c(uv.zw, uv_w, xy).a;
+
+	// Denormalize value
+	uint4 i;
+		
+	if (PS_SC_RTA_SRC_CORRECTION)
+	{
+		i = uint4(round(c * 128.25f)); // Denormalize value
+	}
+	else
+	{
+		i = uint4(c * 255.5f); // Denormalize value
+	}
+
+	if (PS_SC_PAL_FMT == 1)
+	{
+		// 4HL
+		return i & 0xFu;
+	}
+	else if (PS_SC_PAL_FMT == 2)
+	{
+		// 4HH
+		return i >> 4u;
+	}
+	else
+	{
+		// 8
+		return i;
+	}
+}
+
+float4x4 sample_4p(uint4 u)
+{
+	float4x4 c;
+
+	c[0] = sample_p(u.x);
+	c[1] = sample_p(u.y);
+	c[2] = sample_p(u.z);
+	c[3] = sample_p(u.w);
+
+	return c;
+}
+
+uint fetch_raw_depth(int2 xy)
+{
+	float4 col;
+	if (PS_SC_TEX_IS_FB == 1)
+		col = RtTexture.Load(int3(xy, 0));
+	else
+		col = Texture.Load(int3(xy, 0));
+	return (uint)(col.r * exp2(32.0f));
+}
+
+float4 fetch_raw_color(int2 xy)
+{
+	if (PS_SC_TEX_IS_FB == 1)
+		return RtTexture.Load(int3(xy, 0));
+	else
+		return Texture.Load(int3(xy, 0));
+}
+
+float4 fetch_c(int2 uv)
+{
+	if (PS_SC_TEX_IS_FB == 1)
+		return RtTexture.Load(int3(uv, 0));
+	else
+		return Texture.Load(int3(uv, 0));
+}
+
+//////////////////////////////////////////////////////////////////////
+// Depth sampling
+//////////////////////////////////////////////////////////////////////
+
+int2 clamp_wrap_uv_depth(int2 uv)
+{
+	int4 mask = asint(MinMax) << 4;
+	if (PS_SC_WMS == PS_SC_WMT)
+	{
+		if (PS_SC_WMS == 2)
+		{
+			uv = clamp(uv, mask.xy, mask.zw);
+		}
+		else if (PS_SC_WMS == 3)
+		{
+			uv = (uv & mask.xy) | mask.zw;
+		}
+	}
+	else
+	{
+		if (PS_SC_WMS == 2)
+		{
+			uv.x = clamp(uv.x, mask.x, mask.z);
+		}
+		else if (PS_SC_WMS == 3)
+		{
+			uv.x = (uv.x & mask.x) | mask.z;
+		}
+		if (PS_SC_WMT == 2)
+		{
+			uv.y = clamp(uv.y, mask.y, mask.w);
+		}
+		else if (PS_SC_WMT == 3)
+		{
+			uv.y = (uv.y & mask.y) | mask.w;
+		}
+	}
+	return uv;
+}
+
+float4 sample_depth(float2 st, float2 pos)
+{
+	float2 uv_f = (float2)clamp_wrap_uv_depth(int2(st)) * (float2)ScaledScaleFactor;
+
+	if (PS_SC_REGION_RECT == 1)
+	{
+		uv_f = clamp(uv_f + STRange.xy, STRange.xy, STRange.zw);
+	}
+
+	int2 uv = (int2)uv_f;
+	float4 t = (float4)(0.0f);
+
+	if (PS_SC_TALES_OF_ABYSS_HLE == 1)
+	{
+		// Warning: UV can't be used in channel effect
+		uint depth = fetch_raw_depth(pos);
+
+		// Convert msb based on the palette
+		t = Palette.Load(int3((depth >> 8u) & 0xFFu, 0, 0)) * 255.0f;
+	}
+	else if (PS_SC_URBAN_CHAOS_HLE == 1)
+	{
+		// Depth buffer is read as a RGB5A1 texture. The game try to extract the green channel.
+		// So it will do a first channel trick to extract lsb, value is right-shifted.
+		// Then a new channel trick to extract msb which will shifted to the left.
+		// OpenGL uses a FLOAT32 format for the depth so it requires a couple of conversion.
+		// To be faster both steps (msb&lsb) are done in a single pass.
+
+		// Warning: UV can't be used in channel effect
+		uint depth = fetch_raw_depth(pos);
+
+		// Convert lsb based on the palette
+		t = Palette.Load(int3(depth & 0xFFu, 0, 0)) * 255.0f;
+
+		// Msb is easier
+		float green = (float)((depth >> 8u) & 0xFFu) * 36.0f;
+		green = min(green, 255.0f);
+		t.g += green;
+	}
+	else if (PS_SC_DEPTH_FMT == 1)
+	{
+		// Based on ps_convert_float32_rgba8 of convert
+
+		// Convert a FLOAT32 depth texture into a RGBA color texture
+		uint d = uint(fetch_c(uv).r * exp2(32.0f));
+		t = float4(uint4((d & 0xFFu), ((d >> 8) & 0xFFu), ((d >> 16) & 0xFFu), (d >> 24)));
+	}
+	else if (PS_SC_DEPTH_FMT == 2)
+	{
+		// Based on ps_convert_float16_rgb5a1 of convert
+
+		// Convert a FLOAT32 (only 16 lsb) depth into a RGB5A1 color texture
+		uint d = uint(fetch_c(uv).r * exp2(32.0f));
+		t = float4(uint4((d & 0x1Fu), ((d >> 5) & 0x1Fu), ((d >> 10) & 0x1Fu), (d >> 15) & 0x01u)) * float4(8.0f, 8.0f, 8.0f, 128.0f);
+	}
+	else if (PS_SC_DEPTH_FMT == 3)
+	{
+		// Convert a RGBA/RGB5A1 color texture into a RGBA/RGB5A1 color texture
+		t = fetch_c(uv) * 255.0f;
+	}
+
+	if (PS_SC_AEM_FMT == FMT_24)
+	{
+		t.a = ((PS_SC_AEM == 0) || any(bool3(t.rgb))) ? 255.0f * TA.x : 0.0f;
+	}
+	else if (PS_SC_AEM_FMT == FMT_16)
+	{
+		t.a = t.a >= 128.0f ? 255.0f * TA.y : ((PS_SC_AEM == 0) || any(bool3(t.rgb))) ? 255.0f * TA.x : 0.0f;
+	}
+	else if (PS_SC_PAL_FMT != 0 && !PS_SC_TALES_OF_ABYSS_HLE && !PS_SC_URBAN_CHAOS_HLE)
+	{
+		t = trunc(sample_4p(uint4(t.aaaa))[0] * 255.0f + 0.05f);
+	}
+
+	return t;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Fetch a Single Channel
+//////////////////////////////////////////////////////////////////////
+
+float4 fetch_red(int2 xy)
+{
+	float4 rt;
+
+	if ((PS_SC_DEPTH_FMT == 1) || (PS_SC_DEPTH_FMT == 2))
+	{
+		uint depth = (fetch_raw_depth(xy)) & 0xFFu;
+		rt = (float4)(depth) / 255.0f;
+	}
+	else
+	{
+		rt = fetch_raw_color(xy);
+	}
+
+	return sample_p_norm(rt.r) * 255.0f;
+}
+
+float4 fetch_green(int2 xy)
+{
+	float4 rt;
+
+	if ((PS_SC_DEPTH_FMT == 1) || (PS_SC_DEPTH_FMT == 2))
+	{
+		uint depth = (fetch_raw_depth(xy) >> 8u) & 0xFFu;
+		rt = (float4)(depth) / 255.0f;
+	}
+	else
+	{
+		rt = fetch_raw_color(xy);
+	}
+
+	return sample_p_norm(rt.g) * 255.0f;
+}
+
+float4 fetch_blue(int2 xy)
+{
+	float4 rt;
+
+	if ((PS_SC_DEPTH_FMT == 1) || (PS_SC_DEPTH_FMT == 2))
+	{
+		uint depth = (fetch_raw_depth(xy) >> 16u) & 0xFFu;
+		rt = (float4)(depth) / 255.0f;
+	}
+	else
+	{
+		rt = fetch_raw_color(xy);
+	}
+
+	return sample_p_norm(rt.b) * 255.0f;
+}
+
+float4 fetch_alpha(int2 xy)
+{
+	float4 rt = fetch_raw_color(xy);
+	return sample_p_norm(rt.a) * 255.0f;
+}
+
+float4 fetch_rgb(int2 xy)
+{
+	float4 rt = fetch_raw_color(xy);
+	float4 c = float4(sample_p_norm(rt.r).r, sample_p_norm(rt.g).g, sample_p_norm(rt.b).b, 1.0);
+	return c * 255.0f;
+}
+
+float4 fetch_gXbY(int2 xy)
+{
+	if ((PS_SC_DEPTH_FMT == 1) || (PS_SC_DEPTH_FMT == 2))
+	{
+		uint depth = fetch_raw_depth(xy);
+		uint bg = (depth >> (8u + uint(ChannelShuffle.w))) & 0xFFu;
+		return (float4)(bg);
+	}
+	else
+	{
+		int4 rt = (int4)(fetch_raw_color(xy) * 255.0);
+		int green = (rt.g >> ChannelShuffle.w) & ChannelShuffle.z;
+		int blue = (rt.b << ChannelShuffle.y) & ChannelShuffle.x;
+		return (float4)(green | blue);
+	}
+}
+
+float4 sample_color(float2 st, float uv_w, int2 xy)
+{
+	if (PS_SC_TCOFFSETHACK)
+	{
+		st += TC_OffsetHack.xy;
+	}
+
+	float4 t;
+	float4x4 c;
+	float2 dd;
+
+	if (PS_SC_LTF == 0 && PS_SC_AEM_FMT == FMT_32 && PS_SC_PAL_FMT == 0 && PS_SC_REGION_RECT == 0 && PS_SC_WMS < 2 && PS_SC_WMT < 2)
+	{
+		c[0] = sample_c(st, uv_w, xy);
+	}
+	else
+	{
+		float4 uv;
+
+		if(PS_SC_LTF)
+		{
+			uv = st.xyxy + HalfTexel;
+			dd = frac(uv.xy * WH.zw);
+
+			if(PS_SC_FST == 0)
+			{
+				dd = clamp(dd, (float2)0.0f, (float2)0.9999999f);
+			}
+		}
+		else
+		{
+			uv = st.xyxy;
+		}
+
+		uv = clamp_wrap_uv(uv);
+
+		if (PS_SC_PAL_FMT != 0)
+		{
+			c = sample_4p(sample_4_index(uv, uv_w, xy));
+		}
+		else
+		{
+			c = sample_4c(uv, uv_w, xy);
+		}
+	}
+
+	[unroll]
+	for (uint i = 0; i < 4; i++)
+	{
+		if(PS_SC_AEM_FMT == FMT_24)
+		{
+			c[i].a = !PS_SC_AEM || any(c[i].rgb) ? TA.x : 0;
+		}
+		else if(PS_SC_AEM_FMT == FMT_16)
+		{
+			c[i].a = c[i].a >= 0.5 ? TA.y : !PS_SC_AEM || any(int3(c[i].rgb * 255.0f) & 0xF8) ? TA.x : 0;
+		}
+	}
+
+	if(PS_SC_LTF)
+	{
+		t = lerp(lerp(c[0], c[1], dd.x), lerp(c[2], c[3], dd.x), dd.y);
+	}
+	else
+	{
+		t = c[0];
+	}
+
+	if (PS_SC_AEM_FMT == FMT_32 && PS_SC_PAL_FMT == 0 && PS_SC_RTA_SRC_CORRECTION)
+		t.a = t.a * (128.5f / 255.0f);
+			
+	return trunc(t * 255.0f + 0.05f);
+}
+
+float4 tfx(float4 T, float4 C)
+{
+	float4 C_out;
+	float4 FxT = trunc((C * T) / 128.0f);
+
+	if (PS_SC_TFX == 0)
+	{
+		C_out = FxT;
+	}
+	else if (PS_SC_TFX == 1)
+	{
+		C_out = T;
+	}
+	else if (PS_SC_TFX == 2)
+	{
+		C_out.rgb = FxT.rgb + C.a;
+		C_out.a = T.a + C.a;
+	}
+	else if (PS_SC_TFX == 3)
+	{
+		C_out.rgb = FxT.rgb + C.a;
+		C_out.a = T.a;
+	}
+	else
+	{
+		C_out = C;
+	}
+
+	if (PS_SC_TCC == 0)
+	{
+		C_out.a = C.a;
+	}
+
+	if ((PS_SC_TFX == 0) || (PS_SC_TFX == 2) || (PS_SC_TFX == 3))
+	{
+		// Clamp only when it is useful
+		C_out = min(C_out, 255.0f);
+	}
+
+	return C_out;
+}
+
+bool atst(float4 C)
+{
+	float a = C.a;
+
+	if (PS_SC_ATST == ATST_LEQUAL)
+	{
+		return (a <= AREF);
+	}
+	else if (PS_SC_ATST == ATST_GEQUAL)
+	{
+		return (a >= AREF);
+	}
+	else if (PS_SC_ATST == ATST_EQUAL)
+	{
+		return (abs(a - AREF) <= 0.5f);
+	}
+	else if (PS_SC_ATST == ATST_NOTEQUAL)
+	{
+		return (abs(a - AREF) >= 0.5f);
+	}
+	else
+	{
+		return true;
+	}
+}
+
+float4 fog(float4 c, float f)
+{
+	if(PS_SC_FOG)
+	{
+		c.rgb = trunc(lerp(FogColor, c.rgb, (f * 255.0f) / 256.0f));
+	}
+
+	return c;
+}
+
+float4 ps_color(PS_INPUT input)
+{
+	float2 st;
+	float2 st_int;
+	if (PS_SC_FST == 0)
+	{
+		st = input.t.xy / input.t.w;
+		st_int = input.ti.zw / input.t.w;
+	}
+	else
+	{
+		st = input.ti.xy;
+		st_int = input.ti.zw;
+	}
+
+	float4 T;
+	if (PS_SC_CHANNEL_FETCH == 1)
+		T = fetch_red(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_CHANNEL_FETCH == 2)
+		T = fetch_green(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_CHANNEL_FETCH == 3)
+		T = fetch_blue(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_CHANNEL_FETCH == 4)
+		T = fetch_alpha(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_CHANNEL_FETCH == 5)
+		T = fetch_rgb(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_CHANNEL_FETCH == 6)
+		T = fetch_gXbY(int2(input.p.xy + ChannelShuffleOffset));
+	else if (PS_SC_DEPTH_FMT > 0)
+		T = sample_depth(st_int, input.p.xy);
+	else
+		T = sample_color(st, input.t.w, int2(input.p.xy));
+
+	if (PS_SC_SHUFFLE && !PS_SC_SHUFFLE_SAME && !PS_SC_READ16_SRC && !(PS_SC_PROCESS_BA == SHUFFLE_READWRITE && PS_SC_PROCESS_RG == SHUFFLE_READWRITE))
+	{
+		uint4 denorm_c_before = uint4(T);
+		if (PS_SC_PROCESS_BA & SHUFFLE_READ)
+		{
+			T.r = float((denorm_c_before.b << 3) & 0xF8u);
+			T.g = float(((denorm_c_before.b >> 2) & 0x38u) | ((denorm_c_before.a << 6) & 0xC0u));
+			T.b = float((denorm_c_before.a << 1) & 0xF8u);
+			T.a = float(denorm_c_before.a & 0x80u);
+		}
+		else
+		{
+			T.r = float((denorm_c_before.r << 3) & 0xF8u);
+			T.g = float(((denorm_c_before.r >> 2) & 0x38u) | ((denorm_c_before.g << 6) & 0xC0u));
+			T.b = float((denorm_c_before.g << 1) & 0xF8u);
+			T.a = float(denorm_c_before.g & 0x80u);
+		}
+		
+		T.a = (T.a >= 127.5f ? TA.y : !PS_SC_AEM || any(int3(T.rgb) & 0xF8) ? TA.x : 0) * 255.0f;
+	}
+
+	float4 C = tfx(T, input.c);
+
+	C = fog(C, input.t.z);
+
+	return C;
+}
+
+void ps_fbmask(inout float4 C, float2 pos_xy)
+{
+	if (PS_SC_FBMASK)
+	{
+		float multi = PS_SC_COLCLIP_HW ? 65535.0f : 255.0f;
+		float4 RT = trunc(RtTexture.Load(int3(pos_xy, 0)) * multi + 0.1f);
+		C = (float4)(((uint4)C & ~FbMask) | ((uint4)RT & FbMask));
+	}
+}
+
+void ps_dither(inout float3 C, float As, float2 pos_xy)
+{
+	if (PS_SC_DITHER > 0 && PS_SC_DITHER < 3)
+	{
+		int2 fpos;
+
+		if (PS_SC_DITHER == 2)
+			fpos = int2(pos_xy);
+		else
+			fpos = int2(pos_xy * RcpScaleFactor);
+
+		float value = DitherMatrix[fpos.x & 3][fpos.y & 3];
+		
+		// The idea here is we add on the dither amount adjusted by the alpha before it goes to the hw blend
+		// so after the alpha blend the resulting value should be the same as (Cs - Cd) * As + Cd + Dither.
+		if (PS_SC_DITHER_ADJUST)
+		{
+			float Alpha = PS_SC_BLEND_C == 2 ? Af : As;
+			value *= Alpha > 0.0f ? min(1.0f / Alpha, 1.0f) : 1.0f;
+		}
+		
+		if (PS_SC_ROUND_INV)
+			C -= value;
+		else
+			C += value;
+	}
+}
+
+void ps_color_clamp_wrap(inout float3 C)
+{
+	// When dithering the bottom 3 bits become meaningless and cause lines in the picture
+	// so we need to limit the color depth on dithered items
+	if (SW_BLEND || (PS_SC_DITHER > 0 && PS_SC_DITHER < 3) || PS_SC_FBMASK)
+	{
+		if (PS_SC_DST_FMT == FMT_16 && PS_SC_BLEND_MIX == 0 && PS_SC_ROUND_INV)
+			C += 7.0f; // Need to round up, not down since the shader will invert
+
+		// Standard Clamp
+		if (PS_SC_COLCLIP == 0 && PS_SC_COLCLIP_HW == 0)
+			C = clamp(C, (float3)0.0f, (float3)255.0f);
+
+		// In 16 bits format, only 5 bits of color are used. It impacts shadows computation of Castlevania
+		if (PS_SC_DST_FMT == FMT_16 && PS_SC_DITHER != 3 && (PS_SC_BLEND_MIX == 0 || PS_SC_DITHER))
+			C = (float3)((int3)C & (int3)0xF8);
+		else if (PS_SC_COLCLIP == 1 || PS_SC_COLCLIP_HW == 1)
+			C = (float3)((int3)C & (int3)0xFF);
+	}
+	else if (PS_SC_DST_FMT == FMT_16 && PS_SC_DITHER != 3 && PS_SC_BLEND_MIX == 0 && PS_SC_BLEND_HW == 0)
+		C = (float3)((int3)C & (int3)0xF8);
+}
+
+void ps_blend(inout float4 Color, inout float4 As_rgba, float2 pos_xy)
+{
+	float As = As_rgba.a;
+
+	if (SW_BLEND)
+	{
+		// PABE
+		if (PS_SC_PABE)
+		{
+			// As_rgba needed for accumulation blend to manipulate Cd.
+			// No blending so early exit
+			if (As < 1.0f)
+			{
+				As_rgba.rgb = (float3)0.0f;
+				return;
+			}
+
+			As_rgba.rgb = (float3)1.0f;
+		}
+
+		float4 RT = SW_BLEND_NEEDS_RT ? RtTexture.Load(int3(pos_xy, 0)) : (float4)0.0f;
+
+		if (PS_SC_SHUFFLE && SW_BLEND_NEEDS_RT)
+		{
+			uint4 denorm_rt = uint4(RT);
+			if (PS_SC_PROCESS_BA & SHUFFLE_WRITE)
+			{
+				RT.r = float((denorm_rt.b << 3) & 0xF8u);
+				RT.g = float(((denorm_rt.b >> 2) & 0x38u) | ((denorm_rt.a << 6) & 0xC0u));
+				RT.b = float((denorm_rt.a << 1) & 0xF8u);
+				RT.a = float(denorm_rt.a & 0x80u);
+			}
+			else
+			{
+				RT.r = float((denorm_rt.r << 3) & 0xF8u);
+				RT.g = float(((denorm_rt.r >> 2) & 0x38u) | ((denorm_rt.g << 6) & 0xC0u));
+				RT.b = float((denorm_rt.g << 1) & 0xF8u);
+				RT.a = float(denorm_rt.g & 0x80u);
+			}
+		}
+		
+		float Ad = PS_SC_RTA_CORRECTION ? trunc(RT.a * 128.0f + 0.1f) / 128.0f : trunc(RT.a * 255.0f + 0.1f) / 128.0f;
+		float color_multi = PS_SC_COLCLIP_HW ? 65535.0f : 255.0f;
+		float3 Cd = trunc(RT.rgb * color_multi + 0.1f);
+		float3 Cs = Color.rgb;
+
+		float3 A = (PS_SC_BLEND_A == 0) ? Cs : ((PS_SC_BLEND_A == 1) ? Cd : (float3)0.0f);
+		float3 B = (PS_SC_BLEND_B == 0) ? Cs : ((PS_SC_BLEND_B == 1) ? Cd : (float3)0.0f);
+		float  C = (PS_SC_BLEND_C == 0) ? As : ((PS_SC_BLEND_C == 1) ? Ad : Af);
+		float3 D = (PS_SC_BLEND_D == 0) ? Cs : ((PS_SC_BLEND_D == 1) ? Cd : (float3)0.0f);
+
+		// As/Af clamp alpha for Blend mix
+		// We shouldn't clamp blend mix with blend hw 1 as we want alpha higher
+		float C_clamped = C;
+		if (PS_SC_BLEND_MIX > 0 && PS_SC_BLEND_HW != 1 && PS_SC_BLEND_HW != 2)
+			C_clamped = saturate(C_clamped);
+
+		if (PS_SC_BLEND_A == PS_SC_BLEND_B)
+			Color.rgb = D;
+		// In blend_mix, HW adds on some alpha factor * dst.
+		// Truncating here wouldn't quite get the right result because it prevents the <1 bit here from combining with a <1 bit in dst to form a ≥1 amount that pushes over the truncation.
+		// Instead, apply an offset to convert HW's round to a floor.
+		// Since alpha is in 1/128 increments, subtracting (0.5 - 0.5/128 == 127/256) would get us what we want if GPUs blended in full precision.
+		// But they don't.  Details here: https://github.com/PCSX2/pcsx2/pull/6809#issuecomment-1211473399
+		// Based on the scripts at the above link, the ideal choice for Intel GPUs is 126/256, AMD 120/256.  Nvidia is a lost cause.
+		// 124/256 seems like a reasonable compromise, providing the correct answer 99.3% of the time on Intel (vs 99.6% for 126/256), and 97% of the time on AMD (vs 97.4% for 120/256).
+		else if (PS_SC_BLEND_MIX == 2)
+			Color.rgb = ((A - B) * C_clamped + D) + (124.0f / 256.0f);
+		else if (PS_SC_BLEND_MIX == 1)
+			Color.rgb = ((A - B) * C_clamped + D) - (124.0f / 256.0f);
+		else
+			Color.rgb = trunc(((A - B) * C) + D);
+
+		if (PS_SC_BLEND_HW == 1)
+		{
+			// As or Af
+			As_rgba.rgb = (float3)C;
+			// Subtract 1 for alpha to compensate for the changed equation,
+			// if c.rgb > 255.0f then we further need to adjust alpha accordingly,
+			// we pick the lowest overflow from all colors because it's the safest,
+			// we divide by 255 the color because we don't know Cd value,
+			// changed alpha should only be done for hw blend.
+			float3 alpha_compensate = max((float3)1.0f, Color.rgb / (float3)255.0f);
+			As_rgba.rgb -= alpha_compensate;
+		}
+		else if (PS_SC_BLEND_HW == 2)
+		{
+			// Since we can't do Cd*(Alpha + 1) - Cs*Alpha in hw blend
+			// what we can do is adjust the Cs value that will be
+			// subtracted, this way we can get a better result in hw blend.
+			// Result is still wrong but less wrong than before.
+			float division_alpha = 1.0f + C;
+			Color.rgb /= (float3)division_alpha;
+		}
+		else if (PS_SC_BLEND_HW == 3)
+		{
+			// As, Ad or Af clamped.
+			As_rgba.rgb = (float3)C_clamped;
+			// Cs*(Alpha + 1) might overflow, if it does then adjust alpha value
+			// that is sent on second output to compensate.
+			float3 overflow_check = (Color.rgb - (float3)255.0f) / 255.0f;
+			float3 alpha_compensate = max((float3)0.0f, overflow_check);
+			As_rgba.rgb -= alpha_compensate;
+		}
+	}
+	else
+	{
+		float3 Alpha = PS_SC_BLEND_C == 2 ? (float3)Af : (float3)As;
+
+		if (PS_SC_BLEND_HW == 1)
+		{
+			// Needed for Cd * (As/Ad/F + 1) blending modes
+			Color.rgb = (float3)255.0f;
+		}
+		else if (PS_SC_BLEND_HW == 2)
+		{
+			// Cd*As,Cd*Ad or Cd*F
+			Color.rgb = saturate(Alpha - (float3)1.0f) * (float3)255.0f;
+		}
+		else if (PS_SC_BLEND_HW == 3 && PS_SC_RTA_CORRECTION == 0)
+		{
+			// Needed for Cs*Ad, Cs*Ad + Cd, Cd - Cs*Ad
+			// Multiply Color.rgb by (255/128) to compensate for wrong Ad/255 value when rgb are below 128.
+			// When any color channel is higher than 128 then adjust the compensation automatically
+			// to give us more accurate colors, otherwise they will be wrong.
+			// The higher the value (>128) the lower the compensation will be.
+			float max_color = max(max(Color.r, Color.g), Color.b);
+			float color_compensate = 255.0f / max(128.0f, max_color);
+			Color.rgb *= (float3)color_compensate;
+		}
+		else if (PS_SC_BLEND_HW == 4)
+		{
+			// Needed for Cd * (1 - Ad) and Cd*(1 + Alpha).
+			As_rgba.rgb = Alpha * (float3)(128.0f / 255.0f);
+			Color.rgb = (float3)127.5f;
+		}
+		else if (PS_SC_BLEND_HW == 5)
+		{
+			// Needed for Cs*Alpha + Cd*(1 - Alpha).
+			Alpha *= (float3)(128.0f / 255.0f);
+			As_rgba.rgb = (Alpha - (float3)0.5f);
+			Color.rgb = (Color.rgb * Alpha);
+		}
+		else if (PS_SC_BLEND_HW == 6)
+		{
+			// Needed for Cd*Alpha + Cs*(1 - Alpha).
+			Alpha *= (float3)(128.0f / 255.0f);
+			As_rgba.rgb = Alpha;
+			Color.rgb *= (Alpha - (float3)0.5f);
+		}
+	}
+}
+
+[shader("pixel")]
+PS_OUTPUT ps_main(PS_INPUT input)
+{
+	// Must floor before depth testing.
+#if PS_ZFLOOR
+	input.p.z = floor(input.p.z * exp2(32.0f)) * exp2(-32.0f);
+#endif
+
+#if PS_ZTST == ZTST_GEQUAL
+	if (input.p.z < DepthTexture.Load(int3(input.p.xy, 0)).r)
+		discard;
+#elif PS_ZTST == ZTST_GREATER
+	if (input.p.z <= DepthTexture.Load(int3(input.p.xy, 0)).r)
+		discard;
+#endif
+	float4 C = ps_color(input);
+
+#if PS_AA1
+	float cov = clamp(1.0f - abs(input.inv_cov), 0.0f, 1.0f);
+	if (PS_SC_ABE)
+	{
+		if (floor(C.a) == 128.0f) // The coverage is only used if the fragment alpha is 128.
+			C.a = 128.0f * cov;
+	}
+	else
+	{
+		C.a = 128.0f * cov;
+	}
+#else
+	if (PS_SC_FIXED_ONE_A)
+	{
+		// AA (Fixed one) will output a coverage of 1.0 as alpha
+		C.a = 128.0f;
+	}
+#endif
+
+	bool atst_pass = atst(C);
+
+#if PS_AFAIL == AFAIL_KEEP
+	if (!atst_pass)
+		discard;
+#endif
+
+	PS_OUTPUT output;
+
+	if (PS_SC_SCANMSK & 2)
+	{
+		// fail depth test on prohibited lines
+		if ((int(input.p.y) & 1) == (PS_SC_SCANMSK & 1))
+			discard;
+	}
+
+	float4 alpha_blend = (float4)0.0f;
+	if (SW_AD_TO_HW)
+	{
+		float4 RT = PS_SC_RTA_CORRECTION ? trunc(RtTexture.Load(int3(input.p.xy, 0)) * 128.0f + 0.1f) : trunc(RtTexture.Load(int3(input.p.xy, 0)) * 255.0f + 0.1f);
+		alpha_blend = (float4)(RT.a / 128.0f);
+	}
+	else
+	{
+		alpha_blend = (float4)(C.a / 128.0f);
+	}
+
+	// Alpha correction
+	if (PS_SC_DST_FMT == FMT_16)
+	{
+		float A_one = 128.0f; // alpha output will be 0x80
+		C.a = PS_SC_FBA ? A_one : step(A_one, C.a) * A_one;
+	}
+	else if ((PS_SC_DST_FMT == FMT_32) && PS_SC_FBA)
+	{
+		float A_one = 128.0f;
+		if (C.a < A_one) C.a += A_one;
+	}
+
+#if PS_DATE >= 5
+
+	float rt_a ;
+	if (PS_SC_WRITE_RG == 1)
+	{
+		// Pseudo 16 bits access.
+		rt_a = RtTexture.Load(int3(input.p.xy, 0)).g;
+	}
+	else
+	{
+		rt_a = RtTexture.Load(int3(input.p.xy, 0)).a;
+	}
+
+	bool bad;
+	#if (PS_DATE & 3) == 1
+		// DATM == 0: Pixel with alpha equal to 1 will failed
+		if (PS_SC_RTA_CORRECTION)
+			bad = (254.5f / 255.0f) < rt_a;
+		else
+			bad = (127.5f / 255.0f) < rt_a;
+	#elif (PS_DATE & 3) == 2
+		// DATM == 1: Pixel with alpha equal to 0 will failed
+		if (PS_SC_RTA_CORRECTION)
+			bad = rt_a < (254.5f / 255.0f);
+		else
+			bad = rt_a < (127.5f / 255.0f);
+	#endif
+
+	if (bad)
+		discard;
+
+#endif
+
+#if PS_DATE == 3
+	// Note gl_PrimitiveID == stencil_ceil will be the primitive that will update
+	// the bad alpha value so we must keep it.
+	int stencil_ceil = int(PrimMinTexture.Load(int3(input.p.xy, 0)));
+	if (int(input.primid) > stencil_ceil)
+		discard;
+#endif
+
+	// Get first primitive that will write a failling alpha value
+#if PS_DATE == 1
+	// DATM == 0
+	// Pixel with alpha equal to 1 will failed (128-255)
+	output.c = (C.a > 127.5f) ? float(input.primid) : float(0x7FFFFFFF);
+
+#elif PS_DATE == 2
+
+	// DATM == 1
+	// Pixel with alpha equal to 0 will failed (0-127)
+	output.c = (C.a < 127.5f) ? float(input.primid) : float(0x7FFFFFFF);
+
+#else
+	// Not primid DATE setup
+
+	ps_blend(C, alpha_blend, input.p.xy);
+
+	if (PS_SC_SHUFFLE)
+	{
+		if (!PS_SC_SHUFFLE_SAME && !PS_SC_READ16_SRC && !(PS_SC_PROCESS_BA == SHUFFLE_READWRITE && PS_SC_PROCESS_RG == SHUFFLE_READWRITE))
+		{
+			uint4 denorm_c_after = uint4(C);
+			if (PS_SC_PROCESS_BA & SHUFFLE_READ)
+			{
+				C.b = float(((denorm_c_after.r >> 3) & 0x1Fu) | ((denorm_c_after.g << 2) & 0xE0u));
+				C.a = float(((denorm_c_after.g >> 6) & 0x3u) | ((denorm_c_after.b >> 1) & 0x7Cu) | (denorm_c_after.a & 0x80u));
+			}
+			else
+			{
+				C.r = float(((denorm_c_after.r >> 3) & 0x1Fu) | ((denorm_c_after.g << 2) & 0xE0u));
+				C.g = float(((denorm_c_after.g >> 6) & 0x3u) | ((denorm_c_after.b >> 1) & 0x7Cu) | (denorm_c_after.a & 0x80u));
+			}
+		}
+
+
+		// Special case for 32bit input and 16bit output, shuffle used by The Godfather
+		if (PS_SC_SHUFFLE_SAME)
+		{
+			uint4 denorm_c = uint4(C);
+			
+			if (PS_SC_PROCESS_BA & SHUFFLE_READ)
+				C = (float4)(float((denorm_c.b & 0x7Fu) | (denorm_c.a & 0x80u)));
+			else
+				C.ga = C.rg;
+		}
+		// Copy of a 16bit source in to this target
+		else if (PS_SC_READ16_SRC)
+		{
+			uint4 denorm_c = uint4(C);
+			uint2 denorm_TA = uint2(float2(TA.xy) * 255.0f + 0.5f);
+			C.rb = (float2)float((denorm_c.r >> 3) | (((denorm_c.g >> 3) & 0x7u) << 5));
+			C.ga = (float2)float((denorm_c.g >> 6) | ((denorm_c.b >> 3) << 2) | (denorm_TA.x & 0x80u));
+		}
+		else if (PS_SC_SHUFFLE_ACROSS)
+		{
+			if (PS_SC_PROCESS_BA == SHUFFLE_READWRITE && PS_SC_PROCESS_RG == SHUFFLE_READWRITE)
+			{
+				C.br = C.rb;
+				C.ag = C.ga;
+			}
+			else if(PS_SC_PROCESS_BA & SHUFFLE_READ)
+			{
+				C.rb = C.bb;
+				C.ga = C.aa;
+			}
+			else
+			{
+				C.rb = C.rr;
+				C.ga = C.gg;
+			}
+		}
+	}
+
+	ps_dither(C.rgb, alpha_blend.a, input.p.xy);
+
+	// Color clamp/wrap needs to be done after sw blending and dithering
+	ps_color_clamp_wrap(C.rgb);
+
+	ps_fbmask(C, input.p.xy);
+
+	#if (PS_AFAIL == AFAIL_RGB_ONLY_DSB) && !PS_NO_COLOR1
+		// Use alpha blend factor to determine whether to update A.
+		alpha_blend.a = float(atst_pass);
+	#endif
+
+	#if !PS_NO_COLOR
+		output.c0.a = PS_SC_RTA_CORRECTION ? C.a / 128.0f : C.a / 255.0f;
+		output.c0.rgb = PS_SC_COLCLIP_HW ? float3(C.rgb / 65535.0f) : C.rgb / 255.0f;
+		#if !PS_NO_COLOR1
+			output.c1 = alpha_blend;
+		#endif
+
+		// Alpha test with feedback
+		#if PS_AFAIL == AFAIL_FB_ONLY
+			if (!atst_pass)
+				input.p.z = DepthTexture.Load(int3(input.p.xy, 0)).r;
+		#elif PS_AFAIL == AFAIL_ZB_ONLY
+			if (!atst_pass)
+				output.c0 = RtTexture.Load(int3(input.p.xy, 0));
+		#elif PS_AFAIL == AFAIL_RGB_ONLY || PS_AFAIL == AFAIL_RGB_ONLY_SW_Z
+			if (!atst_pass)
+			{
+				output.c0.a = RtTexture.Load(int3(input.p.xy, 0)).a;
+			#if PS_AFAIL == AFAIL_RGB_ONLY_SW_Z
+				input.p.z = DepthTexture.Load(int3(input.p.xy, 0)).r; 
+			#endif
+			}
+		#endif
+
+	#endif // !PS_NO_COLOR
+
+#endif // PS_DATE != 1/2
+
+#if PS_ZCLAMP
+	input.p.z = min(input.p.z, MaxDepthPS);
+#endif
+
+#if PS_AA1 == PS_AA1_TRIANGLE_SW_Z
+	if (!bool(input.interior))
+		input.p.z = DepthTexture.Load(int3(input.p.xy, 0)).r; // No depth update for triangle edges.
+#endif
+
+#if ZWRITE
+	#if SW_DEPTH && PS_NO_COLOR1 && DX12
+		// Output color clone for feedback as well as real depth.
+		output.depth_color = input.p.z;
+	#endif
+	output.depth = input.p.z;
+#endif
+
+	return output;
+}
+
+#endif // PIXEL_SHADER
+
+//////////////////////////////////////////////////////////////////////
+// Vertex Shader
+//////////////////////////////////////////////////////////////////////
+
+#ifdef VERTEX_SHADER
+
+#ifdef DX12
+cbuffer cb0 : register(b0)
+#else
+cbuffer cb0
+#endif
+{
+	float2 VertexScale;
+	float2 VertexOffset;
+	float2 TextureScale;
+	float2 TextureOffset;
+	float2 PointSize;
+	uint MaxDepth;
+	uint _cb0_pad0;
+};
+
+#ifdef DX12
+cbuffer cb2 : register(b2)
+#else
+cbuffer cb2
+#endif
+{
+	uint BaseVertex;
+	uint BaseIndex;
+	uint _cb2_pad0;
+	uint _cb2_pad1;
+};
+
+VS_OUTPUT vs_main(VS_INPUT input)
+{
+	// Clamp to max depth, gs doesn't wrap
+	input.z = min(input.z, MaxDepth);
+
+	VS_OUTPUT output;
+
+	// pos -= 0.05 (1/320 pixel) helps avoiding rounding problems (integral part of pos is usually 5 digits, 0.05 is about as low as we can go)
+	// example: ceil(afterseveralvertextransformations(y = 133)) => 134 => line 133 stays empty
+	// input granularity is 1/16 pixel, anything smaller than that won't step drawing up/left by one pixel
+	// example: 133.0625 (133 + 1/16) should start from line 134, ceil(133.0625 - 0.05) still above 133
+
+	output.p = float4(input.p, input.z, 1.0f) - float4(0.05f, 0.05f, 0, 0);
+
+	output.p.xy = output.p.xy * float2(VertexScale.x, -VertexScale.y) - float2(VertexOffset.x, -VertexOffset.y);
+	output.p.z *= exp2(-32.0f);		// integer->float depth
+
+	if(VS_TME)
+	{
+		float2 uv = input.uv - TextureOffset;
+		float2 st = input.st - TextureOffset;
+
+		// Integer nomalized
+		output.ti.xy = uv * TextureScale;
+
+		if (VS_FST)
+		{
+			// Integer integral
+			output.ti.zw = uv;
+		}
+		else
+		{
+			// float for post-processing in some games
+			output.ti.zw = st / TextureScale;
+		}
+		// Float coords
+		output.t.xy = st;
+		output.t.w = input.q;
+	}
+	else
+	{
+		output.t.xy = 0;
+		output.t.w = 1.0f;
+		output.ti = 0;
+	}
+
+	output.c = input.c;
+	output.t.z = input.f.r;
+
+	// Silence compiler warnings; should be optimized out when not needed.
+	output.inv_cov = 0.0f;
+	output.interior = 0;
+
+	return output;
+}
+
+#if VS_EXPAND != VS_EXPAND_NONE
+
+struct VS_RAW_INPUT
+{
+	float2 ST;
+	uint RGBA;
+	float Q;
+	uint XY;
+	uint Z;
+	uint UV;
+	uint FOG;
+};
+
+StructuredBuffer<VS_RAW_INPUT> vertices : register(t0);
+StructuredBuffer<uint> IndexBuffer : register(t5);
+
+uint load_index(uint _i)
+{
+	uint i = _i + BaseIndex;
+	// i is even => load lower 16 bits; i odd => load upper 16 bits.
+	uint shift = (i & 1u) << 4u;
+	return (IndexBuffer.Load(i >> 1u) >> shift) & 0xFFFFu;
+}
+
+VS_INPUT load_vertex(uint index)
+{
+	VS_RAW_INPUT raw = vertices.Load(BaseVertex + index);
+
+	VS_INPUT vert;
+	vert.st = raw.ST;
+	vert.c = uint4(raw.RGBA & 0xFFu, (raw.RGBA >> 8) & 0xFFu, (raw.RGBA >> 16) & 0xFFu, raw.RGBA >> 24);
+	vert.q = raw.Q;
+	vert.p = uint2(raw.XY & 0xFFFFu, raw.XY >> 16);
+	vert.z = raw.Z;
+	vert.uv = uint2(raw.UV & 0xFFFFu, raw.UV >> 16);
+	vert.f = float4(float(raw.FOG & 0xFFu), float((raw.FOG >> 8) & 0xFFu), float((raw.FOG >> 16) & 0xFFu), float(raw.FOG >> 24)) / 255.0f;
+	return vert;
+}
+
+VS_OUTPUT vs_main_expand(uint vid : SV_VertexID)
+{
+#if VS_EXPAND == VS_EXPAND_POINT
+
+	VS_OUTPUT vtx = vs_main(load_vertex(vid >> 2));
+
+	vtx.p.x += ((vid & 1u) != 0u) ? PointSize.x : 0.0f;
+	vtx.p.y += ((vid & 2u) != 0u) ? PointSize.y : 0.0f;
+
+	return vtx;
+
+#elif (VS_EXPAND == VS_EXPAND_LINE) || (VS_EXPAND == VS_EXPAND_LINE_AA1)
+
+	// The difference between EXPAND_LINE and EXPAND_LINE_AA1
+	// is that EXPAND_LINE expands in the perpendicular direction while
+	// EXPAND_LINE_AA1 expands in the Y direction for shallow lines (X dominant)
+	// and the X direction for steep lines (Y dominant).
+	// EXPAND_LINE_AA1 also adds coverage to the output.
+
+	uint vid_base = vid >> 2;
+	bool is_bottom = vid & 2;
+	bool is_right = vid & 1;
+	uint vid_other = is_bottom ? vid_base - 1 : vid_base + 1;
+	VS_OUTPUT vtx = vs_main(load_vertex(vid_base));
+	VS_OUTPUT other = vs_main(load_vertex(vid_other));
+
+	// Use bottom minus top for delta regardless of which vertex we are expanding.
+	float2 line_delta = is_bottom ? (vtx.p.xy - other.p.xy) : (other.p.xy - vtx.p.xy);
+	float2 line_vector = normalize(line_delta);
+#if VS_EXPAND == VS_EXPAND_LINE
+	float2 line_expand = float2(line_vector.y, -line_vector.x);
+#elif VS_EXPAND == VS_EXPAND_LINE_AA1
+	// Expand in y direction for shallow lines and x direction for steep lines.
+	line_delta /= VertexScale;
+	float2 line_expand = abs(line_delta.x) >= abs(line_delta.y) ? float2(0.0f, 2.0f) : float2(2.0f, 0.0f);
+#endif
+	float2 line_width = (line_expand * PointSize) / 2;
+	float2 offset = is_right ? line_width : -line_width;
+	vtx.p.xy += offset;
+
+#if VS_EXPAND == VS_EXPAND_LINE_AA1
+	vtx.inv_cov = is_right ? 1.0f : -1.0f;
+#endif
+
+	// Lines will be run as (0 1 2) (1 2 3)
+	// This means that both triangles will have a point based off the top line point as their first point
+	// So we don't have to do anything for !IIP
+
+	return vtx;
+
+#elif VS_EXPAND == VS_EXPAND_SPRITE
+
+	// Sprite points are always in pairs
+	uint vid_base = vid >> 1;
+	uint vid_lt = vid_base & ~1u;
+	uint vid_rb = vid_base | 1u;
+
+	VS_OUTPUT lt = vs_main(load_vertex(vid_lt));
+	VS_OUTPUT rb = vs_main(load_vertex(vid_rb));
+	VS_OUTPUT vtx = rb;
+
+	bool is_right = ((vid & 1u) != 0u);
+	vtx.p.x = is_right ? lt.p.x : vtx.p.x;
+	vtx.t.x = is_right ? lt.t.x : vtx.t.x;
+	vtx.ti.xz = is_right ? lt.ti.xz : vtx.ti.xz;
+
+	bool is_bottom = ((vid & 2u) != 0u);
+	vtx.p.y = is_bottom ? lt.p.y : vtx.p.y;
+	vtx.t.y = is_bottom ? lt.t.y : vtx.t.y;
+	vtx.ti.yw = is_bottom ? lt.ti.yw : vtx.ti.yw;
+
+	return vtx;
+
+#elif VS_EXPAND == VS_EXPAND_TRIANGLE_AA1
+
+	// Triangles with AA1 are expanded as follows:
+	// - Vertices 0-2: Interior of triangle (1 triangle).
+	// - Vertices 3-8: First edge expanded (2 triangles).
+	// - Vertices 9-14: Second edge expanded (2 triangles).
+	// - Vertices 15-20: Third edge expanded (2 triangles).
+
+	uint prim_id = vid / 21;
+	uint prim_offset = vid - 21 * prim_id; // range: 0-20
+	bool interior = prim_offset < 3;
+
+	VS_OUTPUT vtx;
+	if (interior)
+	{
+		vtx = vs_main(load_vertex(load_index(3 * prim_id + prim_offset)));
+		vtx.inv_cov = 0.0f; // Full coverage
+		vtx.interior = 1;
+	}
+	else
+	{
+		// Vertex indices for this edge. We need all 3 for determining exterior/interior.
+		uint prim_offset_edges = prim_offset - 3; // range: 0-17
+		uint i0 = prim_offset_edges / 6;
+		uint i1 = (i0 >= 2) ? i0 - 2 : i0 + 1;
+		uint i2 = (i0 >= 1) ? i0 - 1 : i0 + 2;
+		uint edge_offset = prim_offset_edges - 6 * i0; // range: 0-5
+
+		// Note: order of top/bottom, inside/outside order is arbitrary,
+		// as long as it assembles into two triangles forming a quad.
+		bool is_bottom = (2 <= edge_offset) && (edge_offset <= 4);
+		bool is_outside = edge_offset & 1;
+
+		vtx = vs_main(load_vertex(load_index(3 * prim_id + i0)));
+		VS_OUTPUT other = vs_main(load_vertex(load_index(3 * prim_id + i1)));
+		VS_OUTPUT opposite = vs_main(load_vertex(load_index(3 * prim_id + i2)));
+
+		// Similar expansion to line AA1 except instead of expanding on both sides of
+		// the line we expand on on the side towards the outside of the triangle.
+		float2 line_delta = vtx.p.xy - other.p.xy;
+		float2 line_normal = normalize(float2(line_delta.y, -line_delta.x));
+		float2 line_expand = abs(line_delta.x) >= abs(line_delta.y) ? float2(0.0f, 2.0f) : float2(2.0f, 0.0f);
+		if ((dot(line_expand, line_normal) >= 0.0f) == (dot(opposite.p.xy - vtx.p.xy, line_normal) >= 0.0f))
+		{
+			// Expand direction point towards the interior so flip it.
+			line_expand = -line_expand;
+		}
+		float2 line_width = (line_expand * PointSize) / 2;
+
+		if (is_bottom)
+			vtx = other;
+		if (is_outside)
+		{
+			vtx.p.xy += line_width;
+			vtx.inv_cov = 1.0f; // No coverage
+		}
+		else
+		{
+			vtx.inv_cov = 0.0f; // Full coverage
+		}
+
+		vtx.interior = 0;
+
+		#if !VS_IIP
+			// Get the provoking vertex color (first vertex in DX)
+			vtx.c = i0 == 0 ? vtx.c : (i1 == 0 ? other.c : opposite.c);
+		#endif
+	}
+
+	return vtx;
+
+#endif
+}
+
+#endif // VS_EXPAND
+
+#endif // VERTEX_SHADER
