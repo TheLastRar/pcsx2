@@ -902,7 +902,7 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 			return false;
 		}
 		m_tfx_lib_source.push_back(std::move(*shader));
-
+		/*
 		shader = ReadShaderSource("shaders/dx11/tfx_SC_functions.fx");
 		if (!shader.has_value())
 		{
@@ -910,6 +910,68 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 			return false;
 		}
 		m_tfx_lib_source.push_back(std::move(*shader));
+		*/
+#define SC_FILE(macro) \
+		shader = ReadShaderSource("shaders/dx11/tfx_SC_constants/tfx_SC_" macro ".fx"); \
+		if (!shader.has_value()) \
+		{ \
+			Host::ReportErrorAsync("GS", "Failed to read shaders/dx11/tfx_SC_constants/tfx_SC_" macro ".fx."); \
+			return false; \
+		} \
+		m_tfx_lib_source.push_back(std::move(*shader));
+		
+		SC_FILE("PS_FST"				  )
+		SC_FILE("PS_WMS"				  )
+		SC_FILE("PS_WMT"				  )
+		SC_FILE("PS_ADJS"				  )
+		SC_FILE("PS_ADJT"				  )
+		SC_FILE("PS_AEM_FMT"			  )
+		SC_FILE("PS_AEM"				  )
+		SC_FILE("PS_TFX"				  )
+		SC_FILE("PS_TCC"				  )
+		SC_FILE("PS_ATST"				  )
+		SC_FILE("PS_FOG"				  )
+		SC_FILE("PS_BLEND_HW"			  )
+		SC_FILE("PS_A_MASKED"			  )
+		SC_FILE("PS_FBA"				  )
+		SC_FILE("PS_FBMASK"				  )
+		SC_FILE("PS_LTF"				  )
+		SC_FILE("PS_TCOFFSETHACK"		  )
+		SC_FILE("PS_REGION_RECT"		  )
+		SC_FILE("PS_SHUFFLE"			  )
+		SC_FILE("PS_SHUFFLE_SAME"		  )
+		SC_FILE("PS_PROCESS_BA"			  )
+		SC_FILE("PS_PROCESS_RG"			  )
+		SC_FILE("PS_SHUFFLE_ACROSS"		  )
+		SC_FILE("PS_READ16_SRC"			  )
+		SC_FILE("PS_WRITE_RG"			  )
+		SC_FILE("PS_DST_FMT"			  )
+		SC_FILE("PS_DEPTH_FMT"			  )
+		SC_FILE("PS_PAL_FMT"			  )
+		SC_FILE("PS_CHANNEL_FETCH"		  )
+		SC_FILE("PS_TALES_OF_ABYSS_HLE"	  )
+		SC_FILE("PS_URBAN_CHAOS_HLE"	  )
+		SC_FILE("PS_COLCLIP_HW"			  )
+		SC_FILE("PS_RTA_CORRECTION"		  )
+		SC_FILE("PS_RTA_SRC_CORRECTION"	  )
+		SC_FILE("PS_COLCLIP"			  )
+		SC_FILE("PS_BLEND_A"			  )
+		SC_FILE("PS_BLEND_B"			  )
+		SC_FILE("PS_BLEND_C"			  )
+		SC_FILE("PS_BLEND_D"			  )
+		SC_FILE("PS_BLEND_MIX"			  )
+		SC_FILE("PS_ROUND_INV"			  )
+		SC_FILE("PS_FIXED_ONE_A"		  )
+		SC_FILE("PS_PABE"				  )
+		SC_FILE("PS_DITHER"				  )
+		SC_FILE("PS_DITHER_ADJUST"		  )
+		SC_FILE("PS_SCANMSK"			  )
+		SC_FILE("PS_AUTOMATIC_LOD"		  )
+		SC_FILE("PS_MANUAL_LOD"			  )
+		SC_FILE("PS_TEX_IS_FB"			  )
+		SC_FILE("PS_ABE"				  )
+		SC_FILE("PS_ANISOTROPIC_FILTERING")
+		
 	}
 
 	if (!m_shader_cache.Open(static_cast<D3D::ShaderModel>(m_shader_model), GSConfig.UseDebugDevice))

@@ -18,7 +18,6 @@ export uint ps_sc_fba                  () { return PS_FBA                  ; }
 export uint ps_sc_fbmask               () { return PS_FBMASK               ; }
 export uint ps_sc_ltf                  () { return PS_LTF                  ; }
 export uint ps_sc_tcoffsethack         () { return PS_TCOFFSETHACK         ; }
-export uint ps_sc_point_sampler        () { return PS_POINT_SAMPLER        ; }
 export uint ps_sc_region_rect          () { return PS_REGION_RECT          ; }
 export uint ps_sc_shuffle              () { return PS_SHUFFLE              ; }
 export uint ps_sc_shuffle_same         () { return PS_SHUFFLE_SAME         ; }

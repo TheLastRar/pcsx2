@@ -68,6 +68,8 @@
 
 // ??
 #define PS1 0
+// Always off with DX12
+#define PS_POINT_SAMPLER 0
 #endif
 
 #ifdef PIXEL_SHADER
@@ -88,7 +90,6 @@ uint ps_sc_fba                  ();
 uint ps_sc_fbmask               ();
 uint ps_sc_ltf                  ();
 uint ps_sc_tcoffsethack         ();
-uint ps_sc_point_sampler        ();
 uint ps_sc_region_rect          ();
 uint ps_sc_shuffle              ();
 uint ps_sc_shuffle_same         ();
@@ -141,7 +142,6 @@ uint ps_sc_anisotropic_filtering();
 #define PS_SC_FBMASK                ps_sc_fbmask               ()
 #define PS_SC_LTF                   ps_sc_ltf                  ()
 #define PS_SC_TCOFFSETHACK          ps_sc_tcoffsethack         ()
-#define PS_SC_POINT_SAMPLER         ps_sc_point_sampler        ()
 #define PS_SC_REGION_RECT           ps_sc_region_rect          ()
 #define PS_SC_SHUFFLE               ps_sc_shuffle              ()
 #define PS_SC_SHUFFLE_SAME          ps_sc_shuffle_same         ()
@@ -461,7 +461,7 @@ float4 sample_c(float2 uv, float uv_w, int2 xy)
 	else if (PS_SC_REGION_RECT == 1)
 		return Texture.Load(int3(int2(uv), 0));
 
-	if (PS_SC_POINT_SAMPLER)
+	if (PS_POINT_SAMPLER)
 	{
 		// Weird issue with ATI/AMD cards,
 		// it looks like they add 127/128 of a texel to sampling coordinates
