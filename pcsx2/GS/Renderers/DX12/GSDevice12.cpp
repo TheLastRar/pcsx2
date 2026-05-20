@@ -925,7 +925,7 @@ bool GSDevice12::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 		return false;
 
 	if (!CompileConvertPipelines() || !CompilePresentPipelines() || !CompileInterlacePipelines() ||
-		!CompileMergePipelines() || !CompilePostProcessingPipelines())
+		!CompileMergePipelines() || !CompilePostProcessingPipelines() || !CompileMainTFXShaders())
 	{
 		Host::ReportErrorAsync("GS", "Failed to compile utility pipelines");
 		return false;
@@ -2723,6 +2723,30 @@ bool GSDevice12::CreateRootSignatures()
 	if (!(m_tfx_root_signature = rsb.Create()))
 		return false;
 	D3D12::SetObjectName(m_tfx_root_signature.get(), "TFX root signature");
+	return true;
+}
+
+bool GSDevice12::CompileMainTFXShaders()
+{
+	// Need to trim this down alot
+
+	GSHWDrawConfig::PSSelector sel{};
+	for (int iip = 0; iip <= 1; iip++)
+	{
+		sel.iip = iip;
+		for (int nc = 0; nc <= 1; nc++)
+		{
+			sel.no_color1 = nc;
+
+			for (int zf = 0; zf <= 1; zf++)
+			{
+				sel.zfloor = zf;
+				const ID3DBlob* b = GetTFXPixelShader(sel);
+				if (b == nullptr)
+					return false;
+			}
+		}
+	}
 	return true;
 }
 

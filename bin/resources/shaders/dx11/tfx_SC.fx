@@ -70,7 +70,7 @@
 #define PS1 0
 #endif
 
-//#ifdef PIXEL_SHADER
+#ifdef PIXEL_SHADER
 uint ps_sc_fst                  ();
 uint ps_sc_wms                  ();
 uint ps_sc_wmt                  ();
@@ -176,7 +176,7 @@ uint ps_sc_anisotropic_filtering();
 #define PS_SC_TEX_IS_FB             ps_sc_tex_is_fb            ()
 #define PS_SC_ABE                   ps_sc_abe                  ()
 #define PS_SC_ANISOTROPIC_FILTERING ps_sc_anisotropic_filtering()
-//#endif
+#endif
 
 #ifndef VS_EXPAND_NONE
 #define VS_EXPAND_NONE 0

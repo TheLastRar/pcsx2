@@ -420,6 +420,7 @@ private:
 	bool CreateBuffers();
 	bool CreateRootSignatures();
 
+	bool CompileMainTFXShaders();
 	bool CompileConvertPipelines();
 	bool CompilePresentPipelines();
 	bool CompileInterlacePipelines();
