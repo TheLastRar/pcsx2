@@ -771,7 +771,6 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 	}
 	args.push_back(L"-T");
 	args.push_back(target);
-	args.push_back(L"-Gis");
 
 	if (debug)
 	{
