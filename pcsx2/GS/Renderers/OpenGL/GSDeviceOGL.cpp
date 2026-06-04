@@ -3421,6 +3421,7 @@ bool GSDeviceOGL::DoLibrashader(GSTexture* sTex, GSTexture* dTex)
 	libra_error_t err = libra_gl_filter_chain_frame(&chain, m_librashader_frame_count, input, output, &vp, nullptr, &frame_opts);
 	if (err)
 	{
+		libra_error_print(err);
 		libra_error_free(&err);
 		GLState::Invalidate();
 		GLProgram::ResetLastProgram();
