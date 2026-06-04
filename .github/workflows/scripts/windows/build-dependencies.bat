@@ -98,7 +98,7 @@ set KDDOCKWIDGETS=2.4.0
 set PLUTOVG=1.3.2
 set PLUTOSVG=0.0.7
 set RAPIDYAML=0.12.1
-set LIBRASHADER=0.11.0
+set LIBRASHADER=cd577b4bc2d7499fb41a3cc0f3e097190e8f0512
 
 set SHADERC=2026.2
 set SHADERC_GLSLANG=275822a6261ee689aadb1da5f09a0ec2f058685c
@@ -142,7 +142,7 @@ call :downloadfile "plutosvg-%PLUTOSVG%.zip" "https://github.com/sammycage/pluto
 call :downloadfile "agility-sdk-%AGILITYSDK%.nupkg" "https://www.nuget.org/api/v2/package/Microsoft.Direct3D.D3D12/%AGILITYSDK%" eb92d90bb23b2ec23410c41d791e41dbdbec942ab946924d1fdcb31eac6f0735 || goto error
 call :downloadfile "dxc_%DXC_ASSET%.zip" "https://github.com/microsoft/DirectXShaderCompiler/releases/download/%DXC_TAG%/dxc_%DXC_ASSET%.zip" a1e89031421cf3c1fca6627766ab3020ca4f962ac7e2caa7fab2b33a8436151e || goto error
 call :downloadfile "rapidyaml-%RAPIDYAML%-src.zip" "https://github.com/biojppm/rapidyaml/releases/download/v%RAPIDYAML%/rapidyaml-%RAPIDYAML%-src.zip" 96276f55b9fa7837ac8f3f72fd52965879cbb5d5d2e6af548c69a177fb078304 || goto error
-call :downloadfile "librashader-v%LIBRASHADER%.zip" "https://github.com/SnowflakePowered/librashader/archive/refs/tags/librashader-v%LIBRASHADER%.zip" 762c181e871d64e8b86414b4f13f2c569e72993b056495a3f258392b02cd185c || goto error
+call :downloadfile "librashader-%LIBRASHADER%.zip" "https://github.com/SnowflakePowered/librashader/archive/%LIBRASHADER%.zip" 0e8e9e452a038490aa6e42a4f019c089a9b9f08b01586c4c815113daae9b7341 || goto error
 
 call :downloadfile "shaderc-%SHADERC%.zip" "https://github.com/google/shaderc/archive/refs/tags/v%SHADERC%.zip" f9401cc5cb36c276cd1e072b6595dbd728148e8dba389e50f7339e2d388dbc08 || goto error
 call :downloadfile "shaderc-glslang-%SHADERC_GLSLANG%.zip" "https://github.com/KhronosGroup/glslang/archive/%SHADERC_GLSLANG%.zip" 2b63189efad0348d88d410a5e12ec550a612e0b6ceef64624b8f45491269fb9c || goto error
@@ -516,9 +516,9 @@ cd .. || goto error
 
 if %BUILD_LIBRASHADER%==1 (
   echo Building librashader...
-  rmdir /S /Q "librashader-librashader-v%LIBRASHADER%"
-  %SEVENZIP% x "librashader-v%LIBRASHADER%.zip" || goto error
-  cd "librashader-librashader-v%LIBRASHADER%" || goto error
+  rmdir /S /Q "librashader-%LIBRASHADER%"
+  %SEVENZIP% x "librashader-%LIBRASHADER%.zip" || goto error
+  cd "librashader-%LIBRASHADER%" || goto error
   cargo run -p librashader-build-script -- --profile optimized --stable -- --no-default-features --features runtime-opengl,runtime-d3d11,runtime-d3d12,runtime-vulkan || goto error
   if not exist "%INSTALLDIR%\include\librashader" mkdir "%INSTALLDIR%\include\librashader" || goto error
   copy "include\librashader.h" "%INSTALLDIR%\include\librashader\librashader.h" || goto error
