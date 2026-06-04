@@ -3422,11 +3422,13 @@ bool GSDeviceOGL::DoLibrashader(GSTexture* sTex, GSTexture* dTex)
 	{
 		libra_error_free(&err);
 		GLState::Invalidate();
+		GLProgram::ResetLastProgram();
 		return false;
 	}
 
 	// librashader binds its own program/FBO/samplers wipe our cache so the next call rebinds.
 	GLState::Invalidate();
+	GLProgram::ResetLastProgram();
 	return true;
 }
 
