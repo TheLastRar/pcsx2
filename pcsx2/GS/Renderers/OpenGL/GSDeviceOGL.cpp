@@ -279,7 +279,7 @@ bool GSDeviceOGL::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 	}
 
 	// because of fbo bindings below...
-	GLState::Clear();
+	GLState::Init();
 
 	// ****************************************************************
 	// Debug helper
@@ -3421,12 +3421,12 @@ bool GSDeviceOGL::DoLibrashader(GSTexture* sTex, GSTexture* dTex)
 	if (err)
 	{
 		libra_error_free(&err);
-		GLState::Clear();
+		GLState::Invalidate();
 		return false;
 	}
 
 	// librashader binds its own program/FBO/samplers wipe our cache so the next call rebinds.
-	GLState::Clear();
+	GLState::Invalidate();
 	return true;
 }
 
