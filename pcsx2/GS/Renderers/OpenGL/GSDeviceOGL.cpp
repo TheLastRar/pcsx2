@@ -723,13 +723,14 @@ bool GSDeviceOGL::CheckFeatures()
 	{
 		Console.WriteLn(Color_StrongGreen, "GL: NVIDIA GPU detected.");
 		//vendor_id_nvidia = true;
-		m_bugs.broken_blend_coherency = true;
+		
 	}
 	else if (std::strstr(vendor, "Intel"))
 	{
 		Console.WriteLn(Color_StrongBlue, "GL: Intel GPU detected.");
 		//vendor_id_intel = true;
 	}
+	m_bugs.broken_blend_coherency = true;
 
 	GLint major_gl = 0;
 	GLint minor_gl = 0;
