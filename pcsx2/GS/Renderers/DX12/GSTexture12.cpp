@@ -198,6 +198,8 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 	D3D12_CLEAR_VALUE optimized_clear_value = {};
 	ResourceState state;
 
+	const char* type_str;
+
 	switch (type)
 	{
 		case Type::Texture:
@@ -208,6 +210,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			                                                                 D3D12_RESOURCE_FLAG_NONE;
 			state = ResourceState::CopyDst;
 			pxAssert(uav_format == DXGI_FORMAT_UNKNOWN);
+			type_str = levels > 1 ? "Mipmapped texture" : "Texture";
 		}
 		break;
 
@@ -226,6 +229,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			{
 				desc.desc1.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 			}
+			type_str = "RenderTarget";
 		}
 		break;
 
@@ -237,6 +241,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			optimized_clear_value.Format = dsv_format;
 			state = ResourceState::DepthWriteStencil;
 			pxAssert(uav_format == DXGI_FORMAT_UNKNOWN);
+			type_str = "DepthStencil";
 		}
 		break;
 
@@ -247,6 +252,7 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			state = ResourceState::PixelShaderResource;
 			pxAssert(uav_format != DXGI_FORMAT_UNKNOWN);
 			desc.desc1.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			type_str = "RWTexture";
 		}
 		break;
 
@@ -320,6 +326,10 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			return {};
 		}
 	}
+
+	D3D12_RESOURCE_DESC res_desc = resource->GetDesc();
+	Console.WriteLnFmt("D3D12: {} allocated with aligment {} via {}", type_str, res_desc.Alignment,
+		res_desc.Flags & 1024 ? "tight aligment" : "normal aligment");
 
 	D3D12DescriptorHandle srv_descriptor, write_descriptor, ro_dsv_descriptor, uav_descriptor, fbl_descriptor;
 	WriteDescriptorType write_descriptor_type = WriteDescriptorType::None;
