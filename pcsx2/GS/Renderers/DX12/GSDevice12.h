@@ -365,6 +365,7 @@ private:
 	bool m_uma = false;
 	bool m_typed_casting_supported = false;
 	bool m_enhanced_barriers = false;
+	bool m_depth_uav_Interleaved = false;
 	bool m_device_lost = false;
 
 	ComPtr<ID3D12RootSignature> m_tfx_root_signature;

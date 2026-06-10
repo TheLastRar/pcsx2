@@ -1443,6 +1443,21 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_features.rov = options.ROVsSupported;
 
 	Console.WriteLnFmt("D3D12: Tight Alignment: {}", m_allocator->IsTightAlignmentSupported() ? "Supported" : "Not Supported");
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS_PREVIEW device_options_p{};
+	m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS_PREVIEW, &device_options_p, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS_PREVIEW));
+	if (SUCCEEDED(hr) && device_options_p.UAVOfDepthStencilSupported)
+	{
+		Console.WriteLnFmt("D3D12: UAV of Depth: Supported as {}", device_options_p.D32S8Interleaved ? "interleaved" : "planer");
+		m_features.rov_depth = true;
+		m_depth_uav_Interleaved = device_options_p.D32S8Interleaved;
+	}
+	else
+	{
+		Console.WriteLnFmt("D3D12: UAV of Depth: Not supported");
+		m_features.rov_depth = false;
+	}
+
 	return true;
 }
 
@@ -1545,6 +1560,9 @@ GSTexture* GSDevice12::CreateSurface(GSTexture::Type type, int width, int height
 
 	if (type != GSTexture::Type::RWTexture && type != GSTexture::Type::RenderTarget)
 		uav_format = DXGI_FORMAT_UNKNOWN; // We don't need the UAV descriptor.
+
+	if (type == GSTexture::Type::DepthStencil && m_features.rov_depth)
+		uav_format = m_depth_uav_Interleaved ? DXGI_FORMAT_R32G32_UINT : DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
 
 	std::unique_ptr<GSTexture12> tex(GSTexture12::Create(type, format, width, height, levels,
 		dxgi_format, srv_format, rtv_format, dsv_format, uav_format));
@@ -3180,6 +3198,7 @@ const ID3DBlob* GSDevice12::GetTFXPixelShader(const GSHWDrawConfig::PSSelector& 
 	sm.AddMacro("PS_ANISOTROPIC_FILTERING", sel.sw_aniso);
 	sm.AddMacro("PS_ROV_COLOR", sel.rov_color);
 	sm.AddMacro("PS_ROV_DEPTH", static_cast<u32>(sel.rov_depth));
+	sm.AddMacro("PS_ROV_DEPTH_INTERLEAVED", static_cast<u32>(m_depth_uav_Interleaved));
 
 	ComPtr<ID3DBlob> ps(m_shader_cache.GetPixelShader(m_tfx_source, sm.GetPtr(), "ps_main"));
 	it = m_tfx_pixel_shaders.emplace(sel, std::move(ps)).first;

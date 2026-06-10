@@ -7828,6 +7828,9 @@ void GSRendererHW::ConvertDepthFormatROV(GSTextureCache::Target* ds)
 	if (!ds)
 		return;
 
+	if (g_gs_device->Features().rov_depth)
+		return;
+
 	GSTexture* ds_tex_old = m_conf.ds;
 	GSTexture* ds_tex_new = nullptr;
 

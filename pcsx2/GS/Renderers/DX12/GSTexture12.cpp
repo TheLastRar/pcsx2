@@ -236,7 +236,10 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			desc.desc1.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 			optimized_clear_value.Format = dsv_format;
 			state = ResourceState::DepthWriteStencil;
-			pxAssert(uav_format == DXGI_FORMAT_UNKNOWN);
+			if (uav_format != DXGI_FORMAT_UNKNOWN)
+			{
+				desc.desc1.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			}
 		}
 		break;
 
@@ -360,6 +363,13 @@ std::unique_ptr<GSTexture12> GSTexture12::Create(Type type, Format format, int w
 			{
 				dev->GetDSVHeapManager().Free(&write_descriptor);
 				dev->GetDescriptorHeapManager().Free(&srv_descriptor);
+				return {};
+			}
+			if (uav_format != DXGI_FORMAT_UNKNOWN && !CreateUAVDescriptor(resource.get(), uav_format, &uav_descriptor))
+			{
+				dev->GetDSVHeapManager().Free(&write_descriptor);
+				dev->GetDescriptorHeapManager().Free(&srv_descriptor);
+				dev->GetDSVHeapManager().Free(&ro_dsv_descriptor);
 				return {};
 			}
 		}

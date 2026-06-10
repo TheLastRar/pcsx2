@@ -119,6 +119,7 @@
 #define PS_ABE 0
 #define PS_ROV_COLOR 0
 #define PS_ROV_DEPTH 0
+#define PS_ROV_DEPTH_INTERLEAVED 0
 #endif
 
 #ifndef VS_EXPAND_NONE
@@ -262,8 +263,13 @@ static float4 rov_rt_value;
 #endif
 
 #if PS_ROV_DEPTH
+#if PS_ROV_DEPTH_INTERLEAVED
+RasterizerOrderedTexture2D<uint2> DepthTextureRov : register(u1);
+static uint2 rov_depth_value;
+#else
 RasterizerOrderedTexture2D<float> DepthTextureRov : register(u1);
 static float rov_depth_value;
+#endif
 #endif
 
 #ifdef DX12
@@ -304,7 +310,11 @@ float4 RtLoad(int2 xy)
 float DepthLoad(int2 xy)
 {
 #if PS_ROV_DEPTH
+#if PS_ROV_DEPTH_INTERLEAVED
+	return asfloat(rov_depth_value.x);
+#else
 	return rov_depth_value;
+#endif
 #else
 	return DepthTexture.Load(int3(int2(xy), 0));
 #endif
@@ -320,7 +330,11 @@ void RtWrite(int2 xy, float4 c)
 void DepthWrite(int2 xy, float d)
 {
 #if PS_ROV_DEPTH
+#if PS_ROV_DEPTH_INTERLEAVED
+	DepthTextureRov[xy] = uint2(asuint(d), rov_depth_value.y);
+#else
 	DepthTextureRov[xy] = d;
+#endif
 #endif
 }
 
