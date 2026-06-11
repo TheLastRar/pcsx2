@@ -643,7 +643,7 @@ public:
 };
 
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
-	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const std::string_view code, const char* name, const D3D_SHADER_MACRO* macros /* = nullptr */,
 	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
 	const char* target;
@@ -689,7 +689,7 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D:
 
 	wil::com_ptr_nothrow<ID3DBlob> blob;
 	wil::com_ptr_nothrow<ID3DBlob> error_blob;
-	const HRESULT hr = D3DCompile(code.data(), code.size(), "0", macros, pInclude.get(), entry_point, target,
+	const HRESULT hr = D3DCompile(code.data(), code.size(), name, macros, pInclude.get(), entry_point, target,
 		debug ? flags_debug : flags_non_debug, 0, blob.put(), error_blob.put());
 
 	std::string error_string;
@@ -729,7 +729,7 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXBC(D3D::ShaderType type, D3D:
 }
 
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
-	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const std::string_view code, const char* name, const D3D_SHADER_MACRO* macros /* = nullptr */,
 	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
 	const wchar_t* target;
@@ -754,6 +754,7 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 	// Build args
 	std::vector<const wchar_t*> args;
 	std::wstring wentry_point;
+	std::wstring wname;
 	std::vector<std::wstring> wdefines;
 	if (entry_point)
 	{
@@ -766,6 +767,9 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 
 	if (debug)
 	{
+		args.push_back(L"-INPUT");
+		wname = StringUtil::UTF8StringToWideString(name);
+		args.push_back(wname.c_str());
 		args.push_back(L"-Od");
 		args.push_back(L"-Zi");
 		args.push_back(L"-Zss");
@@ -845,13 +849,13 @@ wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShaderDXIL(D3D::ShaderType type, D3D:
 }
 
 wil::com_ptr_nothrow<ID3DBlob> D3D::CompileShader(D3D::ShaderType type, D3D::ShaderModel shader_model, bool debug,
-	const std::string_view code, const D3D_SHADER_MACRO* macros /* = nullptr */,
+	const std::string_view code, const char* name, const D3D_SHADER_MACRO* macros /* = nullptr */,
 	const char* entry_point /* = "main" */, const std::unordered_map<std::string, std::string>& includes /*= {} */)
 {
 	const GSShaderCompileIndicator::CompileTimer compile_timer;
 
 	if (static_cast<int>(shader_model) < 0x65)
-		return CompileShaderDXBC(type, shader_model, debug, code, macros, entry_point, includes);
+		return CompileShaderDXBC(type, shader_model, debug, code, name, macros, entry_point, includes);
 	else
-		return CompileShaderDXIL(type, shader_model, debug, code, macros, entry_point, includes);
+		return CompileShaderDXIL(type, shader_model, debug, code, name, macros, entry_point, includes);
 }
