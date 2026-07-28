@@ -33,6 +33,8 @@ static bool ReloadWGL(HDC dc)
 	return true;
 }
 
+std::mutex GLContextWGL::s_mutex;
+
 GLContextWGL::GLContextWGL(const WindowInfo& wi)
 	: GLContext(wi)
 {
@@ -40,6 +42,7 @@ GLContextWGL::GLContextWGL(const WindowInfo& wi)
 
 GLContextWGL::~GLContextWGL()
 {
+	std::scoped_lock lock(s_mutex);
 	if (wglGetCurrentContext() == m_rc)
 		wglMakeCurrent(m_dc, nullptr);
 
@@ -61,6 +64,8 @@ std::unique_ptr<GLContext> GLContextWGL::Create(const WindowInfo& wi, std::span<
 
 bool GLContextWGL::Initialize(std::span<const Version> versions_to_try, Error* error)
 {
+	std::scoped_lock lock(s_mutex);
+
 	if (m_wi.type == WindowInfo::Type::Win32)
 	{
 		if (!InitializeDC(error))

@@ -11,6 +11,7 @@
 
 #include <optional>
 #include <span>
+#include <mutex>
 
 class GLContextWGL final : public GLContext
 {
@@ -53,4 +54,6 @@ private:
 	HWND m_dummy_window = {};
 	HDC m_dummy_dc = {};
 	HPBUFFERARB m_pbuffer = {};
+
+	static std::mutex s_mutex;
 };
