@@ -191,6 +191,15 @@ public:
 	void UploadIndices(D3D12StreamBuffer& buffer, const void* index, size_t count);
 
 private:
+	class AgilityPreLoader
+	{
+	public:
+		AgilityPreLoader() { LoadAgilitySDK(); }
+
+	private:
+		void LoadAgilitySDK();
+	};
+
 	// For pipeline statistics
 	enum class QueryState
 	{
@@ -213,8 +222,6 @@ private:
 		QueryState pipeline_statistics_query = QueryState::None;
 	};
 
-	void LoadAgilitySDK();
-
 	bool CreateDevice(u32& vendor_id);
 	bool CreateDescriptorHeaps();
 	bool CreateCommandLists();
@@ -222,6 +229,8 @@ private:
 	bool CreatePipelineStatisticsQuery();
 	void MoveToNextCommandList();
 	void DestroyPendingResources(CommandListResources& cmdlist);
+
+	static AgilityPreLoader s_agility_loader;
 
 	ComPtr<IDXGIAdapter1> m_adapter;
 	ComPtr<ID3D12Device> m_device;

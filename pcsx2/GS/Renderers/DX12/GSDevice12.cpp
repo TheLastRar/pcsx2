@@ -191,7 +191,7 @@ uint SDKVersion(const std::string& path)
 	return file_ver->dwFileVersionMS & 0xFFFF;
 }
 
-void GSDevice12::LoadAgilitySDK()
+void GSDevice12::AgilityPreLoader::LoadAgilitySDK()
 {
 	static bool agility_loaded = false;
 	if (agility_loaded)
@@ -266,9 +266,6 @@ bool GSDevice12::CreateDevice(u32& vendor_id)
 	vendor_id = GetAdapterVendorID();
 
 	HRESULT hr;
-
-	// Load the Agility SDK
-	LoadAgilitySDK();
 
 	// Enabling the debug layer will fail if the Graphics Tools feature is not installed.
 	if (enable_debug_layer)
@@ -4843,3 +4840,14 @@ void GSDevice12::UploadHWDrawVerticesAndIndices(GSHWDrawConfig& config)
 		IASetIndexBuffer(config.indices, config.nindices);
 	}
 }
+
+// Load the Agility SDK in a static constructor to ensure it's loaded before OBS tries to hook.
+// Ensure D3D12AgilitySDKLoader dosn't get deffered or optimised out.
+// $XCV will be loaded after the CRT is initialized, but before main() is called.
+#pragma optimize("", off)
+#pragma warning(push)
+#pragma warning(disable : 4075) // warning C4075: initializers put in unrecognized initialization area
+#pragma init_seg(".CRT$XCV")
+GSDevice12::AgilityPreLoader GSDevice12::s_agility_loader;
+#pragma warning(pop)
+#pragma optimize("", on)
