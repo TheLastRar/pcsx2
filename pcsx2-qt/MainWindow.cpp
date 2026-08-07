@@ -110,7 +110,7 @@ static QString s_path_to_recording_for_record_on_start;
 // DX cannot fullscreen when the display surface is in a container.
 // QWindow, however, seems to lack CSD under wayland, so needs the container.
 // MAC is unknown
-#ifdef _WIN32
+#ifndef __linux__
 #define DISPLAY_SURFACE_WINDOW
 #endif
 
