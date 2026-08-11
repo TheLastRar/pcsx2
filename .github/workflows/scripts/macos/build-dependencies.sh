@@ -226,16 +226,16 @@ make -C build install
 cd ..
 
 # MoltenVK already builds universal binaries, nothing special to do here.
-echo "Installing MoltenVK..."
-rm -fr "MoltenVK-${MOLTENVK}"
-tar xf "v$MOLTENVK.tar.gz"
-cd "MoltenVK-${MOLTENVK}"
-sed -i '' 's/xcodebuild "$@"/xcodebuild $XCODEBUILD_EXTRA_ARGS "$@"/g' fetchDependencies
-sed -i '' 's/XCODEBUILD :=/XCODEBUILD ?=/g' Makefile
-XCODEBUILD_EXTRA_ARGS="VALID_ARCHS=x86_64" ./fetchDependencies --macos
-XCODEBUILD="set -o pipefail && xcodebuild VALID_ARCHS=x86_64" make macos MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS=0 MVK_CONFIG_USE_METAL_PRIVATE_API=1
-cp Package/Latest/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib "$INSTALLDIR/lib/"
-cd ..
+#echo "Installing MoltenVK..."
+#rm -fr "MoltenVK-${MOLTENVK}"
+#tar xf "v$MOLTENVK.tar.gz"
+#cd "MoltenVK-${MOLTENVK}"
+#sed -i '' 's/xcodebuild "$@"/xcodebuild $XCODEBUILD_EXTRA_ARGS "$@"/g' fetchDependencies
+#sed -i '' 's/XCODEBUILD :=/XCODEBUILD ?=/g' Makefile
+#XCODEBUILD_EXTRA_ARGS="VALID_ARCHS=x86_64" ./fetchDependencies --macos
+#XCODEBUILD="set -o pipefail && xcodebuild VALID_ARCHS=x86_64" make macos MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS=0 MVK_CONFIG_USE_METAL_PRIVATE_API=1
+#cp Package/Latest/MoltenVK/dynamic/dylib/macOS/libMoltenVK.dylib "$INSTALLDIR/lib/"
+#cd ..
 
 echo "Installing Qt Base..."
 rm -fr "qtbase-everywhere-src-$QT"
