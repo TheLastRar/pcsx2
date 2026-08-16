@@ -1,0 +1,19 @@
+From 17afd173779fbd7a6660b8481a5fd0bc3e5d9842 Mon Sep 17 00:00:00 2001
+From: TheLastRar <TheLastRar@users.noreply.github.com>
+Date: Sun, 6 Sep 2026 16:46:56 +0100
+Subject: [PATCH] Add libdir to CMake's pkgconfig file
+
+---
+ cmake/DirectX-Headers.pc.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/DirectX-Headers.pc.in b/cmake/DirectX-Headers.pc.in
+index f33d3ffd..29c14cfb 100644
+--- a/cmake/DirectX-Headers.pc.in
++++ b/cmake/DirectX-Headers.pc.in
+@@ -7,4 +7,4 @@ Description: Headers for using D3D12
+ URL: https://github.com/microsoft/DirectX-Headers
+ Version: @PROJECT_VERSION@
+ Cflags: -I${includedir}
+-Libs: -lDirectX-Headers -lDirectX-Guids
++Libs: -L${libdir} -lDirectX-Headers -lDirectX-Guids

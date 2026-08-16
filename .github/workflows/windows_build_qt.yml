@@ -128,7 +128,6 @@ jobs:
           path: deps
           key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
-
       - name: Generate CMake
         if: inputs.configuration == 'CMake'
         id: cmake

@@ -1315,6 +1315,9 @@ function(setup_main_executable target)
 			"${DEPS_BINDIR}/avutil-*.dll"
 			"${DEPS_BINDIR}/swscale-*.dll"
 			"${DEPS_BINDIR}/swresample-*.dll"
+			"${DEPS_BINDIR}/va.dll"
+			"${DEPS_BINDIR}/va_win32.dll"
+			"${DEPS_BINDIR}/vaon12_drv_video.dll"
 		)
 		install(FILES ${OPT_DEPS_FULL_PATHS} DESTINATION "${CMAKE_SOURCE_DIR}/bin" OPTIONAL)
 

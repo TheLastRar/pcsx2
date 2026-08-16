@@ -61,11 +61,13 @@ set QTAPNG=1.3.0
 
 set FFMPEG=9.0.1
 set MAKE=4.4.1
-set MESON=1.10.2
-set PKGCONF=2.5.1
+set MESON=1.12.0
+set PKGCONF=3.0.7
 set AMF=1.5.2
 set LIBVPL=2.17.0
 set NVENC=13.0.19.0
+set LIBVA=2.24.1
+set MESA=26.2.2
 set LIBOPUS=1.6.1
 set LIBSVTAV1=4.2.0
 set LIBX264=b35605ace3ddf7c1a5d67a2eb553f034aef41d55
@@ -103,11 +105,13 @@ call :downloadfile "QtApng-%QTAPNG%.zip" "https://github.com/jurplel/QtApng/arch
 
 call :downloadfile "ffmpeg-%FFMPEG%.tar.xz" "https://ffmpeg.org/releases/ffmpeg-%FFMPEG%.tar.xz" cf38e0e28c7e5605942c4a77755349b0145804a397af37eb1fb4c77cb237f635 || goto error
 call :downloadfile "make-%MAKE%-without-guile-w32-bin.zip" "https://sourceforge.net/projects/ezwinports/files/make-%MAKE%-without-guile-w32-bin.zip/download" fb66a02b530f7466f6222ce53c0b602c5288e601547a034e4156a512dd895ee7 || goto error
-call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" 7890287d911dd4ee1ebd0efb61ed0321bfcd87c725df923a837cf90c6508f96b || goto error
-call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-%PKGCONF%.zip" c5b5f88a2ca2324dc5d857e35bb145e24290e326357ea94a86d47b8d7fa15477 || goto error
+call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" 88afe0c20e52030218924ac37d0c81c59b4b5f3ae3752c8c6d7470c7d365886c || goto error
+call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-%PKGCONF%.zip" ae610ecd2ab009ce673eb96c5d9a3d87170e5eefc0ddef60dc1c1542f49e8d1a || goto error
 call :downloadfile "amf-headers-v%AMF%.tar.gz" "https://github.com/GPUOpen-LibrariesAndSDKs/AMF/releases/download/v%AMF%/AMF-headers-v%AMF%.tar.gz" d3c12eb324edf05e214608b6a395a51dd95770ed9d45520185d6c3a206811c99 || goto error
 call :downloadfile "libvpl-%LIBVPL%.zip" "https://github.com/intel/libvpl/archive/v%LIBVPL%.zip" 980d9f3f1dbecc7cbc28b0ff0c0647f925cbaf72844c85515b69b89e9603c35d || goto error
 call :downloadfile "nv-codec-headers-%NVENC%.tar.gz" "https://github.com/FFmpeg/nv-codec-headers/releases/download/n%NVENC%/nv-codec-headers-%NVENC%.tar.gz" 13da39edb3a40ed9713ae390ca89faa2f1202c9dda869ef306a8d4383e242bee || goto error
+call :downloadfile "libva-%LIBVA%.zip" "https://github.com/intel/libva/archive/%LIBVA%.zip" 0d5ec89240573dc981e5e1604baa36505b68676d706ca25e2e4f7df60a9503b4 || goto error
+call :downloadfile "mesa-mesa-%MESA%.zip" "https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-%MESA%/mesa-mesa-%MESA%.zip" f7aa0dc3bc803f9f8cec72dff295274f2136274f1360673b320b09234f577d95 || goto error
 call :downloadfile "opus-%LIBOPUS%.tar.gz" "https://downloads.xiph.org/releases/opus/opus-%LIBOPUS%.tar.gz" 6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1 || goto error
 call :downloadfile "SVT-AV1-v%LIBSVTAV1%.zip" "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v%LIBSVTAV1%/SVT-AV1-v%LIBSVTAV1%.zip" 007d1bd64ae85eaeea51db7465c4b360d115dc2d33d2ad42491c7d2ae7a9124e || goto error
 call :downloadfile "x264-%LIBX264%.zip" "https://code.videolan.org/videolan/x264/-/archive/%LIBX264%.zip" d95d059eff81cc565165cd058b66e208f0cc9874106a8fe94a811a66cf8a85a2 || goto error
@@ -152,6 +156,26 @@ set FOUND_NASM=0
 if !ERRORLEVEL!==0 (
   set FOUND_NASM=1
 )
+
+echo Building Zlib...
+rmdir /S /Q "zlib-%ZLIB%"
+%SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
+cd "zlib-%ZLIB%" || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
+cmake --build build --parallel || goto error
+ninja -C build install || goto error
+cd .. || goto error
+
+rem DirectX Headers includes CMakeList/pkgconfig files, which are absent in the Nuget package
+echo Unpacking DirectX Headers
+rmdir /S /Q "DirectX-Headers-%DXHEADERS%"
+%SEVENZIP% x "DirectX-Headers-%DXHEADERS%.zip" || goto error
+cd "DirectX-Headers-%DXHEADERS%" || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\dx-headers-pkg.patch" || goto error
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DDXHEADERS_BUILD_TEST=OFF -DDXHEADERS_BUILD_GOOGLE_TEST=OFF -B build -G Ninja || goto error
+cmake --build build --parallel || goto error
+ninja -C build install || goto error
+cd .. || goto error
 
 echo "Installing AMF headers"
 rmdir /S /Q "amf-headers-v%AMF%"
@@ -201,12 +225,42 @@ echo "Installing pkgconf"
 rmdir /S /Q "pkgconf-pkgconf-%PKGCONF%"
 %SEVENZIP% x "pkgconf-pkgconf-%PKGCONF%.zip" || goto error
 cd "pkgconf-pkgconf-%PKGCONF%" || goto error
-!MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
+!MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" build --backend=ninja || goto error
 !MASON_PY! compile -C build || goto error
 ninja -C build install || goto error
+rem Meson uses PKG_CONFIG to locate pkg-config
+rem FFmpeg, however, needs it passed in via `--pkg-config`
+set "PKG_CONFIG=%INSTALLDIR%\bin\pkgconf.exe"
+Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
 set PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
 set PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
+cd .. || goto error
+
+echo "Installing libva"
+rmdir /S /Q "libva-%LIBVA%"
+%SEVENZIP% x "libva-%LIBVA%.zip" || goto error
+cd "libva-%LIBVA%" || goto error
+!MASON_PY! setup --buildtype=minsize --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Db_lto=true build --backend=ninja
+!MASON_PY! compile -C build || goto error
+ninja -C build install || goto error
+cd .. || goto error
+
+echo "Installing mesa-va"
+rmdir /S /Q "mesa-mesa-%MESA%"
+%SEVENZIP% x "mesa-mesa-%MESA%.zip" ^
+   "-xr^!.clang-format" ^
+   "-x^!mesa-mesa-%MESA%\.*" ^
+   "-x^!mesa-mesa-%MESA%\bin\ci" ^
+   "-x^!mesa-mesa-%MESA%\include\android_stub" ^
+   "-x^!mesa-mesa-%MESA%\src\compiler\isaspec\README.rst" || goto error
+cd "mesa-mesa-%MESA%" || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\mesa-no-flex.patch" || goto error
+%PATCH% -p1 < "%SCRIPTDIR%\mesa-ice-fix.patch" || goto error
+!MASON_PY! setup --buildtype=minsize --prefix="%INSTALLDIR%" --cmake-prefix-path="%INSTALLDIR%" -Dmin-windows-version=10 -Dgallium-drivers=d3d12 ^
+  -Degl=disabled -Dgles1=disabled -Dgles2=disabled -Dopengl=false -Dgallium-d3d12-graphics=disabled ^
+  -Dgallium-va=enabled -Dvideo-codecs=h264enc,h265enc,av1enc build --backend=ninja || goto error
+!MASON_PY! compile -C build || goto error
+!MASON_PY! install --skip-subprojects -C build || goto error
 cd .. || goto error
 
 echo "Extracting make"
@@ -260,7 +314,7 @@ rem --enable-small removes the display names of codecs, so instead we specify op
   --toolchain=msvc --extra-ldflags="-LTCG" --extra-libs="advapi32.lib ole32.lib" !FFMPEG_NASM! --pkg-config="%INSTALLDIR%\bin\pkgconf.exe" ^
   --extra-cflags="-MD -GL -I!VULKAN_INCLUDE!" --extra-cxxflags="-MD -GL -I!VULKAN_INCLUDE!" --optflags="-O1" ^
   --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale ^
-  --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl --enable-amf ^
+  --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus --enable-vulkan --enable-ffnvcodec --enable-nvenc --enable-libvpl --enable-amf --enable-vaapi ^
   --enable-d3d11va --enable-mediafoundation ^
   --enable-encoder=ffv1,qtrle,libx264*,libsvtav1,aac,flac,libopus,pcm_s16be,pcm_s16le ^
   --enable-encoder=h264_qsv,hevc_qsv,av1_qsv ^
@@ -268,6 +322,7 @@ rem --enable-small removes the display names of codecs, so instead we specify op
   --enable-encoder=h264_amf,hevc_amf,av1_amf ^
   --enable-encoder=h264_vulkan,hevc_vulkan,av1_vulkan ^
   --enable-encoder=h264_mf,hevc_mf,av1_mf ^
+  --enable-encoder=h264_vaapi,hevc_vaapi,av1_vaapi ^
   --enable-parser=hevc ^
   --enable-muxer=avi,matroska,mov,mp3,mp4,wav ^
   --enable-protocol=file || goto error
@@ -277,15 +332,6 @@ cd ..
 echo.
 
 set "PATH=!OLD_PATH!"
-
-echo Building Zlib...
-rmdir /S /Q "zlib-%ZLIB%"
-%SEVENZIP% x "zlib%ZLIBSHORT%.zip" || goto error
-cd "zlib-%ZLIB%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DZLIB_BUILD_EXAMPLES=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-cd .. || goto error
 
 echo Building libpng...
 rmdir /S /Q "lpng%LIBPNG%"
@@ -505,16 +551,6 @@ copy "build\native\bin\x64\D3D12Core.dll" "%INSTALLDIR%\bin\D3D12\D3D12Core.dll"
 if %DEBUG%==1 (
   copy "build\native\bin\x64\d3d12SDKLayers.dll" "%INSTALLDIR%\bin\D3D12\d3d12SDKLayers.dll" || goto error
 )
-cd .. || goto error
-
-rem DirectX Headers include a CMakeList file, which is absent in the Nuget package
-echo Unpacking DirectX Headers
-rmdir /S /Q "DirectX-Headers-%DXHEADERS%"
-%SEVENZIP% x "DirectX-Headers-%DXHEADERS%.zip" || goto error
-cd "DirectX-Headers-%DXHEADERS%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DDXHEADERS_BUILD_TEST=OFF -DDXHEADERS_BUILD_GOOGLE_TEST=OFF -B build -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
 cd .. || goto error
 
 echo Building shaderc...

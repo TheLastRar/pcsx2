@@ -1,0 +1,13 @@
+diff --git a/src/gallium/auxiliary/util/u_vbuf.c b/src/gallium/auxiliary/util/u_vbuf.c
+index 882f683e2a3..62b1fa6d6c4 100644
+--- a/src/gallium/auxiliary/util/u_vbuf.c
++++ b/src/gallium/auxiliary/util/u_vbuf.c
+@@ -776,7 +776,7 @@ u_vbuf_translate_begin(struct u_vbuf *mgr,
+       te = &k->element[k->nr_elements];
+       te->type = TRANSLATE_ELEMENT_NORMAL;
+       te->instance_divisor = 0;
+-      te->input_buffer = vb_index;
++      k->element[k->nr_elements].input_buffer = vb_index;
+       te->input_format = mgr->ve->ve[i].src_format;
+       te->input_offset = mgr->ve->ve[i].src_offset;
+       te->output_format = output_format;
