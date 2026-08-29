@@ -5725,7 +5725,7 @@ SCES-52424:
   patches:
     1D54FEA9:
       content: |-
-        // Fixes collision/missle hit issues.
+        // Fixes collision/missile hit issues.
         patch=0,EE,001A3154,word,48498800
         patch=0,EE,001A3158,word,4B00682C
         patch=0,EE,001A3164,word,484A8800
@@ -7748,7 +7748,7 @@ SCKA-20070:
   patches:
     2799A4E5:
       content: |-
-        // Fixes collision/missle hit issues.
+        // Fixes collision/missile hit issues.
         patch=0,EE,00131ebc,word,48498800
         patch=0,EE,00131ec0,word,4B00682C
         patch=0,EE,00131ecc,word,484A8800
@@ -8907,7 +8907,7 @@ SCPS-15037:
 SCPS-15038:
   name: "OPERATOR'S SIDE [マイク同梱版]"
   name-sort: "おぺれーたーずさいど [まいくどうこんばん]"
-  name-en: "Operator's Side [wtih MIC]"
+  name-en: "Operator's Side [with MIC]"
   region: "NTSC-J"
   gsHWFixes:
     alignSprite: 1 # Fixes vertical lines.
@@ -13305,7 +13305,7 @@ SLAJ-25058:
   name: "GoldenEye - Rogue Agent"
   region: "NTSC-Unk"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLAJ-25059:
@@ -13528,7 +13528,7 @@ SLAJ-35001:
   name: "Sakura Wars"
   region: "NTSC-Unk"
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLAJ-35003:
   name: "Sakura Taisen - Atsuki Chishio Ni"
   region: "NTSC-C"
@@ -15319,7 +15319,7 @@ SLES-50382:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLES-50383:
   name: "Metal Gear Solid 2 - Sons of Liberty"
   region: "PAL-M3"
@@ -17168,7 +17168,7 @@ SLES-51156:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLES-51157:
   name: "Silent Scope 3"
   region: "PAL-M5"
@@ -17935,7 +17935,7 @@ SLES-51434:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
   memcardFilters:
     - "SLES-51434"
@@ -22031,28 +22031,28 @@ SLES-52974:
   name: "GoldenEye - Rogue Agent"
   region: "PAL-M4"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLES-52975:
   name: "GoldenEye - Au Service du Mal"
   region: "PAL-F"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLES-52976:
   name: "GoldenEye - Rogue Agent"
   region: "PAL-G"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLES-52977:
   name: "GoldenEye - Agente Corrupto"
   region: "PAL-S"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLES-52978:
@@ -22562,7 +22562,7 @@ SLES-53106:
   patches:
     D7AE31F4:
       content: |-
-        comment=Rearranging COP2 ops to avoid clip flag resonse. Fixes SPS.
+        comment=Rearranging COP2 ops to avoid clip flag response. Fixes SPS.
         patch=1,EE,001B0138,word,484E9000
         patch=1,EE,001B013C,word,4BDBD9FF
 SLES-53107:
@@ -23404,7 +23404,7 @@ SLES-53443:
   name-sort: "Warriors, The"
   region: "PAL-M5"
   gsHWFixes:
-    halfPixelOffset: 4 # Alings recursive blur effects.
+    halfPixelOffset: 4 # Aligns recursive blur effects.
     autoFlush: 2 # Fixes missing recursive blur effects.
     nativeScaling: 2 # Fixes missing recursive blur effects.
 SLES-53444:
@@ -25815,7 +25815,7 @@ SLES-54171:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLES-54172:
@@ -29454,7 +29454,7 @@ SLES-55242:
   region: "PAL-E"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters: # Allows import of Yakuza 1 data.
@@ -31163,7 +31163,7 @@ SLKA-25001:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLKA-25002:
   name: "에너지 에어포스"
   name-en: "Energy Airforce"
@@ -31459,7 +31459,7 @@ SLKA-25065:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
 SLKA-25066:
   name: "Zone of the Enders - The 2nd Runner SE" # No listed Korean name on ReDump
@@ -32396,7 +32396,7 @@ SLKA-25250:
   name-en: "GoldenEye - Rogue Agent"
   region: "NTSC-K"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLKA-25251:
@@ -32563,7 +32563,7 @@ SLKA-25280:
   region: "NTSC-K"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -32575,7 +32575,7 @@ SLKA-25281:
   region: "NTSC-K"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -32951,7 +32951,7 @@ SLKA-25342:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLKA-25343:
@@ -33742,7 +33742,7 @@ SLKA-35004:
   region: "NTSC-K"
   compat: 5
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLKA-35005:
   name: "진・삼국무쌍 5 스페셜"
   name-en: "Jin Samguk Mussang 5 Special"
@@ -36264,7 +36264,7 @@ SLPM-61009:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-61010:
   name: "Devil May Cry [体験版 Ver.2]"
   name-sort: "でびる めい くらい [たいけんばん Ver.2]"
@@ -36282,7 +36282,7 @@ SLPM-61011:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-61012:
   name: "電撃PS2 / 電撃PlayStation D46"
   name-sort: "でんげき PS2 でんげきPlayStation D46"
@@ -36966,7 +36966,7 @@ SLPM-61140:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-61141:
@@ -37040,7 +37040,7 @@ SLPM-61154:
   region: "NTSC-J"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-61155:
@@ -40129,7 +40129,7 @@ SLPM-62598:
   name-en: "Sakura Taisen V - Saraba Itoshiki Hito yo [Trial]"
   region: "NTSC-J"
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLPM-62599:
   name: "ボンバーマンカートDX [HUDSON THE BEST]"
   name-sort: "ぼんばーまんかーとDX [HUDSON THE BEST]"
@@ -41552,7 +41552,7 @@ SLPM-65051:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-65052:
   name: "ギタドラ！ギターフリークス4thMIX & ドラムマニア3rdMIX"
   name-sort: "ぎたどら！ぎたーふりーくす4thMIX & どらむまにあ3rdMIX"
@@ -41828,7 +41828,7 @@ SLPM-65098:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-65100:
   name: "鬼武者 2 [初回生産限定版]"
   name-sort: "おにむしゃ 2 [しょかいせいさんげんていばん]"
@@ -42738,7 +42738,7 @@ SLPM-65257:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
   memcardFilters:
     - "SLPM-65257"
@@ -43233,7 +43233,7 @@ SLPM-65341:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-65342:
   name: "恐怖新聞【平成版】～怪奇！心霊ファイル～"
   name-sort: "きょうふしんぶん へいせいばん かいき！しんれいふぁいる"
@@ -44820,7 +44820,7 @@ SLPM-65622:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
   memcardFilters:
     - "SLPM-65257"
@@ -44878,7 +44878,7 @@ SLPM-65631:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLPM-65632:
   name: "バーチャファイターサイバージェネレーション ～ジャッジメントシックスの野望～"
   name-sort: "ばーちゃふぁいたーさいばーじぇねれーしょん ～じゃっじめんとしっくすのやぼう～"
@@ -45676,7 +45676,7 @@ SLPM-65763:
   name-en: "007 - Goldeneye - Rogue Agent"
   region: "NTSC-J"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLPM-65764:
@@ -47157,7 +47157,7 @@ SLPM-66018:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
   memcardFilters:
     - "SLPM-65257"
@@ -47942,7 +47942,7 @@ SLPM-66137:
   name-en: "Clover Heart's - Looking for Happiness [The Best]"
   region: "NTSC-J"
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPM-66138:
   name: "DESIRE [ベスト版]"
   name-sort: "でざいあ [べすとばん]"
@@ -47997,7 +47997,7 @@ SLPM-66145:
   name-en: "GoldenEye - Rogue Agent [EA Best Hits]"
   region: "NTSC-J"
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLPM-66146:
@@ -48144,7 +48144,7 @@ SLPM-66168:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-66169:
@@ -49049,7 +49049,7 @@ SLPM-66302:
   region: "NTSC-J"
   gsHWFixes:
     gpuTargetCLUT: 1 # Fixes colours.
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPM-66303:
   name: "真・三國無双2 [真・三國無双シリーズコレクション 上巻]"
   name-sort: "しんさんごくむそう2 [しんさんごくむそうしりーずこれくしょん 01 じょうかん]"
@@ -50911,7 +50911,7 @@ SLPM-66602:
   region: "NTSC-J"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -50927,7 +50927,7 @@ SLPM-66603:
   region: "NTSC-J"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -53368,7 +53368,7 @@ SLPM-67009:
   name-en: "Sakura Taisen V - Saraba Itoshiki Hito Yo"
   region: "NTSC-J"
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLPM-67010:
   name: "ゴッド・オブ・ウォー"
   name-sort: "ごっど・おぶ・うぉー"
@@ -54189,7 +54189,7 @@ SLPM-74234:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-74235:
@@ -54355,7 +54355,7 @@ SLPM-74253:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-74254:
@@ -54476,7 +54476,7 @@ SLPM-74269:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLPM-74270:
@@ -54566,7 +54566,7 @@ SLPM-74301:
   region: "NTSC-J"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -54582,7 +54582,7 @@ SLPM-74302:
   region: "NTSC-J"
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters:
@@ -56259,7 +56259,7 @@ SLPS-20307:
   name-en: "Rakushou! Pachi-Slot Sengen - MoguMoguFuuRinKaZan,Shoukin Kubi,Billy the Big,Super Black Jack"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-20308:
   name: "花火百景 [特典版]"
   name-sort: "はなびひゃっけい [とくてんばん]"
@@ -56722,7 +56722,7 @@ SLPS-20404:
   name-en: "Rakushou! Pachi-Slot Sengen 2 - Juujika, Deka Dan"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-20405:
   name: "スロッターUPコア5 ルパン大好き！主役は銭形"
   name-sort: "すろったーUPこあ 5 るぱんだいすき！しゅやくはぜにがた"
@@ -56802,7 +56802,7 @@ SLPS-20419:
   name-en: "Rakushou! Pachi-Slot Sengen 3 - Rio de Carnival, Juujika 600-shiki"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-20420:
   name: "ウルトラマンネクサス"
   name-sort: "うるとらまんねくさす"
@@ -57024,7 +57024,7 @@ SLPS-20460:
   name-en: "Rakushou! Pachi-Slot Sengen 4 - Shin MoguMogu FuuRinKaZan,Rio de Carnival"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-20461:
   name: "SIMPLE2000シリーズ Vol.99 THE 原始人"
   name-sort: "しんぷる2000しりーず Vol.  99 THE げんしじん"
@@ -59288,7 +59288,7 @@ SLPS-25332:
   name-en: "Snow [First Limited Edition]"
   region: "NTSC-J"
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPS-25333:
   name: "Gallop Racer Lucky7"
   name-sort: "ぎゃろっぷ れーさー 7 らっきー7"
@@ -59386,7 +59386,7 @@ SLPS-25342:
   name-en: "Snow"
   region: "NTSC-J"
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPS-25343:
   name: "ガンスリンガー・ガール Volume.I"
   name-sort: "がんすりんがー がーる Volume.I"
@@ -59702,14 +59702,14 @@ SLPS-25390:
   name-en: "Clover Heart's - Looking for Happiness [First Limited Edition]"
   region: "NTSC-J"
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPS-25391:
   name: "クローバーハーツ ルッキングフォーハピネス [通常版]"
   name-sort: "くろーばーはーつ るっきんぐふぉーはぴねす [つうじょうばん]"
   name-en: "Clover Heart's - Looking for Happiness [Standard Edition]"
   region: "NTSC-J"
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes transparancy.
+    minimumBlendingLevel: 4 # Fixes transparency.
 SLPS-25392:
   name: "DESIRE"
   name-sort: "でざいあ"
@@ -61001,7 +61001,7 @@ SLPS-25601:
 SLPS-25602:
   name: "必勝パチンコ★パチスロ攻略シリーズ Vol.2 ボンバーパワフル&夢夢ワールドDX"
   name-sort: "ひっしょうぱちんこぱちすろこうりゃくしりーず Vol. 2 ぼんばーぱわふる&ゆめゆめわーるどDX"
-  name-en: "Hisshou Pachinko Pachi-Slot Kouryaku Series Vol. 2 - Bomber Powerfull & Yume Yume World DX"
+  name-en: "Hisshou Pachinko Pachi-Slot Kouryaku Series Vol. 2 - Bomber Powerful & Yume Yume World DX"
   region: "NTSC-J"
   gameFixes:
     - EETimingHack # Fixes FMV hanging.
@@ -61487,7 +61487,7 @@ SLPS-25671:
 SLPS-25672:
   name: "必勝パチンコ★パチスロ攻略シリーズ Vol.6 7Cafe～型式名ボンバーパワフル2～"
   name-sort: "ひっしょうぱちんこぱちすろこうりゃくしりーず Vol. 6 7Cafe けいしきめいぼんばーぱわふる2"
-  name-en: "Hisshou Pachinko Pachi-Slot Kouryaku Series Vol. 6 7Cafe - Katashiki Mei Bomber Powerfull 2"
+  name-en: "Hisshou Pachinko Pachi-Slot Kouryaku Series Vol. 6 7Cafe - Katashiki Mei Bomber Powerful 2"
   region: "NTSC-J"
   gameFixes:
     - EETimingHack # Fixes FMV hanging.
@@ -62114,7 +62114,7 @@ SLPS-25770:
   name-en: "Rakushou! Pachi-Slot Sengen 5 - Rio Paradise"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-25771:
   name: "グリムグリモア [初回生産版]"
   name-sort: "ぐりむぐりもあ [しょかいせいさんばん]"
@@ -63036,7 +63036,7 @@ SLPS-25921:
   name-en: "Rakushou! Pachi-Slot Sengen 6 - Rio 2 Cruising Vanadis"
   region: "NTSC-J"
   gsHWFixes:
-    cpuFramebufferConversion: 1 # A liitle fixes some graphic glitchs on upper screen (not Perfectly).
+    cpuFramebufferConversion: 1 # A little fix to some graphic glitchs on upper screen (not Perfectly).
 SLPS-25922:
   name: "Vitamin Z [限定版]"
   name-sort: "びたみん Z [げんていばん]"
@@ -64990,7 +64990,7 @@ SLUS-20149:
   region: "NTSC-U"
   compat: 5
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves reflections on weapons and metalic surfaces.
+    recommendedBlendingLevel: 3 # Improves reflections on weapons and metallic surfaces.
     roundSprite: 1 # Fixes font artifacts.
 SLUS-20150:
   name: "Knockout Kings 2001"
@@ -65377,7 +65377,7 @@ SLUS-20228:
   speedHacks:
     eeCycleRate: 1 # Fixes FMV hangs.
   gsHWFixes:
-    recommendedBlendingLevel: 4 # Fixes menu transparancy and effects.
+    recommendedBlendingLevel: 4 # Fixes menu transparency and effects.
 SLUS-20229:
   name: "Jonny Moseley - Mad Trix"
   region: "NTSC-U"
@@ -67420,7 +67420,7 @@ SLUS-20622:
   clampModes:
     vuClampMode: 2 # Fixes some lighting/shadow artefacts (most light sources like the Flashlight are unaffected).
   gsHWFixes:
-    minimumBlendingLevel: 4 # Fixes brightness menu transparancy effects and text.
+    minimumBlendingLevel: 4 # Fixes brightness menu transparency effects and text.
     deinterlace: 9 # Fixes incorrect field order in FMVs.
   memcardFilters: # Reads Silent Hill 2 for easter egg.
     - "SLUS-20622"
@@ -70006,7 +70006,7 @@ SLUS-21064:
   region: "NTSC-U"
   compat: 5
   gsHWFixes:
-    recommendedBlendingLevel: 3 # Improves metalic shine.
+    recommendedBlendingLevel: 3 # Improves metallic shine.
     halfPixelOffset: 4 # Fixes offset post-processing.
     nativeScaling: 2 # Fixes post-processing.
 SLUS-21065:
@@ -70908,7 +70908,7 @@ SLUS-21215:
   region: "NTSC-U"
   compat: 5
   gsHWFixes:
-    halfPixelOffset: 4 # Alings recursive blur effects.
+    halfPixelOffset: 4 # Aligns recursive blur effects.
     autoFlush: 2 # Fixes missing recursive blur effects.
     nativeScaling: 2 # Fixes missing recursive blur effects.
 SLUS-21216:
@@ -71892,7 +71892,7 @@ SLUS-21348:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLUS-21349:
@@ -74301,7 +74301,7 @@ SLUS-21769:
   compat: 5
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
   memcardFilters: # Allows import of Yakuza 1 data.
@@ -75088,7 +75088,7 @@ SLUS-21927:
   region: "NTSC-U"
   compat: 5
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLUS-21928:
   name: "Scooby-Doo! and the Spooky Swamp"
   region: "NTSC-U"
@@ -75100,7 +75100,7 @@ SLUS-21930:
   region: "NTSC-U"
   compat: 5
   gsHWFixes:
-    halfPixelOffset: 5 # Fixes recrusive drawing to the top left.
+    halfPixelOffset: 5 # Fixes recursive drawing to the top left.
 SLUS-21931:
   name: "Disney/Pixar Toy Story 3"
   region: "NTSC-U"
@@ -76238,7 +76238,7 @@ SLUS-29195:
     - EETimingHack # Fixes flickering.
   gsHWFixes:
     minimumBlendingLevel: 2 # Improves brightness and banding.
-    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparancy.
+    recommendedBlendingLevel: 4 # Fixes road signs street furniture color and glass transparency.
     alignSprite: 1 # Helps align bloom.
     nativeScaling: 2 # Fixes post-processing and lighting smoothness.
 SLUS-29196:
@@ -76430,7 +76430,7 @@ TCPS-10075:
 TCPS-10084:
   name: "零式艦上戦闘記 [数量限定パッケージ]"
   name-sort: "れいしきかんじょうせんとうき [すうりょうげんていぱっけーじ]"
-  name-en: "Rei-shiki Kanjo Sentouki [Limitted Package]"
+  name-en: "Rei-shiki Kanjo Sentouki [Limited Package]"
   region: "NTSC-J"
 TCPS-10085:
   name: "電車でGO！FINAL"
