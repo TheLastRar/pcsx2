@@ -120,7 +120,7 @@ bool DEV9DnsHostDialog::eventFilter(QObject* object, QEvent* event)
 {
 	if (object == m_ui.hostList)
 	{
-		//Check isVisible to avoind an unnessecery call to ResizeColumnsForTableView()
+		//Check isVisible to avoid an unnessecery call to ResizeColumnsForTableView()
 		if (event->type() == QEvent::Resize && m_ui.hostList->isVisible())
 			QtUtils::ResizeColumnsForTableView(m_ui.hostList, {80, -1, 170, 90, 80});
 		else if (event->type() == QEvent::Show)

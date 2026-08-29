@@ -215,13 +215,13 @@ void DisplaySurface::updateCenterPos()
 #endif
 }
 
-// Keyboard focus and child windows are inconsistant across platforms;
+// Keyboard focus and child windows are inconsistent across platforms;
 // Windows: Can programmatically focus the child window, NVidia overlay can defocus it.
 // X11: Can programmatically focus the child window.
 // Wayland: Child window cannot be focused at all on most(?) DE.
 // Mac: Can programmatically focus the child window.
 // Thus for KB inputs we need to sometimes use the event filter.
-// Mouse events are always delivered to the child window, so that seems consistant.
+// Mouse events are always delivered to the child window, so that seems consistent.
 void DisplaySurface::handleKeyInputEvent(QEvent* event)
 {
 	switch (event->type())
@@ -425,7 +425,7 @@ bool DisplaySurface::event(QEvent* event)
 			return true;
 
 		// These events only work on the top level control.
-		// Which is this container when render to seperate or fullscreen is active (Windows).
+		// Which is this container when render to separate or fullscreen is active (Windows).
 		case QEvent::Close:
 			handleCloseEvent(static_cast<QCloseEvent*>(event));
 			return true;
@@ -454,7 +454,7 @@ bool DisplaySurface::eventFilter(QObject* object, QEvent* event)
 			return true;
 
 		// These events only work on the top level control.
-		// Which is this container when render to seperate or fullscreen is active (Non-Windows).
+		// Which is this container when render to separate or fullscreen is active (Non-Windows).
 		case QEvent::Close:
 			handleCloseEvent(static_cast<QCloseEvent*>(event));
 			return true;

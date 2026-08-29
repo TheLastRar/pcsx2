@@ -529,7 +529,7 @@ void DisassemblyView::paintEvent(QPaintEvent* event)
 		}
 		else
 		{
-			// Explaination
+			// Explanation
 			// ((branchLine.first - m_visibleStart) -> Find the amount of bytes from the top of the view
 			// / 4 -> Convert that into rowss in instructions
 			// + 1 -> Offset 1 to account for column title row

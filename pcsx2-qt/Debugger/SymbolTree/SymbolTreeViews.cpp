@@ -313,7 +313,7 @@ std::unique_ptr<SymbolTreeNode> SymbolTreeView::buildTree(const ccc::SymbolDatab
 	const SymbolWork* section_work = nullptr;
 	const SymbolWork* module_work = nullptr;
 
-	// Build the tree. Whenever we enounter a symbol with a different source
+	// Build the tree. Whenever we encounter a symbol with a different source
 	// file, section or module, because they're all sorted we know that we have
 	// to create a new group node (if we're grouping by that attribute).
 	for (SymbolWork& work : symbols)

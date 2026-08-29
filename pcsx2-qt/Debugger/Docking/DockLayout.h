@@ -127,7 +127,7 @@ private:
 	QString m_name;
 
 	// The default target for dock widgets in this layout. This can be
-	// overriden on a per-widget basis.
+	// overridden on a per-widget basis.
 	BreakPointCpu m_cpu;
 
 	// Is this one of the default layouts?

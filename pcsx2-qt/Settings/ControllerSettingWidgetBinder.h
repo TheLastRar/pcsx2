@@ -20,7 +20,7 @@
 #include <QtWidgets/QSlider>
 #include <QtWidgets/QSpinBox>
 
-/// This nastyness is required because input profiles aren't overlaid settings like the rest of them, it's
+/// This nastiness is required because input profiles aren't overlaid settings like the rest of them, it's
 /// input profile *or* global, not both.
 namespace ControllerSettingWidgetBinder
 {

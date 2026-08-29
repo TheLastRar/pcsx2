@@ -766,7 +766,7 @@ void MainWindow::resetSettings(bool ui)
 		// UI reset includes theme (and eventually language).
 		// Just updating the theme here, when there's no change, causes Qt to get very confused..
 		// So, we'll just tear down everything and recreate. We'll need to do that for language
-		// resets eventaully anyway.
+		// resets eventually anyway.
 		recreate();
 	}
 
@@ -2968,7 +2968,7 @@ void MainWindow::createDisplayWidget(bool fullscreen, bool render_to_main)
 		m_ui.mainContainer->setCurrentIndex(1);
 	}
 
-	// Attatch drag and drop signals
+	// Attach drag and drop signals
 	connect(m_display_surface, &DisplaySurface::dragEnterEvent, this, &MainWindow::dragEnterEvent);
 	connect(m_display_surface, &DisplaySurface::dropEvent, this, &MainWindow::dropEvent);
 
@@ -3855,7 +3855,7 @@ MainWindow::VMLock MainWindow::pauseAndLockVM()
 
 		g_emu_thread->setFullscreen(false, false);
 
-		// Process events untill both EmuThread and Qt have finished exiting fullscreen
+		// Process events until both EmuThread and Qt have finished exiting fullscreen
 		while (QtHost::IsVMValid() && (g_emu_thread->isFullscreen() || m_display_surface->isFullScreen()))
 		{
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

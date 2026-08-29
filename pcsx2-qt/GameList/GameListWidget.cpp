@@ -937,7 +937,7 @@ void GameListWidget::ensureMinimumOneColumnVisible()
 	// If absolutely everything is hidden, force the Title column to be visible.
 	// This ensures there is always a right-click menu on the column available to restore
 	// other columns or access the "Reset All Columns" option or even re-order them with drag and drop.
-	// By default Qt will hide everything if it sees 0 viable columns, so just enforce atleast 1 column.
+	// By default Qt will hide everything if it sees 0 viable columns, so just enforce at least 1 column.
 	// Adding ghost columns would be hacky and ugly so let's not do that.
 	if (!any_visible)
 	{
@@ -984,7 +984,7 @@ void GameListWidget::applyTableHeaderDefaults()
 
 // TODO (Tech): Create a button for this in the minibar. Currently unused.
 // TODO (Red): Not sure if I should integrate it in the minibar for now when I made sure they can't break their order and there is a reset function now when you right-click the column.
-//             They could accidentaly press on it when they didn't want to, could be revised later still because people without mouses can't do it such as controller mode on the TV.
+//             They could accidentally press on it when they didn't want to, could be revised later still because people without mouses can't do it such as controller mode on the TV.
 void GameListWidget::resetTableHeaderToDefault()
 {
 	QHeaderView* header = m_table_view->horizontalHeader();

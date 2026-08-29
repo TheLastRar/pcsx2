@@ -319,7 +319,7 @@ void DEV9SettingsWidget::onEthDHCPInterceptChanged(Qt::CheckState state)
 
 void DEV9SettingsWidget::onEthIPChanged(QLineEdit* sender, const char* section, const char* key)
 {
-	//Alow clearing a per-game ip setting
+	//Allow clearing a per-game ip setting
 	if (sender->text().isEmpty())
 	{
 		if (dialog()->getStringValue(section, key, std::nullopt).has_value())
@@ -767,7 +767,7 @@ void DEV9SettingsWidget::showEvent(QShowEvent* event)
 
 	if (m_adaptersLoaded)
 	{
-		//The API combobox dosn't set the EthApi field, that is performed by the device combobox (in addition to saving the device)
+		//The API combobox doesn't set the EthApi field, that is performed by the device combobox (in addition to saving the device)
 		//This means that this setting can get out of sync with true value, so revert to that if the ui is closed and opened
 		const std::string value = dialog()->getStringValue("DEV9/Eth", "EthApi", Pcsx2Config::DEV9Options::NetApiNames[static_cast<int>(Pcsx2Config::DEV9Options::NetApi::Unset)]).value();
 
@@ -788,7 +788,7 @@ void DEV9SettingsWidget::showEvent(QShowEvent* event)
 
 /*
  * QtUtils::ResizeColumnsForTableView() needs the widget to already be the correct size
- * Doing this in our resizeEvent (like GameListWidget does) dosn't work if the ui is
+ * Doing this in our resizeEvent (like GameListWidget does) doesn't work if the ui is
  * hidden, maybe because our table is nested within group & tab widgets
  * We could also listern to out show event, but we also need to listern to the tab
  * changed signal, in the event that another tab is selected when our ui is shown
@@ -801,7 +801,7 @@ bool DEV9SettingsWidget::eventFilter(QObject* object, QEvent* event)
 {
 	if (object == m_ui.ethHosts)
 	{
-		//Check isVisible to avoind an unnessecery call to ResizeColumnsForTableView()
+		//Check isVisible to avoid an unnessecery call to ResizeColumnsForTableView()
 		if (event->type() == QEvent::Resize && m_ui.ethHosts->isVisible())
 			QtUtils::ResizeColumnsForTableView(m_ui.ethHosts, {-1, 170, 90, 80});
 		else if (event->type() == QEvent::Show)
@@ -812,7 +812,7 @@ bool DEV9SettingsWidget::eventFilter(QObject* object, QEvent* event)
 
 void DEV9SettingsWidget::AddAdapter(const AdapterEntry& adapter)
 {
-	//divide into seperate adapter lists
+	//divide into separate adapter lists
 
 	if (std::find(m_api_list.begin(), m_api_list.end(), adapter.type) == m_api_list.end())
 		m_api_list.push_back(adapter.type);
@@ -1058,7 +1058,7 @@ void DEV9SettingsWidget::DeleteHostConfig(int index)
 {
 	const int hostLength = CountHostsConfig();
 
-	//Shuffle entries down to ovewrite deleted entry
+	//Shuffle entries down to overwrite deleted entry
 	for (int i = index; i < hostLength - 1; i++)
 	{
 		std::string section = "DEV9/Eth/Hosts/Host" + std::to_string(i);
