@@ -45,8 +45,8 @@
 			<path id="path27" class="st2" d="M206.4,79.9l4-19.2"/>
 			<path id="path29" class="st2" d="M733.8,79.9l-4-19.2"/>
 		</g>
-		<g id="Controle">
-			<g id="Botões1">
+		<g id="Controller">
+			<g id="Buttons1">
 				<g id="g139">
 					<path id="L1" class="st3" d="M272.7,52.9c-13.3-0.3-46.6-0.7-51.6,17.2c-7.8,27.9-2.9,13.3,41.8,13.3s47.5,22.1,54.2-5
 						C322.5,56.5,290.3,53.3,272.7,52.9L272.7,52.9z"/>
@@ -148,7 +148,7 @@
 		<circle class="st2" cx="473.8" cy="390.3" r="115"/>
 		<circle class="st8" cx="478.2" cy="391.2" r="9.8"/>
 	</g>
-	<g id="Botoes2">
+	<g id="Buttons2">
 		<circle id="circle166" class="st9" cx="642.9" cy="243.3" r="28.7"/>
 		<path id="path168" class="st3" d="M737,177.9c0,15.9-12.8,28.7-28.7,28.7s-28.7-12.9-28.7-28.7s12.8-28.7,28.7-28.7
 			S737,162,737,177.9L737,177.9z"/>

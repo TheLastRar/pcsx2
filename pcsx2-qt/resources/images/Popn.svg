@@ -107,28 +107,28 @@
     </style>
   </defs>
   <g id="By_Maxihplay" data-name="By Maxihplay">
-    <path id="fundo_controle" data-name="fundo controle" class="cls-25" d="m732.99,503.41H107.01c-56.55,0-99.5-59.99-84.64-118.79L96.46,120.83c9.61-38.01,50.78-74.24,92.46-74.24h462.16c41.67,0,82.85,36.23,92.46,74.24l74.09,263.79c14.87,58.8-28.09,118.79-84.64,118.79Z"/>
-    <g id="sombra_inferior" data-name="sombra inferior">
+    <path id="controller" data-name="controller" class="cls-25" d="m732.99,503.41H107.01c-56.55,0-99.5-59.99-84.64-118.79L96.46,120.83c9.61-38.01,50.78-74.24,92.46-74.24h462.16c41.67,0,82.85,36.23,92.46,74.24l74.09,263.79c14.87,58.8-28.09,118.79-84.64,118.79Z"/>
+    <g id="bottom_shadow" data-name="bottom shadow">
       <path class="cls-21" d="m757.16,177.42l40.52,186.36c8.83,58.35-28.4,86.84-82.82,86.84H125.3c-54.41,0-91.21-34.06-82.82-86.84l40.19-186.36-58.02,205.29c-14.78,57.64,27.99,116.64,84.22,116.64h622.4c56.24,0,99.01-58.99,84.22-116.64l-58.35-205.29Z"/>
       <line class="cls-17" x1="531.04" y1="451.07" x2="308.96" y2="451.07"/>
     </g>
-    <g id="botoes_cores">
-      <g id="baixo">
+    <g id="button_colours">
+      <g id="bottom">
         <ellipse class="cls-13" cx="276.31" cy="363.27" rx="58.13" ry="58.86"/>
         <ellipse class="cls-8" cx="420" cy="363.27" rx="58.13" ry="58.86"/>
         <ellipse class="cls-13" cx="563.69" cy="363.27" rx="58.13" ry="58.86"/>
         <ellipse class="cls-12" cx="707.38" cy="363.27" rx="58.13" ry="58.86"/>
         <path class="cls-12" d="m132.62,304.41c-19.2,0-36.22,9.42-46.81,23.95-7.12,9.77-11.33,21.84-11.33,34.91,0,32.51,26.03,58.86,58.13,58.86s58.13-26.35,58.13-58.86-26.03-58.86-58.13-58.86Z"/>
       </g>
-      <g id="cima">
+      <g id="top">
         <ellipse class="cls-10" cx="348.16" cy="223.49" rx="58.13" ry="58.86"/>
         <ellipse class="cls-10" cx="491.84" cy="223.49" rx="58.13" ry="58.86"/>
         <ellipse class="cls-5" cx="635.53" cy="223.49" rx="58.13" ry="58.86"/>
         <ellipse class="cls-5" cx="204.47" cy="223.49" rx="58.13" ry="58.86"/>
       </g>
     </g>
-    <g id="brilho">
-      <g id="brilho_menor" data-name="brilho menor" class="cls-24">
+    <g id="specular">
+      <g id="highlight_outer" data-name="highlight outer" class="cls-24">
         <ellipse class="cls-16" cx="157.67" cy="372.04" rx="9.35" ry="9.47"/>
         <ellipse class="cls-7" cx="301.63" cy="372.04" rx="9.35" ry="9.47"/>
         <ellipse class="cls-6" cx="445.59" cy="372.04" rx="9.35" ry="9.47"/>
@@ -139,7 +139,7 @@
         <ellipse class="cls-11" cx="373.61" cy="241.42" rx="9.35" ry="9.47"/>
         <ellipse class="cls-15" cx="229.65" cy="241.42" rx="9.35" ry="9.47"/>
       </g>
-      <g id="brilho_maior" data-name="brilho maior" class="cls-22">
+      <g id="highlight_inner" data-name="highlight inner" class="cls-22">
         <ellipse class="cls-1" cx="160.94" cy="374.24" rx="9.35" ry="9.47"/>
         <ellipse class="cls-3" cx="304.9" cy="374.24" rx="9.35" ry="9.47"/>
         <ellipse class="cls-3" cx="448.86" cy="374.24" rx="9.35" ry="9.47"/>
@@ -151,8 +151,8 @@
         <ellipse class="cls-2" cx="232.92" cy="243.62" rx="9.35" ry="9.47"/>
       </g>
     </g>
-    <g id="botoes_gota">
-      <g id="botao">
+    <g id="button_teardrop">
+      <g id="buttons">
         <path id="B" class="cls-9" d="m319.86,101.2c-4.93-3.86-15.2-.94-20.32,6.55-4.61,6.75-7.36,23.1-8.33,29.84-.19,1.33,1.02,2.27,2.16,1.66,5.72-3.04,19.42-10.78,24.03-17.53,4.21-6.15,7.4-16.67,2.47-20.53Z"/>
         <path id="B-2" data-name="B" class="cls-14" d="m317.84,99.05c-4.93-3.86-11.46-3.28-16.58,4.21-4.02,5.88-6.62,19.05-7.87,26.8-.43,2.67,2.02,4.55,4.28,3.3,6.53-3.62,17.43-10.25,21.44-16.12,4.21-6.15,3.66-14.32-1.27-18.18Z"/>
         <path id="A" class="cls-9" d="m246.17,118.73c-4.21,6.15-3.66,14.32,1.27,18.18,4.93,3.86,11.46,3.28,16.58-4.21,4.76-6.97,7.54-24.16,8.42-30.46.14-1-.91-1.74-1.81-1.27-5.43,2.86-19.73,10.84-24.46,17.76Z"/>
@@ -161,6 +161,6 @@
     </g>
     <text class="cls-27" transform="translate(202.5 90.95) scale(.99 1)"><tspan x="0" y="0">SELE</tspan><tspan class="cls-20" x="30.28" y="0">C</tspan><tspan class="cls-28" x="38.78" y="0">T</tspan></text>
     <text class="cls-27" transform="translate(325.6 142.14) scale(.99 1)"><tspan x="0" y="0">S</tspan><tspan class="cls-19" x="8.29" y="0">T</tspan><tspan class="cls-23" x="15.86" y="0">A</tspan><tspan class="cls-18" x="24.88" y="0">R</tspan><tspan class="cls-28" x="33.19" y="0">T</tspan></text>
-    <path id="marca" class="cls-26" d="m634.86,89.41l-33.84,33.94c-5.57,5.59-14.02,8.85-22.96,8.85h-125.09l2-42.78h179.89Z"/>
+    <path id="logo" class="cls-26" d="m634.86,89.41l-33.84,33.94c-5.57,5.59-14.02,8.85-22.96,8.85h-125.09l2-42.78h179.89Z"/>
   </g>
 </svg>
