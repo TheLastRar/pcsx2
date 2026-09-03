@@ -126,7 +126,6 @@ if(ARCH_X86)
 endif()
 
 if(WIN32)
-	enable_language(ASM_MASM)
 	target_sources(common PRIVATE
 		FastJmp.asm
 		HTTPDownloaderWinHTTP.cpp
@@ -137,6 +136,12 @@ if(WIN32)
 		Windows/WinHostSys.cpp
 		Windows/WinMisc.cpp
 	)
+	if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+		enable_language(ASM_MASM)
+		target_sources(common PRIVATE
+			FastJmp.asm
+		)
+	endif()
 	target_link_libraries(common PUBLIC
 		WIL::WIL
 		winmm
