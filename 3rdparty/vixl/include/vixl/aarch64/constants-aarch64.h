@@ -732,7 +732,7 @@ enum AddSubWithCarryOp {
 };
 
 // Rotate right into flags.
-enum RotateRightIntoFlagsOp {
+enum RotateRightIntoFlagsOp : unsigned {
   RotateRightIntoFlagsFixed = 0x1A000400,
   RotateRightIntoFlagsFMask = 0x1FE07C00,
   RotateRightIntoFlagsMask  = 0xFFE07C10,
@@ -863,7 +863,7 @@ enum UnconditionalBranchOp {
 };
 
 // Unconditional branch to register.
-enum UnconditionalBranchToRegisterOp {
+enum UnconditionalBranchToRegisterOp : unsigned {
   UnconditionalBranchToRegisterFixed = 0xD6000000,
   UnconditionalBranchToRegisterFMask = 0xFE000000,
   UnconditionalBranchToRegisterMask  = 0xFFFFFC00,
@@ -1034,7 +1034,7 @@ enum LoadStorePairAnyOp {
   V(LDP, q,   0x84400000)
 
 // Load/store pair (post, pre and offset.)
-enum LoadStorePairOp {
+enum LoadStorePairOp : unsigned {
   LoadStorePairMask = 0xC4400000,
   LoadStorePairLBit = 1 << 22,
   #define LOAD_STORE_PAIR(A, B, C) \
@@ -1103,7 +1103,7 @@ enum LoadStorePACOp {
 };
 
 // Load literal.
-enum LoadLiteralOp {
+enum LoadLiteralOp : unsigned {
   LoadLiteralFixed = 0x18000000,
   LoadLiteralFMask = 0x3B000000,
   LoadLiteralMask  = 0xFF000000,
@@ -1142,7 +1142,7 @@ enum LoadLiteralOp {
   V(LD, R, q,   0x04C00000)
 
 // Load/store (post, pre, offset and unsigned.)
-enum LoadStoreOp {
+enum LoadStoreOp : unsigned {
   LoadStoreMask = 0xC4C00000,
   LoadStoreVMask = 0x04000000,
   #define LOAD_STORE(A, B, C, D)  \
@@ -1210,7 +1210,7 @@ enum LoadStoreRegisterOffset {
   #undef LOAD_STORE_REGISTER_OFFSET
 };
 
-enum LoadStoreExclusive {
+enum LoadStoreExclusive : unsigned {
   LoadStoreExclusiveFixed = 0x08000000,
   LoadStoreExclusiveFMask = 0x3F000000,
   LoadStoreExclusiveMask  = 0xFFE08000,
@@ -1292,7 +1292,7 @@ enum LoadStoreExclusive {
 };
 
 // Load/store RCpc unscaled offset.
-enum LoadStoreRCpcUnscaledOffsetOp {
+enum LoadStoreRCpcUnscaledOffsetOp : unsigned {
   LoadStoreRCpcUnscaledOffsetFixed = 0x19000000,
   LoadStoreRCpcUnscaledOffsetFMask = 0x3F200C00,
   LoadStoreRCpcUnscaledOffsetMask  = 0xFFE00C00,
@@ -1322,7 +1322,7 @@ enum LoadStoreRCpcUnscaledOffsetOp {
   V(LDUMIN, 0x00007000)
 
 // Atomic memory.
-enum AtomicMemoryOp {
+enum AtomicMemoryOp : unsigned {
   AtomicMemoryFixed = 0x38200000,
   AtomicMemoryFMask = 0x3B200C00,
   AtomicMemoryMask = 0xFFE0FC00,
@@ -1421,7 +1421,7 @@ enum ConditionalSelectOp {
 };
 
 // Data processing 1 source.
-enum DataProcessing1SourceOp {
+enum DataProcessing1SourceOp : unsigned {
   DataProcessing1SourceFixed = 0x5AC00000,
   DataProcessing1SourceFMask = 0x5FE00000,
   DataProcessing1SourceMask  = 0xFFFFFC00,
@@ -1464,7 +1464,7 @@ enum DataProcessing1SourceOp {
 };
 
 // Data processing 2 source.
-enum DataProcessing2SourceOp {
+enum DataProcessing2SourceOp : unsigned {
   DataProcessing2SourceFixed = 0x1AC00000,
   DataProcessing2SourceFMask = 0x5FE00000,
   DataProcessing2SourceMask  = 0xFFE0FC00,
@@ -1707,7 +1707,7 @@ enum FPDataProcessing3SourceOp {
 };
 
 // Conversion between floating point and integer.
-enum FPIntegerConvertOp {
+enum FPIntegerConvertOp : unsigned {
   FPIntegerConvertFixed = 0x1E200000,
   FPIntegerConvertFMask = 0x5F20FC00,
   FPIntegerConvertMask  = 0xFFFFFC00,
@@ -1809,7 +1809,7 @@ enum FPIntegerConvertOp {
 };
 
 // Conversion between fixed point and floating point.
-enum FPFixedPointConvertOp {
+enum FPFixedPointConvertOp : unsigned {
   FPFixedPointConvertFixed = 0x1E000000,
   FPFixedPointConvertFMask = 0x5F200000,
   FPFixedPointConvertMask  = 0xFFFF0000,
