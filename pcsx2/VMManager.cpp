@@ -54,7 +54,9 @@
 #include "common/StringUtil.h"
 #include "common/Threading.h"
 #include "common/Timer.h"
+#ifdef _M_X86
 #include "common/emitter/x86emitter.h"
+#endif
 
 #include "IconsFontAwesome.h"
 #include "IconsPromptFont.h"
