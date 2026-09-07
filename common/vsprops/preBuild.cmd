@@ -37,12 +37,9 @@ FOR /F "tokens=* USEBACKQ" %%i IN (`git rev-parse HEAD`) DO (
   set GIT_HASH=%%i
 )
 
-set OLDTZ=%TZ%
-set TZ=UTC
-FOR /F "tokens=* USEBACKQ" %%i IN (`git log -1 "--format=%%cd" "--date=local"`) DO (
+FOR /F "tokens=* USEBACKQ" %%i IN (`git log -1 "--format=%%cd" "--date=iso-strict"`) DO (
   set GIT_DATE=%%i
 )
-set TZ=%OLDTZ%
 
 SET SIGNATURELINE=// R[%GIT_REV%] H[%GIT_HASH%] T[%GIT_TAG%]
 SET /P EXISTINGLINE=<"%CD%\svnrev.h"

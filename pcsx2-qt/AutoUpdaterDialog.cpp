@@ -142,13 +142,15 @@ QString AutoUpdaterDialog::getCurrentVersion()
 
 QString AutoUpdaterDialog::getCurrentVersionDate()
 {
-	return QString(BuildVersion::GitDate);
+	QDateTime version_timestamp = QDateTime::fromString(BuildVersion::GitDate, Qt::ISODate);
+	return version_timestamp.toString(Qt::TextDate);
 }
 
 QString AutoUpdaterDialog::getCurrentVersionLocalDate()
 {
-	QDateTime t = QDateTime::fromString(getCurrentVersionDate() + " +0000", QStringLiteral("ddd MMM d HH:mm:ss yyyy tt"));
-	return QLocale::system().toString(t.toLocalTime(), QLocale::LongFormat);
+	QString test = getCurrentVersionDate();
+	QDateTime version_timestamp = QDateTime::fromString(BuildVersion::GitDate, Qt::ISODate);
+	return QLocale::system().toString(version_timestamp.toLocalTime(), QLocale::LongFormat);
 }
 
 QString AutoUpdaterDialog::getCurrentUpdateTag() const
@@ -342,7 +344,7 @@ void AutoUpdaterDialog::getLatestReleaseComplete(s32 status_code, std::vector<u8
 					else
 					{
 						m_latest_version = data_object["version"].toString();
-						m_latest_version_timestamp = QDateTime::fromString(data_object["publishedAt"].toString(), QStringLiteral("yyyy-MM-ddThh:mm:ss.zzzt"));
+						m_latest_version_timestamp = QDateTime::fromString(data_object["publishedAt"].toString(), Qt::ISODate);
 						m_download_url = best_asset["url"].toString();
 						m_download_size = best_asset["size"].toInt();
 						found_update_info = true;
