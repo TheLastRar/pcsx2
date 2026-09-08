@@ -156,7 +156,7 @@ D3D_SHADER_MODEL GSDevice12::DetectShaderModelSupport() {
 	// CheckFeatureSupport will fail if the runtime dosen't support a requested shader model.
 	// Loop though ranges of valid shader models until the check succeeds.
 	constexpr std::array<std::array<D3D_SHADER_MODEL, 2>, 2> shader_model_ranges{{
-		{D3D_SHADER_MODEL_6_5, D3D_SHADER_MODEL_6_0},
+		{D3D_SHADER_MODEL_6_6, D3D_SHADER_MODEL_6_0},
 		{D3D_SHADER_MODEL_5_1, D3D_SHADER_MODEL_5_1},
 	}};
 	
