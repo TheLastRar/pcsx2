@@ -2569,6 +2569,7 @@ void GSDevice12::OMSetRenderTargets(GSTexture* rt, GSTexture* ds_as_rt, GSTextur
 		m_current_depth_target != d12Ds || m_current_depth_read_only != depth_read)
 	{
 		EndRenderPass();
+		m_dirty_flags |= DIRTY_FLAG_RENDER_TARGET;
 	}
 	else if (InRenderPass())
 	{
@@ -4349,6 +4350,7 @@ GSTexture12* GSDevice12::SetupPrimitiveTrackingDATE(GSHWDrawConfig& config, Pipe
 
 void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 {
+	EndRenderPass();
 	if (m_enhanced_barriers)
 	{
 		// Enhanced barriers allows for single resource feedback.
@@ -4361,10 +4363,6 @@ void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 	}
 	else
 	{
-		// The DX12 spec notes "You may not read from, or consume, a write that occurred within the same render pass".
-		// The only exception being the implicit reads for render target blending or depth testing.
-		// Thus, in addition to a barrier, we need to end the render pass.
-		EndRenderPass();
 		// Specify null for the after resource as both resources are used after the barrier.
 		// While this may also be true before the barrier, we only write using the main resource.
 		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
@@ -4615,9 +4613,22 @@ void GSDevice12::RenderHW(GSHWDrawConfig& config)
 		GetCommandList().list4->ClearDepthStencilView(draw_ds->GetWriteDescriptor(), D3D12_CLEAR_FLAG_STENCIL, 0.0f, 1, 1, &rect);
 	}
 
-	// Begin render pass if new target or out of the area.
-	if (!InRenderPass())
+	if (need_barrier)
 	{
+		// The DX12 spec notes "You may not read from, or consume, a write that occurred within the same render pass".
+		// The only exception being the implicit reads for render target blending or depth testing (and ROV?).
+		// This allows drivers to move barriers to the beginning of a render pass, which would break feedback rendering.
+		// As of writing, only the WoA Adreno driver has been observed to do this.
+		// Instead, perform this draw without a render pass.
+		EndRenderPass();
+		if (draw_rt)
+			draw_rt->CommitClear();
+		if (draw_ds)
+			draw_ds->CommitClear();
+	}
+	else if (!InRenderPass())
+	{
+		// Begin render pass if new target or out of the area.
 		GSVector4 clear_color = draw_rt ? draw_rt->GetClearForFormat() : GSVector4::zero();
 		if (pipe.ps.colclip_hw)
 		{
