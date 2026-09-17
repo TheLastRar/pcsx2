@@ -238,39 +238,35 @@ struct PS_OUTPUT
 #ifndef BINDLESS
 	Texture2D<float4> Texture : register(t0);
 	Texture2D<float4> Palette : register(t1);
-
-	#if !PS_ROV_COLOR
-		Texture2D<float4> RtTexture : register(t2);
-	#else
-		RasterizerOrderedTexture2D<unorm float4> RtTextureRov : register(u0);
-	#endif
 	Texture2D<float> PrimMinTexture : register(t3);
-
-	#if !PS_ROV_DEPTH
-		Texture2D<float> DepthTexture : register(t4);
-	#else
-		RasterizerOrderedTexture2D<float> DepthTextureRov : register(u1);
-	#endif
-
+	SamplerState TextureSampler : register(s0);
 #else
 	static Texture2D<float4> Texture;
 	static Texture2D<float4> Palette;
-
-	#if !PS_ROV_COLOR
-		static Texture2D<float4> RtTexture;
-	#else
-		static RasterizerOrderedTexture2D<unorm float4> RtTextureRov;
-	#endif
 	static Texture2D<float> PrimMinTexture;
-
-	#if !PS_ROV_DEPTH
-		static Texture2D<float> DepthTexture;
-	#else
-		static RasterizerOrderedTexture2D<float> DepthTextureRov;
-	#endif
+	static SamplerState TextureSampler;
 #endif
 
-SamplerState TextureSampler : register(s0);
+// Bindless and ROV don't play nice with each other
+#if !PS_ROV_COLOR
+	#ifndef BINDLESS
+		Texture2D<float4> RtTexture : register(t3);
+	#else
+		static Texture2D<float4> RtTexture;
+	#endif
+#else
+	RasterizerOrderedTexture2D<unorm float4> RtTextureRov : register(u0);
+#endif
+
+#if !PS_ROV_DEPTH
+	#ifndef BINDLESS
+		Texture2D<float> DepthTexture : register(t3);
+	#else
+		static Texture2D<float> DepthTexture;
+	#endif
+#else
+	RasterizerOrderedTexture2D<unorm float4> DepthTextureRov : register(u1);
+#endif
 
 #if PS_ROV_COLOR
 static float4 rov_rt_value;
@@ -317,11 +313,10 @@ cbuffer cb2 : register(b2)
 {
 	uint TexIdx;
 	uint PalIdx;
-	uint RtIdx;
 	uint PrimIdx;
+	uint RtIdx;
 	uint DepthIdx;
-	uint RovRtIdx;
-	uint RovDepthIdx;
+	uint SamplerIdx;
 };
 #endif
 
@@ -1376,15 +1371,12 @@ void ps_main(PS_INPUT input)
 	Palette = ResourceDescriptorHeap[PalIdx];
 	PrimMinTexture = ResourceDescriptorHeap[PrimIdx];
 	#if !PS_ROV_COLOR
-	RtTexture = ResourceDescriptorHeap[RtIdx];
-	#else
-	RtTextureRov = ResourceDescriptorHeap[RovRtIdx];
+		RtTexture = ResourceDescriptorHeap[RtIdx];
 	#endif
 	#if !PS_ROV_DEPTH
-	DepthTexture = ResourceDescriptorHeap[DepthIdx];
-	#else
-	DepthTextureRov = ResourceDescriptorHeap[RovDepthIdx];
+		DepthTexture = ResourceDescriptorHeap[DepthIdx];
 	#endif
+	TextureSampler = SamplerDescriptorHeap[SamplerIdx];
 #endif
 
 	// Must floor before depth testing.

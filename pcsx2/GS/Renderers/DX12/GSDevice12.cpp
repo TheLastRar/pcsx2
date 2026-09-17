@@ -2841,17 +2841,18 @@ bool GSDevice12::CreateRootSignatures()
 	if (m_dynamic_resources)
 	{
 		rsb.SetViewHeapIndexedFlag();
-		// Source (0), Palette (1), RT (2), PrimID (3) Depth(4) RT UAV (5) Depth UAV (6)
-		rsb.Add32BitConstants(2, NUM_TOTAL_TFX_TEXTURES, D3D12_SHADER_VISIBILITY_PIXEL);
-		// TODO: also make bindless?
-		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
-		rsb.Add32BitConstants(3, 0, D3D12_SHADER_VISIBILITY_PIXEL); // Pad
+		// Source (0) / Palette (1) / PrimID (2) / RT (3) / Depth(4) / Samplers
+		rsb.Add32BitConstants(2, NUM_TFX_TEXTURES + NUM_TFX_RT_TEXTURES + NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
+		// RT UAV (u0)
+		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 0, 1, D3D12_SHADER_VISIBILITY_PIXEL);
+		// Depth UAV (u1)
+		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1, D3D12_SHADER_VISIBILITY_PIXEL);
 	}
 	else
 	{
 		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 0, 2, D3D12_SHADER_VISIBILITY_PIXEL); // Source (t0) / Palette (t2)
 		rsb.AddDescriptorTable(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 0, NUM_TFX_SAMPLERS, D3D12_SHADER_VISIBILITY_PIXEL);
-		// RT (t2) / PrimID (t3) / Depth (t4) / RT UAV (u0) / Depth UAV (u1)
+		// PrimID (t2) / RT (t3) / Depth (t4) / RT UAV (u0) / Depth UAV (u1)
 		D3D12_DESCRIPTOR_RANGE_TYPE rt_types[2] = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, D3D12_DESCRIPTOR_RANGE_TYPE_UAV };
 		u32 rt_start_regs[2] = { 2, 0 };
 		u32 rt_num_regs[2] = { 3, 2 };
@@ -3688,7 +3689,8 @@ void GSDevice12::PSSetShaderResource(int i, GSTexture* sr, bool check_state, Res
 		return;
 
 	m_tfx_textures[i] = handle;
-	m_dirty_flags |= (i < NUM_TFX_TEXTURES) ? DIRTY_FLAG_TFX_TEXTURES : DIRTY_FLAG_TFX_RT_TEXTURES;
+	m_dirty_flags |= (i < NUM_TFX_TEXTURES) ? DIRTY_FLAG_TFX_TEXTURES : 
+		((i < (NUM_TFX_TEXTURES + NUM_TFX_RT_TEXTURES)) ? DIRTY_FLAG_TFX_RT_TEXTURES : DIRTY_FLAG_TFX_RT_UAV_TEXTURES);
 }
 
 void GSDevice12::PSSetSampler(GSHWDrawConfig::SamplerSelector sel)
@@ -3841,7 +3843,7 @@ void GSDevice12::UnbindTexture(GSTexture12* tex)
 			m_tfx_textures[i] == tex->GetUAVDescriptor())
 		{
 			m_tfx_textures[i] = m_null_texture->GetSRVDescriptor();
-			m_dirty_flags |= DIRTY_FLAG_TFX_RT_TEXTURES;
+			m_dirty_flags |= DIRTY_FLAG_TFX_RT_TEX_TEXTURES;
 		}
 	}
 
@@ -3851,7 +3853,7 @@ void GSDevice12::UnbindTexture(GSTexture12* tex)
 		if (m_tfx_textures[i] == tex->GetUAVDescriptor())
 		{
 			m_tfx_textures[i] = m_null_texture->GetUAVDescriptor();
-			m_dirty_flags |= DIRTY_FLAG_TFX_RT_TEXTURES;
+			m_dirty_flags |= DIRTY_FLAG_TFX_RT_UAV_TEXTURES;
 		}
 	}
 
@@ -4200,7 +4202,7 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 
 		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
 		{
-			if (!GetTextureGroupDescriptors(&m_tfx_rt_textures_handle_gpu, m_tfx_textures.data() + 2, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES))
+			if (!GetTextureGroupDescriptors(&m_tfx_rt_textures_handle_gpu, m_tfx_textures.data() + NUM_TFX_TEXTURES, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES))
 			{
 				ExecuteCommandListAndRestartRenderPass(false, "Ran out of TFX RT descriptor descriptor groups");
 				return ApplyTFXState(true);
@@ -4240,16 +4242,23 @@ bool GSDevice12::ApplyTFXState(bool already_execed)
 		if (flags & DIRTY_FLAG_TFX_TEXTURES)
 		{
 			std::array<u32, NUM_TFX_TEXTURES> texIndices{m_tfx_textures[0].index, m_tfx_textures[1].index};
-			cmdlist->SetGraphicsRoot32BitConstants(4, NUM_TFX_TEXTURES, texIndices.data(), 0);
+			cmdlist->SetGraphicsRoot32BitConstants(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, NUM_TFX_TEXTURES, texIndices.data(), 0);
 		}
-		if (flags & DIRTY_FLAG_TFX_RT_TEXTURES)
+		if (flags & DIRTY_FLAG_TFX_RT_TEX_TEXTURES)
 		{
-			std::array<u32, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index, m_tfx_textures[4].index, m_tfx_textures[5].index, m_tfx_textures[6].index};
-			cmdlist->SetGraphicsRoot32BitConstants(4, NUM_TFX_RT_TEXTURES + NUM_TFX_UAV_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
+			std::array<u32, NUM_TFX_RT_TEXTURES> texIndices{m_tfx_textures[2].index, m_tfx_textures[3].index, m_tfx_textures[4].index};
+			cmdlist->SetGraphicsRoot32BitConstants(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, NUM_TFX_RT_TEXTURES, texIndices.data(), NUM_TFX_TEXTURES);
 		}
 
 		if (flags & DIRTY_FLAG_SAMPLERS_DESCRIPTOR_TABLE)
-			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_samplers_handle_gpu);
+		{
+			cmdlist->SetGraphicsRoot32BitConstants(TFX_ROOT_SIGNATURE_PARAM_PS_TEXTURES, 1, &m_tfx_samplers_handle_gpu.index, NUM_TFX_TEXTURES + NUM_TFX_RT_TEXTURES);
+		}
+		if (flags & DIRTY_FLAG_TFX_RT_UAV_TEXTURES)
+		{
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_SAMPLERS, m_tfx_textures[TEXTURE_RT_UAV].gpu_handle);
+			cmdlist->SetGraphicsRootDescriptorTable(TFX_ROOT_SIGNATURE_PARAM_PS_RT_TEXTURES, m_tfx_textures[TEXTURE_DEPTH_UAV].gpu_handle);
+		}
 	}
 	else
 	{
