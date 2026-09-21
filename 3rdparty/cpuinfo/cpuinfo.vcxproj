@@ -31,7 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="src\arm\uarch.c">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\arm\windows\init-by-logical-sys-info.c">
       <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
@@ -79,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\arm\api.h">
-      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="src\arm\windows\windows-arm-init.h">
       <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
