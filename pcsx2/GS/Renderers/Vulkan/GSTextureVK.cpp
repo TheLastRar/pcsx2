@@ -202,7 +202,7 @@ void GSTextureVK::Destroy(bool defer)
 
 	if (IsRenderTargetOrDepthStencil())
 	{
-		for (const auto& [other_tex, fb, feedback_color, feedback_depth] : m_framebuffers)
+		for (const auto& [other_tex, fb, feedback_color, feedback_depth, subpasses] : m_framebuffers)
 		{
 			if (other_tex)
 			{
@@ -792,18 +792,18 @@ void GSTextureVK::TransitionSubresourcesToLayout(
 	}
 }
 
-VkFramebuffer GSTextureVK::GetFramebuffer(bool feedback_loop)
+VkFramebuffer GSTextureVK::GetFramebuffer(bool feedback_loop, u32 num_subpasses)
 {
-	return GetLinkedFramebuffer(nullptr, feedback_loop, false);
+	return GetLinkedFramebuffer(nullptr, feedback_loop, false, num_subpasses);
 }
 
-VkFramebuffer GSTextureVK::GetLinkedFramebuffer(GSTextureVK* depth_texture, bool feedback_loop_color, bool feedback_loop_depth)
+VkFramebuffer GSTextureVK::GetLinkedFramebuffer(GSTextureVK* depth_texture, bool feedback_loop_color, bool feedback_loop_depth, u32 num_subpasses)
 {
 	pxAssertRel(!IsTexture(), "Texture is a render target");
 
-	for (const auto& [other_tex, fb, other_feedback_loop_color, other_feedback_loop_depth] : m_framebuffers)
+	for (const auto& [other_tex, fb, other_feedback_loop_color, other_feedback_loop_depth, other_subpasses] : m_framebuffers)
 	{
-		if (other_tex == depth_texture && other_feedback_loop_color == feedback_loop_color && other_feedback_loop_depth == feedback_loop_depth)
+		if (other_tex == depth_texture && other_feedback_loop_color == feedback_loop_color && other_feedback_loop_depth == feedback_loop_depth && other_subpasses == num_subpasses)
 			return fb;
 	}
 
@@ -811,7 +811,7 @@ VkFramebuffer GSTextureVK::GetLinkedFramebuffer(GSTextureVK* depth_texture, bool
 		!IsDepthStencil() ? m_vk_format : VK_FORMAT_UNDEFINED,
 		!IsDepthStencil() ? (depth_texture ? depth_texture->m_vk_format : VK_FORMAT_UNDEFINED) : m_vk_format,
 		VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_LOAD,
-		VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, feedback_loop_color, feedback_loop_depth);
+		VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, feedback_loop_color, feedback_loop_depth, num_subpasses);
 	if (!rp)
 		return VK_NULL_HANDLE;
 
@@ -826,9 +826,9 @@ VkFramebuffer GSTextureVK::GetLinkedFramebuffer(GSTextureVK* depth_texture, bool
 	if (!fb)
 		return VK_NULL_HANDLE;
 
-	m_framebuffers.emplace_back(depth_texture, fb, feedback_loop_color, feedback_loop_depth);
+	m_framebuffers.emplace_back(depth_texture, fb, feedback_loop_color, feedback_loop_depth, num_subpasses);
 	if (depth_texture)
-		depth_texture->m_framebuffers.emplace_back(this, fb, feedback_loop_color, feedback_loop_depth);
+		depth_texture->m_framebuffers.emplace_back(this, fb, feedback_loop_color, feedback_loop_depth, num_subpasses);
 	return fb;
 }
 

@@ -1021,7 +1021,7 @@ bool GSDeviceVK::CreateGlobalDescriptorPool()
 VkRenderPass GSDeviceVK::GetRenderPass(VkFormat color_format, VkFormat depth_format, VkAttachmentLoadOp color_load_op,
 	VkAttachmentStoreOp color_store_op, VkAttachmentLoadOp depth_load_op, VkAttachmentStoreOp depth_store_op,
 	VkAttachmentLoadOp stencil_load_op, VkAttachmentStoreOp stencil_store_op, bool color_feedback_loop,
-	bool depth_sampling)
+	bool depth_sampling, u32 num_subpasses)
 {
 	RenderPassCacheKey key = {};
 	key.color_format = color_format;
@@ -1034,6 +1034,7 @@ VkRenderPass GSDeviceVK::GetRenderPass(VkFormat color_format, VkFormat depth_for
 	key.stencil_store_op = stencil_store_op;
 	key.color_feedback_loop = color_feedback_loop;
 	key.depth_sampling = depth_sampling;
+	key.num_subpasses = num_subpasses;
 
 	auto it = m_render_pass_cache.find(key.key);
 	if (it != m_render_pass_cache.end())
@@ -1065,6 +1066,7 @@ VkRenderPass GSDeviceVK::GetRenderPassForRestarting(VkRenderPass pass)
 		if (fit != m_render_pass_cache.end())
 			return fit->second;
 
+		pxAssert(modified_key.num_subpasses == 1);
 		return CreateCachedRenderPass(modified_key);
 	}
 
@@ -1731,11 +1733,47 @@ VkRenderPass GSDeviceVK::CreateCachedRenderPass(RenderPassCacheKey key)
 	const VkSubpassDescription subpass = {subpass_flags, VK_PIPELINE_BIND_POINT_GRAPHICS, num_subpass_inputs,
 		num_subpass_inputs ? input_reference.data() : nullptr, color_reference_ptr ? 1u : 0u,
 		color_reference_ptr ? color_reference_ptr : nullptr, nullptr, depth_reference_ptr, 0, nullptr};
-	const VkRenderPassCreateInfo pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0u, num_attachments,
-		attachments.data(), 1u, &subpass, num_subpass_dependencies, num_subpass_dependencies ? subpass_dependency.data() : nullptr};
 
+	VkResult res;
 	VkRenderPass pass;
-	const VkResult res = vkCreateRenderPass(m_device, &pass_info, nullptr, &pass);
+
+	// If Buggy intel
+	if (key.num_subpasses > 1)
+	{
+		pxAssert(num_subpass_dependencies > 0);
+
+		std::vector<VkSubpassDependency> subpass_dependency_all;
+		std::vector<VkSubpassDescription> subpasses;
+		subpass_dependency_all.reserve((key.num_subpasses - 1) * num_subpass_dependencies);
+		subpasses.reserve(key.num_subpasses);
+
+		for (uint i = 0; i < (key.num_subpasses - 1u); i++)
+		{
+			for (uint y = 0; y < num_subpass_dependencies; y++)
+			{
+				VkSubpassDependency subpass_dep = subpass_dependency[y];
+				subpass_dep.srcSubpass = i;
+				subpass_dep.dstSubpass = i + 1;
+				subpass_dependency_all.push_back(std::move(subpass_dep));
+			}
+		}
+
+		for (uint i = 0; i < key.num_subpasses; i++)
+			subpasses.push_back(subpass);
+
+		const VkRenderPassCreateInfo pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0u, num_attachments,
+			attachments.data(), key.num_subpasses, subpasses.data(), static_cast<u32>(subpass_dependency_all.size()), subpass_dependency_all.data()};
+
+		res = vkCreateRenderPass(m_device, &pass_info, nullptr, &pass);
+	}
+	else
+	{
+		const VkRenderPassCreateInfo pass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0u, num_attachments,
+			attachments.data(), 1u, &subpass, num_subpass_dependencies, num_subpass_dependencies ? subpass_dependency.data() : nullptr};
+
+		res = vkCreateRenderPass(m_device, &pass_info, nullptr, &pass);
+	}
+
 	if (res != VK_SUCCESS)
 	{
 		LOG_VULKAN_ERROR(res, "vkCreateRenderPass failed: ");
@@ -2516,7 +2554,7 @@ GSDevice::PresentResult GSDeviceVK::BeginPresent(bool frame_skip)
 	if (!frame_skip && m_current)
 		static_cast<GSTextureVK*>(m_current)->TransitionToLayout(GSTextureVK::Layout::ShaderReadOnly);
 
-	const VkFramebuffer fb = swap_chain_texture->GetFramebuffer(false);
+	const VkFramebuffer fb = swap_chain_texture->GetFramebuffer(false, 1u);
 	if (fb == VK_NULL_HANDLE)
 		return GSDevice::PresentResult::FrameSkipped;
 
@@ -3625,13 +3663,14 @@ void GSDeviceVK::VSSetIndexBuffer(const void* index, size_t count)
 
 void GSDeviceVK::OMSetRenderTargets(
 	GSTexture* rt, GSTexture* ds, const GSVector4i& scissor, FeedbackLoopFlag feedback_loop,
-	const GSVector2i& viewport_size)
+	const GSVector2i& viewport_size, u32 num_subpasses)
 {
 	GSTextureVK* vkRt = static_cast<GSTextureVK*>(rt);
 	GSTextureVK* vkDs = static_cast<GSTextureVK*>(ds);
 
 	if (m_current_render_target != vkRt || m_current_depth_target != vkDs ||
 		m_current_framebuffer_feedback_loop != feedback_loop ||
+		m_current_subpass_count != num_subpasses ||
 		m_current_framebuffer == VK_NULL_HANDLE)
 	{
 		// framebuffer change or feedback loop enabled/disabled
@@ -3642,13 +3681,15 @@ void GSDeviceVK::OMSetRenderTargets(
 			m_current_framebuffer =
 				vkRt->GetLinkedFramebuffer(vkDs,
 					(feedback_loop & FeedbackLoopFlag_ReadAndWriteRT) != 0,
-					(feedback_loop & (FeedbackLoopFlag_ReadAndWriteDepth | FeedbackLoopFlag_ReadDepth)) != 0);
+					(feedback_loop & (FeedbackLoopFlag_ReadAndWriteDepth | FeedbackLoopFlag_ReadDepth)) != 0,
+					num_subpasses);
 		}
 		else if (vkDs)
 		{
 			pxAssert(!(feedback_loop & FeedbackLoopFlag_ReadAndWriteRT));
 			m_current_framebuffer = vkDs->GetLinkedFramebuffer(
-				nullptr, false, (feedback_loop & (FeedbackLoopFlag_ReadAndWriteDepth | FeedbackLoopFlag_ReadDepth)) != 0);
+				nullptr, false, (feedback_loop & (FeedbackLoopFlag_ReadAndWriteDepth | FeedbackLoopFlag_ReadDepth)) != 0,
+				num_subpasses);
 		}
 		else
 		{
@@ -3735,6 +3776,7 @@ void GSDeviceVK::OMSetRenderTargets(
 	m_current_render_target = vkRt;
 	m_current_depth_target = vkDs;
 	m_current_framebuffer_feedback_loop = feedback_loop;
+	m_current_subpass_count = num_subpasses;
 
 	if (!InRenderPass())
 	{
@@ -5080,6 +5122,31 @@ VkPipeline GSDeviceVK::CreateTFXPipeline(const PipelineSelector& p)
 		// DATE image prepass
 		gpb.SetRenderPass(m_primid_image_setup_render_passes[p.ds][0], 0);
 	}
+	else if (p.num_subpasses > 1)
+	{
+		const VkFormat rt_format = LookupNativeFormat(GSTexture::Format::Color);
+		const VkFormat colclip_rt_format = LookupNativeFormat(GSTexture::Format::ColorClip);
+		const VkFormat depth_format = LookupNativeFormat(GSTexture::Format::DepthStencil);
+
+		const VkFormat rp_rt_format =
+			(p.rt != 0) ? ((p.ps.colclip_hw != 0) ? colclip_rt_format : rt_format) : VK_FORMAT_UNDEFINED;
+		const VkFormat rp_depth_format = (p.ds != 0) ? depth_format : VK_FORMAT_UNDEFINED;
+
+		const VkAttachmentLoadOp opc = (!p.dss.date || !m_features.stencil_buffer) ?
+		        VK_ATTACHMENT_LOAD_OP_DONT_CARE :
+		        VK_ATTACHMENT_LOAD_OP_LOAD;
+
+		gpb.SetRenderPass(
+			GetRenderPass(rp_rt_format, rp_depth_format,
+				p.rt ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				p.rt ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				p.ds ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				p.ds ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				(p.dss.date && m_features.stencil_buffer) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				p.IsRTFeedbackLoop(), p.IsTestingAndSamplingDepth(), p.num_subpasses),
+			p.subpass_index);
+	}
 	else
 	{
 		gpb.SetRenderPass(
@@ -5315,7 +5382,7 @@ void GSDeviceVK::ExecuteCommandBufferAndRestartPresent(bool wait_for_completion,
 
 	GSTextureVK* swap_chain_texture = m_swap_chain->GetCurrentTexture();
 
-	const VkFramebuffer fb = swap_chain_texture->GetFramebuffer(false);
+	const VkFramebuffer fb = swap_chain_texture->GetFramebuffer(false, 1u);
 	pxAssert(fb);
 
 	const VkRenderPassBeginInfo rp = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr,
@@ -6320,16 +6387,44 @@ void GSDeviceVK::RenderHW(GSHWDrawConfig& config)
 	
 	PSSetROVs(draw_rt_rov, draw_ds_rov, config.ps.HasColorOutput(), config.ps.HasDepthROVWrite());
 
-	OMSetRenderTargets(draw_rt, draw_ds, config.scissor, static_cast<FeedbackLoopFlag>(pipe.feedback_loop_flags), rtsize);
+	OMSetRenderTargets(draw_rt, draw_ds, config.scissor, static_cast<FeedbackLoopFlag>(pipe.feedback_loop_flags), rtsize, pipe.num_subpasses);
+
+	if (pipe.num_subpasses > 1)
+		EndRenderPass();
 
 	// Begin render pass if new target or out of the area.
 	if (!InRenderPass())
 	{
 		const VkAttachmentLoadOp rt_op = GetLoadOpForTexture(draw_rt);
 		const VkAttachmentLoadOp ds_op = GetLoadOpForTexture(draw_ds);
-		const VkRenderPass rp = GetTFXRenderPass(pipe.rt, pipe.ds, pipe.ps.colclip_hw,
-			config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::Stencil, pipe.IsRTFeedbackLoop(),
-			pipe.IsTestingAndSamplingDepth(), rt_op, ds_op);
+
+		VkRenderPass rp; 
+		if (pipe.num_subpasses > 1)
+		{
+			const VkFormat rt_format = LookupNativeFormat(GSTexture::Format::Color);
+			const VkFormat colclip_rt_format = LookupNativeFormat(GSTexture::Format::ColorClip);
+			const VkFormat depth_format = LookupNativeFormat(GSTexture::Format::DepthStencil);
+
+			const VkFormat rp_rt_format =
+				(pipe.rt != 0) ? ((pipe.ps.colclip_hw != 0) ? colclip_rt_format : rt_format) : VK_FORMAT_UNDEFINED;
+			const VkFormat rp_depth_format = (pipe.ds != 0) ? depth_format : VK_FORMAT_UNDEFINED;
+
+			rp = GetRenderPass(rp_rt_format, rp_depth_format,
+				rt_op,
+				pipe.rt ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				ds_op,
+				config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::Stencil 
+					? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				(pipe.dss.date && m_features.stencil_buffer) ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				pipe.IsRTFeedbackLoop(), pipe.IsTestingAndSamplingDepth(), pipe.num_subpasses);
+		}
+		else
+		{
+			rp = GetTFXRenderPass(pipe.rt, pipe.ds, pipe.ps.colclip_hw,
+				config.destination_alpha == GSHWDrawConfig::DestinationAlphaMode::Stencil, pipe.IsRTFeedbackLoop(),
+				pipe.IsTestingAndSamplingDepth(), rt_op, ds_op);
+		}
 		const bool is_clearing_rt = (rt_op == VK_ATTACHMENT_LOAD_OP_CLEAR || ds_op == VK_ATTACHMENT_LOAD_OP_CLEAR);
 
 		// Only draw to the active area of the colclip hw target. Except when depth is cleared, we need to use the full
@@ -6394,7 +6489,7 @@ void GSDeviceVK::RenderHW(GSHWDrawConfig& config)
 
 	// now we can do the actual draw
 	if (BindDrawPipeline(pipe))
-		SendHWDraw(config, pipe.IsRTFeedbackLoop() ? draw_rt : nullptr, pipe.IsDepthFeedbackLoop() ? draw_ds : nullptr,
+		SendHWDraw(config, pipe, pipe.IsRTFeedbackLoop() ? draw_rt : nullptr, pipe.IsDepthFeedbackLoop() ? draw_ds : nullptr,
 			config.require_one_barrier, config.require_full_barrier);
 
 	// blend second pass
@@ -6430,10 +6525,13 @@ void GSDeviceVK::RenderHW(GSHWDrawConfig& config)
 		pipe.bs = config.blend;
 		if (BindDrawPipeline(pipe))
 		{
-			SendHWDraw(config, pipe.IsRTFeedbackLoop() ? draw_rt : nullptr, pipe.IsDepthFeedbackLoop() ? draw_ds : nullptr,
+			SendHWDraw(config, pipe, pipe.IsRTFeedbackLoop() ? draw_rt : nullptr, pipe.IsDepthFeedbackLoop() ? draw_ds : nullptr,
 				config.alpha_second_pass.require_one_barrier, config.alpha_second_pass.require_full_barrier);
 		}
 	}
+
+	//if (pipe.num_subpasses > 1)
+	//	EndRenderPass();
 
 	if (draw_rt_clone)
 		Recycle(draw_rt_clone);
@@ -6508,6 +6606,7 @@ void GSDeviceVK::UpdateHWPipelineSelector(GSHWDrawConfig& config, PipelineSelect
 	pipe.ds = config.ds != nullptr && !config.ps.HasDepthROV();
 	pipe.line_width = config.line_expand;
 	pipe.feedback_loop_flags = FeedbackLoopFlag_None;
+	pipe.num_subpasses = 1u;
 	if (m_features.texture_barrier && (config.require_one_barrier || config.require_full_barrier))
 	{
 		if (config.IsFeedbackLoopRT(config.ps))
@@ -6515,11 +6614,19 @@ void GSDeviceVK::UpdateHWPipelineSelector(GSHWDrawConfig& config, PipelineSelect
 
 		if (config.IsFeedbackLoopDepth(config.ps))
 			pipe.feedback_loop_flags |= FeedbackLoopFlag_ReadAndWriteDepth;
+
+		pipe.num_subpasses += config.require_full_barrier ? static_cast<u32>(config.drawlist->size()) : 1u;
+
+		if (config.alpha_second_pass.require_full_barrier)
+			pipe.num_subpasses += (static_cast<u32>(config.drawlist->size()));
+		else if (config.alpha_second_pass.require_one_barrier)
+			pipe.num_subpasses += 1;
 	}
 	if (pipe.ds && !(pipe.feedback_loop_flags & FeedbackLoopFlag_ReadAndWriteDepth))
 	{
 		pipe.feedback_loop_flags |= (config.tex && config.tex == config.ds) ? FeedbackLoopFlag_ReadDepth : FeedbackLoopFlag_None;
 	}
+	pipe.subpass_index = 0u;
 
 	// enable point size in the vertex shader if we're rendering points regardless of upscaling.
 	pipe.vs.point_size |= (config.topology == GSHWDrawConfig::Topology::Point);
@@ -6575,7 +6682,7 @@ VkDependencyFlags GSDeviceVK::GetFeedbackBarrierDependencyFlags() const
 	                                 VK_DEPENDENCY_BY_REGION_BIT;
 }
 
-void GSDeviceVK::SendHWDraw(const GSHWDrawConfig& config, GSTextureVK* draw_rt, GSTextureVK* draw_ds,
+void GSDeviceVK::SendHWDraw(const GSHWDrawConfig& config, PipelineSelector& pipe, GSTextureVK* draw_rt, GSTextureVK* draw_ds,
 	bool one_barrier, bool full_barrier)
 {
 	if (!m_features.texture_barrier) [[unlikely]]
@@ -6607,6 +6714,7 @@ void GSDeviceVK::SendHWDraw(const GSHWDrawConfig& config, GSTextureVK* draw_rt, 
 	}
 
 	const auto IssueBarriers = [&]() {
+		/*
 		if (draw_rt)
 		{
 			vkCmdPipelineBarrier(GetCurrentCommandBuffer(),
@@ -6619,6 +6727,10 @@ void GSDeviceVK::SendHWDraw(const GSHWDrawConfig& config, GSTextureVK* draw_rt, 
 				VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
 				VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, barrier_flags, 0, nullptr, 0, nullptr, 1, &barriers[1]);
 		}
+		*/
+		vkCmdNextSubpass(GetCurrentCommandBuffer(), VK_SUBPASS_CONTENTS_INLINE);
+		pipe.subpass_index++;
+		BindDrawPipeline(pipe);
 	};
 
 	if (full_barrier)

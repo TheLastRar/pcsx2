@@ -90,7 +90,7 @@ public:
 		VkAttachmentStoreOp depth_store_op = VK_ATTACHMENT_STORE_OP_STORE,
 		VkAttachmentLoadOp stencil_load_op = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 		VkAttachmentStoreOp stencil_store_op = VK_ATTACHMENT_STORE_OP_DONT_CARE, bool color_feedback_loop = false,
-		bool depth_sampling = false);
+		bool depth_sampling = false, u32 num_subpasses = 1);
 
 	// Gets a non-clearing version of the specified render pass. Slow, don't call in hot path.
 	VkRenderPass GetRenderPassForRestarting(VkRenderPass pass);
@@ -177,9 +177,11 @@ private:
 			u32 stencil_store_op : 1;
 			u32 color_feedback_loop : 1;
 			u32 depth_sampling : 1;
+
+			u32 num_subpasses;
 		};
 
-		u32 key;
+		u64 key;
 	};
 
 	using ExtensionList = std::vector<const char*>;
@@ -297,7 +299,7 @@ private:
 
 	bool m_last_submit_failed = false;
 
-	std::map<u32, VkRenderPass> m_render_pass_cache;
+	std::map<u64, VkRenderPass> m_render_pass_cache;
 
 	VkDebugUtilsMessengerEXT m_debug_messenger_callback = VK_NULL_HANDLE;
 
@@ -349,9 +351,12 @@ public:
 				u32 ds : 1;
 				u32 line_width : 1;
 				u32 feedback_loop_flags : 3;
+
+				u16 num_subpasses;
+				u16 subpass_index;
 			};
 
-			u32 key;
+			u64 key;
 		};
 
 		GSHWDrawConfig::BlendState bs;
@@ -633,7 +638,8 @@ public:
 	void PSSetSampler(GSHWDrawConfig::SamplerSelector sel);
 
 	void OMSetRenderTargets(GSTexture* rt, GSTexture* ds, const GSVector4i& scissor,
-		FeedbackLoopFlag feedback_loop = FeedbackLoopFlag_None, const GSVector2i& viewport_size = {});
+		FeedbackLoopFlag feedback_loop = FeedbackLoopFlag_None, const GSVector2i& viewport_size = {},
+		u32 num_subpasses = 1u);
 
 	void SetVSConstantBuffer(const GSHWDrawConfig::VSConstantBuffer& cb);
 	void SetPSConstantBuffer(const GSHWDrawConfig::PSConstantBuffer& cb);
@@ -646,7 +652,7 @@ public:
 	VkImageMemoryBarrier GetColorBufferFeedbackBarrier(GSTextureVK* rt) const;
 	VkImageMemoryBarrier GetDepthStencilBufferFeedbackBarrier(GSTextureVK* ds) const;
 	VkDependencyFlags GetFeedbackBarrierDependencyFlags() const;
-	void SendHWDraw(const GSHWDrawConfig& config, GSTextureVK* draw_rt, GSTextureVK* draw_ds,
+	void SendHWDraw(const GSHWDrawConfig& config, PipelineSelector& pipe, GSTextureVK* draw_rt, GSTextureVK* draw_ds,
 		bool one_barrier, bool full_barrier);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -754,6 +760,7 @@ private:
 	GSTextureVK* m_current_render_target = nullptr;
 	GSTextureVK* m_current_depth_target = nullptr;
 	VkFramebuffer m_current_framebuffer = VK_NULL_HANDLE;
+	u32 m_current_subpass_count = 1u;
 	VkRenderPass m_current_render_pass = VK_NULL_HANDLE;
 	GSVector4i m_current_render_pass_area = GSVector4i::zero();
 
