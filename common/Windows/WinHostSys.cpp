@@ -153,8 +153,11 @@ std::unique_ptr<SharedMemoryMappingArea> SharedMemoryMappingArea::Create(size_t 
 
 	return std::unique_ptr<SharedMemoryMappingArea>(new SharedMemoryMappingArea(static_cast<u8*>(alloc), size, size / __pagesize));
 }
-
+#ifdef _M_ARM64EC
+u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode, bool Arm64EC)
+#else
 u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode)
+#endif
 {
 	pxAssert(static_cast<u8*>(map_base) >= m_base_ptr && static_cast<u8*>(map_base) < (m_base_ptr + m_size));
 
@@ -212,7 +215,13 @@ u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* ma
 	}
 	else
 	{
+#ifdef _M_ARM64EC
+		//Arm64EC = false;
+		MEM_EXTENDED_PARAMETER MemEx{.Type = MemExtendedParameterAttributeFlags, .ULong64 = MEM_EXTENDED_PARAMETER_EC_CODE};
+		if (!VirtualAlloc2(GetCurrentProcess(), map_base, map_size, MEM_RESERVE | MEM_COMMIT | MEM_REPLACE_PLACEHOLDER, Arm64EC ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE, Arm64EC ? &MemEx : nullptr, Arm64EC ? 1 : 0))
+#else
 		if (!VirtualAlloc2(GetCurrentProcess(), map_base, map_size, MEM_RESERVE | MEM_COMMIT | MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, nullptr, 0))
+#endif // _M_ARM64EC
 		{
 			Console.Error("(SharedMemoryMappingArea) VirtualAlloc2() failed: %u", GetLastError());
 			return nullptr;
@@ -220,7 +229,11 @@ u8* SharedMemoryMappingArea::Map(void* file_handle, size_t file_offset, void* ma
 	}
 
 	const DWORD prot = ConvertToWinApi(mode);
+#ifdef _M_ARM64EC
+	if (prot != (Arm64EC ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE))
+#else
 	if (prot != PAGE_READWRITE)
+#endif
 	{
 		DWORD old_prot;
 		if (!VirtualProtect(map_base, map_size, prot, &old_prot))

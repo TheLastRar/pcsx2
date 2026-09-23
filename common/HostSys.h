@@ -150,7 +150,12 @@ public:
 	__fi u8* OffsetPointer(size_t offset) const { return m_base_ptr + offset; }
 	__fi u8* PagePointer(size_t page) const { return m_base_ptr + __pagesize * page; }
 
+#ifdef _M_ARM64EC
+	u8* Map(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode, bool Arm64EC = false);
+#else
 	u8* Map(void* file_handle, size_t file_offset, void* map_base, size_t map_size, const PageProtectionMode& mode);
+#endif // _M_ARM64EC
+
 	bool Unmap(void* map_base, size_t map_size, bool is_file = true);
 
 private:
