@@ -109,12 +109,48 @@ bool SysMemory::AllocateMemoryMap()
 		return false;
 	}
 
+#ifndef _M_ARM64EC
 	if ((s_code_memory = s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize), HostMemoryMap::CodeSize, PageAccess_Any())) == nullptr)
 	{
 		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
 		ReleaseMemoryMap();
 		return false;
 	}
+#else
+	// Split out VIF and SW rec areas into a separate mapping for Arm64EC, so that we can mark as ARM64EC code.
+
+	// X64 EE + IOP
+	if ((s_code_memory = s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize), HostMemoryMap::VIF0recOffset, PageAccess_Any())) == nullptr)
+	{
+		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
+		ReleaseMemoryMap();
+		return false;
+	}
+
+	// Arm64 VIF0 + VIF1
+	if (s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize + HostMemoryMap::VIF0recOffset), HostMemoryMap::VIF0recSize + HostMemoryMap::VIF0recSize, PageAccess_Any(), true) == nullptr)
+	{
+		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
+		ReleaseMemoryMap();
+		return false;
+	}
+
+	// x64 VU0 + VU1
+	if (s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize + HostMemoryMap::mVU0recOffset), HostMemoryMap::mVU0recSize + HostMemoryMap::mVU1recSize, PageAccess_Any()) == nullptr)
+	{
+		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
+		ReleaseMemoryMap();
+		return false;
+	}
+
+	// Arm64 VIF Unpack + SW rec
+	if (s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize + HostMemoryMap::VIFUnpackRecOffset), HostMemoryMap::VIFUnpackRecSize + HostMemoryMap::SWrecSize, PageAccess_Any(), true) == nullptr)
+	{
+		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
+		ReleaseMemoryMap();
+		return false;
+	}
+#endif // _M_ARM64EC
 
 	HostMemoryMap::EEmem = (uptr)(s_data_memory + HostMemoryMap::EEmemOffset);
 	HostMemoryMap::IOPmem = (uptr)(s_data_memory + HostMemoryMap::IOPmemOffset);
