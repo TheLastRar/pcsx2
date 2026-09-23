@@ -370,12 +370,12 @@ void VifUnpackNEON_Simple::doMaskWrite(const vixl::aarch64::VRegister& regX) con
 
 	int offX = std::min(curCycle, 3);
 	armMoveAddressToReg(RXVIXLSCRATCH, nVifMask);
-	armAsm->Ldr(a64::q29, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[0][offX]) - reinterpret_cast<const u8*>(nVifMask)));
-	armAsm->Ldr(a64::q30, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[1][offX]) - reinterpret_cast<const u8*>(nVifMask)));
-	armAsm->Ldr(a64::q31, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[2][offX]) - reinterpret_cast<const u8*>(nVifMask)));
-	armAsm->And(regX.V16B(), regX.V16B(), a64::q29.V16B());
-	armAsm->And(a64::q7.V16B(), a64::q7.V16B(), a64::q30.V16B());
-	armAsm->Orr(regX.V16B(), regX.V16B(), a64::q31.V16B());
+	armAsm->Ldr(a64::q2, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[0][offX]) - reinterpret_cast<const u8*>(nVifMask)));
+	armAsm->Ldr(a64::q3, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[1][offX]) - reinterpret_cast<const u8*>(nVifMask)));
+	armAsm->Ldr(a64::q4, a64::MemOperand(RXVIXLSCRATCH, reinterpret_cast<const u8*>(nVifMask[2][offX]) - reinterpret_cast<const u8*>(nVifMask)));
+	armAsm->And(regX.V16B(), regX.V16B(), a64::q2.V16B());
+	armAsm->And(a64::q7.V16B(), a64::q7.V16B(), a64::q3.V16B());
+	armAsm->Orr(regX.V16B(), regX.V16B(), a64::q4.V16B());
 	armAsm->Orr(regX.V16B(), regX.V16B(), a64::q7.V16B());
 	armAsm->Str(regX, dstIndirect);
 }
