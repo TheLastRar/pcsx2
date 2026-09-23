@@ -122,9 +122,9 @@ std::unique_ptr<GSTextureVK> GSTextureVK::Create(Usage usage, Format format, int
 			VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT :
 			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 		ici.sharingMode = VK_SHARING_MODE_CONCURRENT;
-		const u32 index = GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex();
-		ici.pQueueFamilyIndices = &index;
-		ici.queueFamilyIndexCount = 1;
+		const u32 index[] = {GSDeviceVK::GetInstance()->GetGraphicsQueueFamilyIndex(), GSDeviceVK::GetInstance()->m_spin_queue_family_index};
+		ici.pQueueFamilyIndices = index;
+		ici.queueFamilyIndexCount = 2;
 	}
 
 	if (IsDepthStencil(usage))

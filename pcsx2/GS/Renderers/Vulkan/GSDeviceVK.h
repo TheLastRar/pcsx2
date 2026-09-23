@@ -271,7 +271,11 @@ private:
 #endif
 	double m_spin_timestamp_scale = 0;
 	double m_spin_timestamp_offset = 0;
+
+public:
 	u32 m_spin_queue_family_index = 0;
+
+private:
 	u32 m_command_buffer_render_passes = 0;
 	u32 m_spin_timer = 0;
 	bool m_spinning_supported = false;
