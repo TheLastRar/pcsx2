@@ -285,7 +285,15 @@ static void DynGen_IndirectTlbDispatcher(int mode, int bits, bool sign)
 
 	// jump to the indirect handler, which is a C++ function.
 	// [ecx is address, edx is data]
+#if _M_ARM64EC
+	sptr table;
+	if (bits == 4 && mode == 1)
+		table = (sptr)vtlbdata.RWFT_R128_THUNK;
+	else
+		table = (sptr)vtlbdata.RWFT[bits][mode];
+#else
 	sptr table = (sptr)vtlbdata.RWFT[bits][mode];
+#endif
 	if (table == (s32)table)
 	{
 		xFastCall(ptrNative[(rax * wordsize) + table], arg1reg, arg2reg);
@@ -877,9 +885,19 @@ void vtlb_DynGenWrite_Const(u32 bits, bool xmm, u32 addr_const, int value_reg)
 		if (bits == 128)
 		{
 			pxAssert(xmm);
+
 			const xRegisterSSE argreg(xRegisterSSE::GetArgRegister(1, 0));
 			_freeXMMreg(argreg.GetId());
 			xMOVAPS(argreg, xRegisterSSE(value_reg));
+#ifdef _M_ARM64EC
+			const int hID = vmv.assumeHandlerGetID();
+			xFastCall(vtlbdata.RWFT_R128_THUNK[hID]);
+			return;
+#else
+			const xRegisterSSE argreg(xRegisterSSE::GetArgRegister(1, 0));
+			_freeXMMreg(argreg.GetId());
+			xMOVAPS(argreg, xRegisterSSE(value_reg));
+#endif // _M_ARM64EC
 		}
 		else if (xmm)
 		{
@@ -1069,4 +1087,68 @@ void vtlb_DynBackpatchLoadStore(uptr code_address, u32 code_size, u32 guest_pc, 
 	pxAssertRel(static_cast<u32>((uptr)x86Ptr - code_address) <= code_size, "Overflowed when backpatching");
 	for (u32 i = static_cast<u32>((uptr)x86Ptr - code_address); i < code_size; i++)
 		xNOP();
+}
+
+// ARM64EC thunks
+#include "arm64/AsmHelpers.h"
+namespace a64 = vixl::aarch64;
+
+extern "C" 
+{
+	extern void* __os_arm64x_dispatch_ret;
+	extern void* __os_arm64x_dispatch_call_no_redirect;
+}
+
+void vltb_ARMEC_thunk(uint rv)
+{
+	// ARM64EC dosn't support vectorcall, or marshalling a vector parameter
+	// JIT a func to marshall this from x64 to ARM64EC
+
+	// When the x64 emulator enters ARM64 code, it will look for a thunk based on the target address
+	// So we also emit a pesudo function, which the x64 will use to find this thunk.
+
+	constexpr uint THUNK_SIZE = 128;
+
+	const uint offset = HostMemoryMap::ECTHrecOffset + rv * THUNK_SIZE;
+	armSetAsmPtr(SysMemory::GetCodePtr(offset + 4), HostMemoryMap::ECTHrecSize - rv * THUNK_SIZE - 8, nullptr);
+
+	// Emit dummy function.
+	u8* ptr_dummy = armStartBlock();
+	armEmitJmp(vtlbdata.RWFT[4][1][rv]);
+	armEndBlock();
+
+	// Emit the thunk (and store displacement).
+	u8* ptr_thunk = armStartBlock();
+	*reinterpret_cast<s32*>(ptr_dummy - 4) = (ptr_thunk - ptr_dummy) | 0x1;
+	armAsm->Pacibsp();
+
+	// Store Win x64 non-volitile regs
+	armAsm->Stp(a64::q6, a64::q7, a64::MemOperand(a64::sp, -0xA0, a64::PreIndex));
+	armAsm->Stp(a64::q8, a64::q9, a64::MemOperand(a64::sp, 0x20));
+	armAsm->Stp(a64::q10, a64::q11, a64::MemOperand(a64::sp, 0x40));
+	armAsm->Stp(a64::q12, a64::q13, a64::MemOperand(a64::sp, 0x60));
+	armAsm->Stp(a64::q14, a64::q15, a64::MemOperand(a64::sp, 0x80));
+	armAsm->Stp(a64::x29, a64::x30, a64::MemOperand(a64::sp, -0x10, a64::PreIndex)); //fp and lr
+	armAsm->Mov(a64::x29, a64::sp);
+
+	// Marshal vector argument
+	armAsm->Mov(a64::v0, a64::v1);
+
+	// Inline call to handler
+	armEmitCall(vtlbdata.RWFT[4][1][rv]);
+
+	// Load Win x64 non-volitile regs
+	armAsm->Ldp(a64::x29, a64::x30, a64::MemOperand(a64::sp, 0x10, a64::PostIndex)); //fp and lr
+	armAsm->Ldp(a64::q14, a64::q15, a64::MemOperand(a64::sp, 0x80));
+	armAsm->Ldp(a64::q12, a64::q13, a64::MemOperand(a64::sp, 0x60));
+	armAsm->Ldp(a64::q10, a64::q11, a64::MemOperand(a64::sp, 0x40));
+	armAsm->Ldp(a64::q8, a64::q9, a64::MemOperand(a64::sp, 0x20));
+	armAsm->Ldp(a64::q6, a64::q7, a64::MemOperand(a64::sp, 0xA0, a64::PostIndex));
+
+	// Return
+	armAsm->Autibsp();
+	armEmitJmp(__os_arm64x_dispatch_ret);
+	armEndBlock();
+
+	vtlbdata.RWFT_R128_THUNK[rv] = ptr_dummy;
 }

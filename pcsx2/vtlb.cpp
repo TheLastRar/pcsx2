@@ -699,6 +699,10 @@ __ri void vtlb_ReassignHandler(vtlbHandler rv,
 	vtlbdata.RWFT[2][1][rv] = (void*)((w32 != 0) ? w32 : vtlbDefaultPhyWrite32);
 	vtlbdata.RWFT[3][1][rv] = (void*)((w64 != 0) ? w64 : vtlbDefaultPhyWrite64);
 	vtlbdata.RWFT[4][1][rv] = (void*)((w128 != 0) ? w128 : vtlbDefaultPhyWrite128);
+
+#ifdef _M_ARM64EC
+	vltb_ARMEC_thunk(rv);
+#endif
 }
 
 vtlbHandler vtlb_NewHandler()

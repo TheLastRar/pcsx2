@@ -143,8 +143,8 @@ bool SysMemory::AllocateMemoryMap()
 		return false;
 	}
 
-	// Arm64 VIF Unpack + SW rec
-	if (s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize + HostMemoryMap::VIFUnpackRecOffset), HostMemoryMap::VIFUnpackRecSize + HostMemoryMap::SWrecSize, PageAccess_Any(), true) == nullptr)
+	// Arm64 VIF Unpack + SW rec + ARM64EC thunks
+	if (s_memory_mapping_area->Map(nullptr, 0, s_memory_mapping_area->OffsetPointer(HostMemoryMap::MainSize + HostMemoryMap::VIFUnpackRecOffset), HostMemoryMap::VIFUnpackRecSize + HostMemoryMap::SWrecSize + HostMemoryMap::ECTHrecSize, PageAccess_Any(), true) == nullptr)
 	{
 		Host::ReportErrorAsync("Error", "Failed to allocate code memory.");
 		ReleaseMemoryMap();

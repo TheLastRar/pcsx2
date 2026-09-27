@@ -86,8 +86,18 @@ namespace HostMemoryMap
 	static constexpr u32 SWrecOffset = VIFUnpackRecOffset + VIFUnpackRecSize;
 	static constexpr u32 SWrecSize = 0x04000000;
 
+	#ifdef _M_ARM64EC
+	// VTLB 128bit write thunks (1mb)
+	static constexpr u32 ECTHrecOffset = SWrecOffset + SWrecSize;
+	static constexpr u32 ECTHrecSize = 0x100000;
+
+	// Overall size.
+	static constexpr u32 CodeSize = ECTHrecOffset + ECTHrecSize; // 305 mb
+	#else
 	// Overall size.
 	static constexpr u32 CodeSize = SWrecOffset + SWrecSize; // 305 mb
+	#endif
+
 } // namespace HostMemoryMap
 
 

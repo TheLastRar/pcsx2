@@ -115,6 +115,8 @@ extern void vtlb_DynGenWrite_Const(u32 bits, bool xmm, u32 addr_const, int value
 
 extern void vtlb_DynGenDispatchers();
 
+extern void vltb_ARMEC_thunk(u32 rv);
+
 namespace vtlb_private
 {
 	static const uint VTLB_PAGE_BITS = 12;
@@ -188,6 +190,12 @@ namespace vtlb_private
 		// second indexer -- read/write  [0 or 1]
 		// third indexer -- 128 possible handlers!
 		void* RWFT[5][2][VTLB_HANDLER_ITEMS];
+#ifdef _M_ARM64EC
+		// Thunk for vector writes
+		// ARM64EC can't marshal vector parameters, and also dosn't support vectorcall
+		// Do we want this in ASM or C++?
+		void* RWFT_R128_THUNK[VTLB_HANDLER_ITEMS];
+#endif
 
 		VTLBPhysical pmap[VTLB_PMAP_ITEMS]; //512KB // PS2 physical to x86 physical
 
