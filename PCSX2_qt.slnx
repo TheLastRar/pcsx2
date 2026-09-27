@@ -481,7 +481,12 @@
       <BuildType Solution="Release Clang AVX2|ARM64" Project="Release Clang" />
       <BuildType Solution="Release Clang AVX2|ARM64EC" Project="Release Clang" />
       <Build Solution="*|ARM64" Project="false" />
-      <Build Solution="*|ARM64EC" Project="false" />
+      <Build Solution="Debug AVX2|ARM64EC" Project="false" />
+      <Build Solution="Debug Clang AVX2|ARM64EC" Project="false" />
+      <Build Solution="Devel AVX2|ARM64EC" Project="false" />
+      <Build Solution="Devel Clang AVX2|ARM64EC" Project="false" />
+      <Build Solution="Release AVX2|ARM64EC" Project="false" />
+      <Build Solution="Release Clang AVX2|ARM64EC" Project="false" />
     </Project>
   </Folder>
   <Project Path="common/common.vcxproj" Id="4639972e-424e-4e13-8b07-ca403c481346">

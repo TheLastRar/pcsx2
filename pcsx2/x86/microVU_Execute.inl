@@ -208,7 +208,7 @@ static void mVUGenerateCopyPipelineState(mV)
 	mVU.copyPLState = xGetAlignedCallTarget();
 
 	xLoadFarAddr(rdx, reinterpret_cast<u8*>(&mVU.prog.lpState));
-
+#if ARCH_X86
 	if (g_cpu.vectorISA >= ProcessorFeatures::VectorISA::AVX)
 	{
 		xMOVAPS(ymm0, ptr[rax]);
@@ -222,6 +222,7 @@ static void mVUGenerateCopyPipelineState(mV)
 		xVZEROUPPER();
 	}
 	else
+#endif
 	{
 		xMOVAPS(xmm0, ptr[rax]);
 		xMOVAPS(xmm1, ptr[rax + 16u]);
@@ -253,8 +254,10 @@ static void mVUGenerateCopyPipelineState(mV)
 static void mVUGenerateCompareState(mV)
 {
 	mVU.compareStateF = xGetAlignedCallTarget();
-
+#if ARCH_X86
 	if (g_cpu.vectorISA < ProcessorFeatures::VectorISA::AVX2)
+#endif
+	if (true)
 	{
 		xMOVAPS  (xmm0, ptr32[arg1reg]);
 		xPCMP.EQD(xmm0, ptr32[arg2reg]);

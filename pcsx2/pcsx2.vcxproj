@@ -56,6 +56,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\freesurround\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\xbyak</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\zydis\include;$(SolutionDir)3rdparty\zydis\dependencies\zycore\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='ARM64EC'">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\zydis\include;$(SolutionDir)3rdparty\zydis\dependencies\zycore\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="$(Platform.StartsWith('ARM64'))">%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\vixl\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\demangler\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(SolutionDir)3rdparty\ccc\src</AdditionalIncludeDirectories>
@@ -66,7 +67,7 @@
       <PreprocessorDefinitions Condition="$(Platform.StartsWith('ARM64')) == false">ENABLE_RAINTEGRATION;ENABLE_OPENGL;ENABLE_VULKAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">XBYAK_NO_EXCEPTION;ZYCORE_STATIC_BUILD;ZYDIS_STATIC_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64'">VIXL_INCLUDE_TARGET_AARCH64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64EC'">VIXL_INCLUDE_TARGET_AARCH64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='ARM64EC'">ZYCORE_STATIC_BUILD;ZYDIS_STATIC_BUILD;VIXL_INCLUDE_TARGET_AARCH64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -214,7 +215,7 @@
       <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="arm64\RecStubs.cpp">
-      <ExcludedFromBuild Condition="$(Platform.StartsWith('ARM64')) == false">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='ARM64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="CDVD\BlockdumpFileReader.cpp" />
     <ClCompile Include="CDVD\CDVDdiscReader.cpp" />
@@ -525,7 +526,7 @@
     <ClCompile Include="Elfheader.cpp" />
     <ClCompile Include="CDVD\InputIsoFile.cpp" />
     <ClCompile Include="x86\BaseblockEx.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ps2\BiosTools.cpp" />
     <ClCompile Include="BuildVersion.cpp" />
@@ -537,17 +538,17 @@
     <ClCompile Include="Cache.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="x86\iR5900Analysis.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\recVTLB.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="vtlb.cpp" />
     <ClCompile Include="MTVU.cpp" />
     <ClCompile Include="VUmicro.cpp" />
     <ClCompile Include="VUmicroMem.cpp" />
     <ClCompile Include="x86\microVU.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="VU0.cpp" />
     <ClCompile Include="VU0micro.cpp" />
@@ -576,49 +577,49 @@
     <ClCompile Include="Gif.cpp" />
     <ClCompile Include="R5900OpcodeTables.cpp" />
     <ClCompile Include="x86\iCOP0.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iFPU.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iFPUd.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iMMI.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iR5900Misc.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Arit.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900AritImm.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Branch.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Jump.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900LoadStore.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Move.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900MultDiv.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Shift.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iR5900Templates.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="COP0.cpp" />
     <ClCompile Include="COP2.cpp" />
@@ -636,10 +637,10 @@
     <ClCompile Include="R3000AInterpreter.cpp" />
     <ClCompile Include="R3000AOpcodeTables.cpp" />
     <ClCompile Include="x86\iR3000A.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iR3000Atables.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="IopHw.cpp" />
     <ClCompile Include="ps2\Iop\IopHwRead.cpp" />
@@ -677,10 +678,10 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\ix86-32\iCore.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="x86\iCore.cpp">
-      <ExcludedFromBuild Condition="'$(Platform)'!='x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Platform)'!='x64' And '$(Platform)'!='ARM64EC'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1123,7 +1124,7 @@
     <ProjectReference Include="..\3rdparty\glad\glad.vcxproj" Condition="'$(Platform)'=='x64'">
       <Project>{c0293b32-5acf-40f0-aa6c-e6da6f3bf33a}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\3rdparty\vixl\vixl.vcxproj" Condition="'$(Platform)'=='ARM64EC'">
+    <ProjectReference Include="..\3rdparty\vixl\vixl.vcxproj" Condition="$(Platform.StartsWith('ARM64'))">
       <Project>{8906836e-f06e-46e8-b11a-74e5e8c7b8fb}</Project>
     </ProjectReference>
     <ProjectReference Include="..\3rdparty\demangler\demangler.vcxproj">
@@ -1132,7 +1133,7 @@
     <ProjectReference Include="..\3rdparty\ccc\ccc.vcxproj">
       <Project>{2589f8ce-ea77-4b73-911e-64074569795b}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\3rdparty\zydis\zydis.vcxproj" Condition="'$(Platform)'=='x64'">
+    <ProjectReference Include="..\3rdparty\zydis\zydis.vcxproj" Condition="'$(Platform)'=='x64' And '$(Platform)'=='ARM64EC'">
       <Project>{67d0160c-0fe4-44b9-ac2e-82bbcf4104df}</Project>
     </ProjectReference>
   </ItemGroup>

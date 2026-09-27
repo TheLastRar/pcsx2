@@ -2701,7 +2701,7 @@ void VMManager::LogCPUCapabilities()
 
 void VMManager::InitializeCPUProviders()
 {
-#ifdef _M_X86 // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
+#if defined(_M_X86) || defined(_M_ARM64EC) // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
 	recCpu.Reserve();
 	psxRec.Reserve();
 
@@ -2725,7 +2725,7 @@ void VMManager::ShutdownCPUProviders()
 		dVifRelease(0);
 	}
 
-#ifdef _M_X86 // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
+#if defined(_M_X86) || defined(_M_ARM64EC) // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
 	CpuMicroVU1.Shutdown();
 	CpuMicroVU0.Shutdown();
 
@@ -2750,7 +2750,7 @@ void VMManager::UpdateCPUImplementations()
 		return;
 	}
 
-#ifdef _M_X86 // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
+#if defined(_M_X86) || defined(_M_ARM64EC) // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
 	Cpu = CHECK_EEREC ? &recCpu : &intCpu;
 	psxCpu = CHECK_IOPREC ? &psxRec : &psxInt;
 
@@ -2770,7 +2770,7 @@ void VMManager::Internal::ClearCPUExecutionCaches()
 	Cpu->Reset();
 	psxCpu->Reset();
 
-#ifdef _M_X86 // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
+#if defined(_M_X86) || defined(_M_ARM64EC) // TODO(Stenzek): Remove me once EE/VU/IOP recs are added.
 	// mVU's VU0 needs to be properly initialized for macro mode even if it's not used for micro mode!
 	if (CHECK_EEREC && !EmuConfig.Cpu.Recompiler.EnableVU0)
 		CpuMicroVU0.Reset();
