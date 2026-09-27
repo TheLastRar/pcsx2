@@ -20,7 +20,8 @@ enum class FPRoundMode : u8
 
 struct FPControlRegister
 {
-#ifdef ARCH_X86
+	// ARM64EC: LDMXCSR instructions crash if we've modified the FPCR via ARM64 methods, using _mm_setcsr works fine.
+#if defined(ARCH_X86) || defined(_M_ARM64EC)
 	u32 bitmask;
 
 	static constexpr u32 EXCEPTION_MASK = (0x3Fu << 7);
