@@ -54,7 +54,9 @@
 #include "common/StringUtil.h"
 #include "common/Threading.h"
 #include "common/Timer.h"
+#ifdef ARCH_X86
 #include "common/emitter/x86emitter.h"
+#endif
 
 #include "IconsFontAwesome.h"
 #include "IconsPromptFont.h"
@@ -403,7 +405,7 @@ bool VMManager::Internal::CPUThreadInitialize()
 	if (!cpuinfo_initialize())
 		Console.Error("cpuinfo_initialize() failed.");
 
-#ifdef _M_X86
+#ifdef ARCH_X86
 	x86Emitter::use_avx = g_cpu.vectorISA >= ProcessorFeatures::VectorISA::AVX;
 #endif
 
