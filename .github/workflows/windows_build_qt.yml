@@ -163,7 +163,13 @@ jobs:
         shell: cmd
         run: |
           call "%VCVARSPATH%" || exit /b
-          cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -G Ninja
+          rem ccache currently doesn't support CMake + clang-cl (https://github.com/ccache/ccache/issues/1775)
+          set "EXTRA_FLAGS=${{ inputs.cmakeFlags }}"
+          if not "%EXTRA_FLAGS:clang-cl=%"=="%EXTRA_FLAGS%" (
+            cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -G Ninja
+          ) else (
+            cmake . -B build ${{ inputs.cmakeFlags }} "-DCMAKE_PREFIX_PATH=%cd%\deps" -DQT_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DDISABLE_ADVANCE_SIMD=ON -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -G Ninja
+          )
 
       - name: Build PCSX2
         shell: cmd
