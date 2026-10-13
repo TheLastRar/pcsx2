@@ -2,17 +2,24 @@
 setlocal enabledelayedexpansion
 
 echo Setting environment...
+if %PROCESSOR_ARCHITECTURE%==ARM64 (
+  set CROSSCOMPILE=0
+  set VCVARSBAT=vcvarsarm64.bat
+) else (
+  set CROSSCOMPILE=1
+  set VCVARSBAT=vcvarsamd64_arm64.bat
+)
 rem Favour VS2022 over VS2026 for now.
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
   for /f "usebackq tokens=*" %%i in (`call "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -version "[17, 18)" -latest -property installationPath`) do set "VSINSTPATH=%%i"
   if defined VSINSTPATH (
     echo VSINSTPATH=!VSINSTPATH!
-    call "!VSINSTPATH!\VC\Auxiliary\Build\vcvarsamd64_arm64.bat" || goto error
+    call "!VSINSTPATH!\VC\Auxiliary\Build\%VCVARSBAT%" || goto error
   ) else (
     for /f "usebackq tokens=*" %%i in (`call "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -version "[18, 19)" -latest -property installationPath`) do set "VSINSTPATH=%%i"
     if defined VSINSTPATH (
       echo VSINSTPATH=!VSINSTPATH!
-      call "!VSINSTPATH!\VC\Auxiliary\Build\vcvarsamd64_arm64.bat" || goto error
+      call "!VSINSTPATH!\VC\Auxiliary\Build\%VCVARSBAT%" || goto error
     ) else (
       echo Visual Studio not found.
       goto error
@@ -46,14 +53,20 @@ mkdir deps-arm64
 cd deps-arm64 || goto error
 set "INSTALLDIR=%CD%"
 cd ..
-cd deps || goto error
-set "X64INSTALLDIR=%CD%"
-cd ..
+if %CROSSCOMPILE%==1 (
+  cd deps || goto error
+  set "X64INSTALLDIR=!CD!"
+  cd ..
+)
 popd
 
 echo SCRIPTDIR=%SCRIPTDIR%
 echo BUILDDIR=%BUILDDIR%
 echo INSTALLDIR=%INSTALLDIR%
+
+if not %CROSSCOMPILE%==1 (
+  set "PATH=%PATH%;%INSTALLDIR%\bin"
+)
 
 cd "%BUILDDIR%"
 
@@ -104,12 +117,17 @@ call :downloadfile "QtApng-%QTAPNG%.zip" "https://github.com/jurplel/QtApng/arch
 
 call :downloadfile "ffmpeg-%FFMPEG%.tar.xz" "https://ffmpeg.org/releases/ffmpeg-%FFMPEG%.tar.xz" cf38e0e28c7e5605942c4a77755349b0145804a397af37eb1fb4c77cb237f635 || goto error
 call :downloadfile "gas-preprocessor.pl" "https://raw.githubusercontent.com/FFmpeg/gas-preprocessor/%GAS_PREPROC%/gas-preprocessor.pl" 7124d70cdecba7c5612f9a71fbf3f28514dd9c2ca3022f58ad793f88bb925fcf || goto error
-call :downloadfile "make-%MAKE%-without-guile-w32-bin.zip" "https://sourceforge.net/projects/ezwinports/files/make-%MAKE%-without-guile-w32-bin.zip/download" fb66a02b530f7466f6222ce53c0b602c5288e601547a034e4156a512dd895ee7 || goto error
 call :downloadfile "meson-%MESON%.tar.gz" "https://github.com/mesonbuild/meson/releases/download/%MESON%/meson-%MESON%.tar.gz" 7890287d911dd4ee1ebd0efb61ed0321bfcd87c725df923a837cf90c6508f96b || goto error
 call :downloadfile "pkgconf-pkgconf-%PKGCONF%.zip" "https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-%PKGCONF%.zip" c5b5f88a2ca2324dc5d857e35bb145e24290e326357ea94a86d47b8d7fa15477 || goto error
 call :downloadfile "opus-%LIBOPUS%.tar.gz" "https://downloads.xiph.org/releases/opus/opus-%LIBOPUS%.tar.gz" 6ffcb593207be92584df15b32466ed64bbec99109f007c82205f0194572411a1 || goto error
 call :downloadfile "SVT-AV1-v%LIBSVTAV1%.zip" "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v%LIBSVTAV1%/SVT-AV1-v%LIBSVTAV1%.zip" 007d1bd64ae85eaeea51db7465c4b360d115dc2d33d2ad42491c7d2ae7a9124e || goto error
 call :downloadfile "x264-%LIBX264%.zip" "https://code.videolan.org/videolan/x264/-/archive/%LIBX264%.zip" d95d059eff81cc565165cd058b66e208f0cc9874106a8fe94a811a66cf8a85a2 || goto error
+
+if %CROSSCOMPILE%==1 (
+  call :downloadfile "make-%MAKE%-without-guile-w32-bin.zip" "https://sourceforge.net/projects/ezwinports/files/make-%MAKE%-without-guile-w32-bin.zip/download" fb66a02b530f7466f6222ce53c0b602c5288e601547a034e4156a512dd895ee7 || goto error
+) else (
+  call :downloadfile "make-%MAKE%.zip" "https://sourceforge.net/projects/ezwinports/files/make-%MAKE%-w32-src.zip/download" 5861eeba7040fdd73510043c06a4e6a28be4767a3ffc4ec5cc0eff4d6cc12c2d || goto error
+)
 
 call :downloadfile "freetype-%FREETYPE%.tar.gz" https://sourceforge.net/projects/freetype/files/freetype2/%FREETYPE%/freetype-%FREETYPE%.tar.gz/download e61b31ab26358b946e767ed7eb7f4bb2e507da1cfefeb7a8861ace7fd5c899a1 || goto error
 call :downloadfile "harfbuzz-%HARFBUZZ%.zip" https://github.com/harfbuzz/harfbuzz/archive/refs/tags/%HARFBUZZ%.zip bb2f83255706b1c92d731541c7cefaf98bb5b93e8f76d16f6deda05225ff20ee || goto error
@@ -141,7 +159,11 @@ if %DEBUG%==1 (
 )
 
 set FORCEPDB=-DCMAKE_SHARED_LINKER_FLAGS_RELEASE="/DEBUG" -DCMAKE_SHARED_LINKER_FLAGS_MINSIZEREL="/DEBUG"
-set ARM64TOOLCHAIN=-DCMAKE_TOOLCHAIN_FILE="%SCRIPTDIR%\cmake-toolchain-windows-arm64.cmake"
+if %CROSSCOMPILE%==1 (
+  set ARM64TOOLCHAIN=-DCMAKE_TOOLCHAIN_FILE="%SCRIPTDIR%\cmake-toolchain-windows-arm64.cmake"
+) else (
+  set ARM64TOOLCHAIN= 
+)
 
 if not "%INSTALLDIR%"=="%INSTALLDIR: =%" (
   echo FFmpeg does not support building in paths with spaces.
@@ -173,15 +195,54 @@ cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
 
+if %CROSSCOMPILE%==1 (
+  set "PKG_CONFIG=%X64INSTALLDIR%\bin\pkgconf.exe"
+) else (
+  echo "Extracting meson"
+  rmdir /S /Q "meson-%MESON%"
+  tar xf "meson-%MESON%.tar.gz" || goto error
+  set MASON_PY=python "%BUILDDIR%\meson-%MESON%\meson.py"
+  !MASON_PY! -v || goto error
+  echo.
+
+  echo "Installing pkgconf"
+  rmdir /S /Q "pkgconf-pkgconf-%PKGCONF%"
+  %SEVENZIP% x "pkgconf-pkgconf-%PKGCONF%.zip" || goto error
+  cd "pkgconf-pkgconf-%PKGCONF%" || goto error
+  !MASON_PY! setup --buildtype=release --prefix="%INSTALLDIR%" -Dtests=disabled build --backend=ninja || goto error
+  !MASON_PY! compile -C build || goto error
+  ninja -C build install || goto error
+  set "PKG_CONFIG=%INSTALLDIR%\bin\pkgconf.exe"
+  cd .. || goto error
+)
 set PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1
 set PKG_CONFIG_ALLOW_SYSTEM_LIBS=1
-Set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
+set "PKG_CONFIG_PATH=%INSTALLDIR%\lib\pkgconfig"
 
-set MAKE_EXE="%X64INSTALLDIR%\bin\make.exe"
+if %CROSSCOMPILE%==1 (
+  set MAKE_EXE="%X64INSTALLDIR%\bin\make.exe"
+) else (
+  echo "Installing make"
+  rmdir /S /Q "make-%MAKE%"
+  %SEVENZIP% x "make-%MAKE%.zip" || goto error
+  cd "make-%MAKE%" || goto error
+  %PATCH% -p1 < "%SCRIPTDIR%\make-arm64.patch" || goto error
+  call build_w32.bat --without-guile
+  copy ".\WinRel\gnumake.exe" "%INSTALLDIR%\bin\make.exe" || goto error
+  set MAKE_EXE="%INSTALLDIR%\bin\make.exe"
+  cd .. || goto error
+  echo.
+)
 
 set "OLD_PATH=%PATH%"
-rem Also add INSTALLDIR to add gas-preprocessor.pl to path
-set "PATH=%PATH%;%UNIX_TOOLS%;%INSTALLDIR%\bin"
+
+if %CROSSCOMPILE%==1 (
+  rem Also add INSTALLDIR to add gas-preprocessor.pl to path
+  set "PATH=%PATH%;%UNIX_TOOLS%;%INSTALLDIR%\bin"
+) else (
+  rem INSTALLDIR already added
+  set "PATH=%PATH%;%UNIX_TOOLS%"
+)
 
 set CC=cl
 set CXX=cl
@@ -191,8 +252,8 @@ rmdir /S /Q "x264-%LIBX264%"
 %SEVENZIP% x "x264-%LIBX264%.zip" || goto error
 cd "x264-%LIBX264%" || goto error
 %BASH% configure --prefix="%INSTALLDIR%" --disable-cli --enable-static --extra-cflags="-MD -w -Os -GL" || goto error
-!MAKE_EXE! -j%NUMBER_OF_PROCESSORS% || goto error
-!MAKE_EXE! install || goto error
+%MAKE_EXE% -j%NUMBER_OF_PROCESSORS% || goto error
+%MAKE_EXE% install || goto error
 cd .. || goto error
 echo.
 
@@ -201,13 +262,17 @@ rmdir /S /Q "ffmpeg-%FFMPEG%"
 tar xf "ffmpeg-%FFMPEG%.tar.xz" || goto error
 cd "ffmpeg-%FFMPEG%"
 %PATCH% -p1 < "%SCRIPTDIR%\ffmpeg-configure-escape.patch" || goto error
-rem FFmpeg's build seems to choke when extra-cflags contain `\`, so use `/` as the path separator.
-set HOST_CC_PATH=%SCRIPTDIR:\=/%/ffmpeg-host-cl.bat
-set HOST_LD_PATH=%SCRIPTDIR:\=/%/ffmpeg-host-link.bat
+if %CROSSCOMPILE%==1 (
+  rem FFmpeg's build seems to choke when extra-cflags contain `\`, so use `/` as the path separator.
+  set "HOST_CC_PATH=%SCRIPTDIR:\=/%/ffmpeg-host-cl.bat"
+  set "HOST_LD_PATH=%SCRIPTDIR:\=/%/ffmpeg-host-link.bat"
+  set FFMPEG_ARCH=--enable-cross-compile --arch=aarch64 --host-cc="!HOST_CC_PATH!" --host-ld="!HOST_LD_PATH!"
+) else (
+  set FFMPEG_ARCH=--arch=aarch64
+)
 rem --enable-small removes the display names of codecs, so instead we specify optflag for minsize
 %BASH% configure --prefix="%INSTALLDIR%" --disable-all --disable-autodetect --disable-static --enable-shared --disable-debug ^
-  --toolchain=msvc --extra-ldflags="-LTCG" --pkg-config="%X64INSTALLDIR%\bin\pkgconf.exe" ^
-  --enable-cross-compile --arch=aarch64 --host-cc="%HOST_CC_PATH%" --host-ld="%HOST_LD_PATH%" ^
+  --toolchain=msvc --extra-ldflags="-LTCG" --pkg-config="%PKG_CONFIG%" %FFMPEG_ARCH% ^
   --extra-cflags="-MD -GL" --extra-cxxflags="-MD -GL" --optflags="-O1" ^
   --enable-avcodec --enable-avformat --enable-avutil --enable-swresample --enable-swscale ^
   --enable-gpl --enable-libx264 --enable-libsvtav1 --enable-libopus ^
@@ -216,8 +281,8 @@ rem --enable-small removes the display names of codecs, so instead we specify op
   --enable-encoder=h264_mf,hevc_mf,av1_mf ^
   --enable-muxer=avi,matroska,mov,mp3,mp4,wav ^
   --enable-protocol=file || goto error
-!MAKE_EXE! -j%NUMBER_OF_PROCESSORS% || goto error
-!MAKE_EXE! install || goto error
+%MAKE_EXE% -j%NUMBER_OF_PROCESSORS% || goto error
+%MAKE_EXE% install || goto error
 cd ..
 echo.
 
@@ -324,11 +389,17 @@ if %DEBUG%==1 (
   set QTBUILDSPEC=-DCMAKE_BUILD_TYPE=MinSizeRel -G Ninja
 )
 
+if %CROSSCOMPILE%==1 (
+  set QTARMSPEC=-DQT_HOST_PATH="%X64INSTALLDIR%"
+) else (
+  set QTARMSPEC=
+)
+
 echo Building Qt base...
 rmdir /S /Q "qtbase-everywhere-src-%QT%"
 %SEVENZIP% x "qtbase-everywhere-src-%QT%.zip" || goto error
 cd "qtbase-everywhere-src-%QT%" || goto error
-cmake -B build %ARM64TOOLCHAIN% -DFEATURE_sql=OFF -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DQT_HOST_PATH="%X64INSTALLDIR%" %FORCEPDB% -DINPUT_gui=yes -DINPUT_widgets=yes -DINPUT_ssl=yes -DINPUT_openssl=no -DINPUT_schannel=yes -DFEATURE_system_png=ON -DFEATURE_system_jpeg=ON -DFEATURE_system_zlib=ON -DFEATURE_system_freetype=ON -DFEATURE_system_harfbuzz=ON -DQT_FEATURE_windows_ioring=OFF %QTBUILDSPEC% || goto error
+cmake -B build %ARM64TOOLCHAIN% -DFEATURE_sql=OFF -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" %QTARMSPEC% %FORCEPDB% -DINPUT_gui=yes -DINPUT_widgets=yes -DINPUT_ssl=yes -DINPUT_openssl=no -DINPUT_schannel=yes -DFEATURE_system_png=ON -DFEATURE_system_jpeg=ON -DFEATURE_system_zlib=ON -DFEATURE_system_freetype=ON -DFEATURE_system_harfbuzz=ON -DQT_FEATURE_windows_ioring=OFF %QTBUILDSPEC% || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
