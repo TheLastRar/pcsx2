@@ -16,9 +16,9 @@ jobs:
   build_qt_deps_arm64:
     name: "Dependencies"
     uses: ./.github/workflows/windows_deps_build.yml
-      with:
-        os: windows-11-vs2026-arm
-        platform: ARM64
+    with:
+      os: windows-11-vs2026-arm
+      platform: ARM64
 
   # MSBUILD
   lint_vs_proj_files:
