@@ -125,7 +125,9 @@ jobs:
         uses: actions/cache@v6
         with:
           fail-on-cache-miss: true
-          path: deps
+          path: |
+            deps
+            deps-arm64
           key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
 
