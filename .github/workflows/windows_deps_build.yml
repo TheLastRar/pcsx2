@@ -40,13 +40,13 @@ jobs:
           DEBUG: 0
         run: |
           if ${{ inputs.platform }}==x64 (
-            .github/workflows/scripts/windows/build-dependencies.bat
+            call .github/workflows/scripts/windows/build-dependencies.bat
             exit /b
           )
           if ${{ inputs.platform }}==ARM64 (
             if not %PROCESSOR_ARCHITECTURE%==ARM64 (
-              .github/workflows/scripts/windows/build-dependencies.bat || exit /b
+              call .github/workflows/scripts/windows/build-dependencies.bat || exit /b
             )
-            .github/workflows/scripts/windows/build-dependencies-arm64.bat
+            call .github/workflows/scripts/windows/build-dependencies-arm64.bat
             exit /b
           )
