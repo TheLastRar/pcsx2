@@ -13,6 +13,13 @@ jobs:
     name: "Dependencies"
     uses: ./.github/workflows/windows_deps_build.yml
 
+  build_qt_deps_arm64:
+    name: "Dependencies"
+    uses: ./.github/workflows/windows_deps_build.yml
+      with:
+        os: windows-11-vs2026-arm
+        platform: ARM64
+
   # MSBUILD
   lint_vs_proj_files:
     name: Lint VS Project Files
@@ -82,6 +89,19 @@ jobs:
       configuration: Release Clang AVX2
     secrets: inherit
 
+  build_qt_clang_arm64:
+    needs: [build_qt_deps_arm64, lint_vs_proj_files]
+    name: "AVX2"
+    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
+    uses: ./.github/workflows/windows_build_qt.yml
+    with:
+      jobName: "Clang ARM"
+      artifactPrefixName: "PCSX2-windows-Qt-ARM64-avx2-clang"
+      os: windows-11-vs2026-arm
+      platform: ARM64
+      configuration: Release Clang
+    secrets: inherit
+
   build_qt_cmake_clang:
     needs: build_qt_deps
     name: "CMake"
@@ -90,6 +110,20 @@ jobs:
     with:
       jobName: "CMake Clang"
       artifactPrefixName: "PCSX2-windows-Qt-x64-cmake-clang"
+      configuration: CMake
+      buildSystem: cmake
+      cmakeFlags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DPCSX2_EXE_NAME=pcsx2-qt-clang
+    secrets: inherit
+
+  build_qt_cmake_clang_arm64:
+    needs: build_qt_deps_arm64
+    name: "CMake"
+    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
+    uses: ./.github/workflows/windows_build_qt.yml
+    with:
+      jobName: "CMake Clang ARM"
+      artifactPrefixName: "PCSX2-windows-Qt-ARM64-cmake-clang"
+      os: windows-11-vs2026-arm
       configuration: CMake
       buildSystem: cmake
       cmakeFlags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DPCSX2_EXE_NAME=pcsx2-qt-clang

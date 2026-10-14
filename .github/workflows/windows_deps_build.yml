@@ -30,11 +30,23 @@ jobs:
         uses: actions/cache@v6
         with:
           lookup-only: true
-          path: deps
+          path: deps, deps-arm64
           key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
       - name: Build Dependencies
         if: steps.cache-deps.outputs.cache-hit != 'true'
+        shell: cmd
         env:
           DEBUG: 0
-        run: .github/workflows/scripts/windows/build-dependencies.bat
+        run: |
+          if ${{ inputs.platform }}==x64 (
+            .github/workflows/scripts/windows/build-dependencies.bat
+            exit /b
+          )
+          if ${{ inputs.platform }}==ARM64 (
+            if not %PROCESSOR_ARCHITECTURE%==ARM64 (
+              .github/workflows/scripts/windows/build-dependencies.bat || exit /b
+            )
+            .github/workflows/scripts/windows/build-dependencies-arm64.bat
+            exit /b
+          )
