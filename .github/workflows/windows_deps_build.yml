@@ -14,7 +14,7 @@ on:
 
 jobs:
   build_windows_deps:
-    name: "Cache Dependencies"
+    name: "Cache Dependencies ${{ inputs.platform }}"
     runs-on: ${{ inputs.os }}
     # Set some sort of timeout in the event of run-away builds.  We are limited on concurrent jobs so, get rid of them.
     timeout-minutes: 90
@@ -30,7 +30,9 @@ jobs:
         uses: actions/cache@v6
         with:
           lookup-only: true
-          path: deps, deps-arm64
+          path: |
+            deps
+            deps-arm64
           key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/windows/build-dependencies.bat', '.github/workflows/scripts/common/*.patch') }}
 
       - name: Build Dependencies
