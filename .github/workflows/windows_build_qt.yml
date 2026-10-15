@@ -114,7 +114,13 @@ jobs:
         shell: cmd
         run: |
             for /f "usebackq tokens=*" %%i in (`call vswhere -latest -property installationPath`) do set "VSINSTPATH=%%i"
-            echo VCVARSPATH=%VSINSTPATH%\VC\Auxiliary\Build\vcvars64.bat>>%GITHUB_ENV%
+            if ${{ inputs.platform }}==x64 (
+              echo VCVARSPATH=%VSINSTPATH%\VC\Auxiliary\Build\vcvars64.bat>>%GITHUB_ENV%
+            )
+            if ${{ inputs.platform }}==ARM64 (
+              rem Assume we aren't cross compiling
+              echo VCVARSPATH=%VSINSTPATH%\VC\Auxiliary\Build\vcvarsarm64.bat>>%GITHUB_ENV%
+            )
 
       - name: Download patches
         shell: cmd
@@ -185,7 +191,12 @@ jobs:
         shell: pwsh
         run: |
           mkdir -Force symbols
-          Get-ChildItem -Path ./bin -Recurse -File | Where-Object {
+          if ("${{ inputs.platform }}" -eq "x64") {
+            $bin_dir = "./bin"
+          } elseif ("${{ inputs.platform }}" -eq "ARM64") {
+            $bin_dir = "./bin-arm64"
+          }
+          Get-ChildItem -Path $bin_dir -Recurse -File | Where-Object {
             ($_.Extension -eq ".exe" -or $_.Extension -eq ".pdb") -and ($_.Name -notmatch "updater")
           } | ForEach-Object {
             & dump_syms $_.FullName >> symbols/pcsx2-qt.bpsym
