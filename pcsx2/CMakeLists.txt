@@ -1350,7 +1350,7 @@ function(setup_main_executable target)
 
 		get_target_property(WINDEPLOYQT_EXE Qt6::windeployqt IMPORTED_LOCATION)
 		set(DEPS_QT_PATH)
-		if (ARCH_ARM64)
+		if (ARCH_ARM64 AND CMAKE_CROSSCOMPILING)
 			set(DEPS_QT_PATH "--qtpaths \"${DEPS_BINDIR}/qtpaths.bat\"")
 		endif()
 		install(CODE "execute_process(COMMAND \"${WINDEPLOYQT_EXE}\" \"${CMAKE_SOURCE_DIR}/bin/$<TARGET_FILE_NAME:${target}>\" --plugindir \"${CMAKE_SOURCE_DIR}/bin/QtPlugins\" ${DEPS_QT_PATH} --pdb --no-compiler-runtime --no-system-d3d-compiler --no-system-dxc-compiler --no-translations --no-network COMMAND_ERROR_IS_FATAL ANY)")
