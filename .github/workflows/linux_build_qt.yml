@@ -125,6 +125,7 @@ jobs:
 
       - name: Download patches
         run: |
+          mkdir -p bin/resources
           cd bin/resources
           aria2c -Z "${{ inputs.patchesUrl }}/patches.zip"
 

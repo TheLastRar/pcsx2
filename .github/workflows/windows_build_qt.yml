@@ -117,6 +117,7 @@ jobs:
       - name: Download patches
         shell: cmd
         run: |
+          mkdir bin/resources
           cd bin/resources
           aria2c -Z "${{ inputs.patchesUrl }}/patches.zip"
 
@@ -148,7 +149,7 @@ jobs:
             msbuild "PCSX2_qt.slnx" /m /v:m /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" || exit /b
           )
           REM We can use Segoe UI Emoji so we don't need to bundle this
-          del bin\resources\fonts\Twemoji*
+          rem del bin\resources\fonts\Twemoji*
 
       - name: Run Tests
         if: inputs.configuration == 'CMake'
