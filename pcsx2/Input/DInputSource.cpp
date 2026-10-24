@@ -404,7 +404,7 @@ std::optional<InputBindingKey> DInputSource::ParseKeyString(const std::string_vi
 	return std::nullopt;
 }
 
-TinyString DInputSource::ConvertKeyToString(InputBindingKey key, bool display, bool migration)
+TinyString DInputSource::ConvertKeyToString(InputBindingKey key, bool display)
 {
 	TinyString ret;
 
@@ -421,7 +421,7 @@ TinyString DInputSource::ConvertKeyToString(InputBindingKey key, bool display, b
 					ret.format("DInput-{} {}Axis {}{}", u32(key.source_index), modifier, u32(key.data) + 1, key.invert ? "~" : "");
 			}
 			else
-				ret.format("DInput-{}/{}Axis{}{}", u32(key.source_index), modifier, u32(key.data), (key.invert && (migration || !ShouldIgnoreInversion())) ? "~" : "");
+				ret.format("DInput-{}/{}Axis{}{}", u32(key.source_index), modifier, u32(key.data), (key.invert && !ShouldIgnoreInversion()) ? "~" : "");
 		}
 		else if (key.source_subtype == InputSubclass::ControllerButton && key.data >= MAX_NUM_BUTTONS)
 		{

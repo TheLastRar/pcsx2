@@ -153,8 +153,7 @@ namespace VMManager
 	void ReloadInputSources();
 
 	/// Reloads input bindings.
-	/// Can be forced to load even when there is not an active virtual machine.
-	void ReloadInputBindings(bool force = false);
+	void ReloadInputBindings();
 
 	/// Returns the save state filename for the given game serial/crc.
 	std::string GetSaveStateFileName(const char* game_serial, u32 game_crc, s32 slot, bool backup = false);

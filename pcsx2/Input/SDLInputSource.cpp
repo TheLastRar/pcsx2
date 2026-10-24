@@ -19,7 +19,6 @@
 
 #include <bit>
 #include <cmath>
-#include <VMManager.h>
 
 static constexpr const char* CONTROLLER_DB_FILENAME = "game_controller_db.txt";
 
@@ -825,133 +824,6 @@ std::optional<InputBindingKey> SDLInputSource::ParseKeyString(const std::string_
 	key.source_type = InputSourceType::SDL;
 	key.source_index = static_cast<u32>(player_id.value());
 
-	// SDL2-SDL3 migrations
-	static constexpr const char* sdl_button_legacy_names[] = {
-		"A", // SDL_CONTROLLER_BUTTON_A
-		"B", // SDL_CONTROLLER_BUTTON_B
-		"X", // SDL_CONTROLLER_BUTTON_X
-		"Y", // SDL_CONTROLLER_BUTTON_Y
-	};
-
-	for (u32 i = 0; i < std::size(sdl_button_legacy_names); i++)
-	{
-		if (binding == sdl_button_legacy_names[i])
-		{
-			key.source_subtype = InputSubclass::ControllerButton;
-			key.data = i;
-
-			// SDL2 would map A/B/X/Y based on the button's label
-			// We need to convert this to a positional binding for SDL3
-			static constexpr SDL_GamepadButton face_button_pos[] = {
-				SDL_GAMEPAD_BUTTON_SOUTH,
-				SDL_GAMEPAD_BUTTON_EAST,
-				SDL_GAMEPAD_BUTTON_WEST,
-				SDL_GAMEPAD_BUTTON_NORTH,
-			};
-
-			// This migrations needs to inspect the controller
-			{
-				std::lock_guard lock(m_controllers_key_mutex);
-
-				auto it = GetControllerDataForPlayerId(key.source_index);
-				if (it != m_controllers.end() && it->gamepad)
-				{
-					static bool shown_prompt = false;
-					for (u32 pos = 0; pos < std::size(face_button_pos); pos++)
-					{
-						// A/B/X/Y are equal to 1/2/3/4 in SDL_GamepadButtonLabel
-						// PS controllers have positional A/B/X/Y, so don't need adjusting
-						// Controllers with unknown labels are assumed to have positional A/B/X/Y
-						const SDL_GamepadButtonLabel label = SDL_GetGamepadButtonLabel(it->gamepad, face_button_pos[pos]);
-						if (key.data == (label - 1))
-						{
-							if (key.data != pos)
-							{
-								if (!shown_prompt)
-								{
-									shown_prompt = true;
-									Host::ReportInfoAsync(TRANSLATE("SDLInputSource", "SDL3 Migration"),
-										TRANSLATE("SDLInputSource", "As part of our upgrade to SDL3, we've had to migrate your binds.\n"
-																	"Your controller did not match the Xbox layout and may need rebinding.\n"
-																	"Please verify your controller settings and amend if required."));
-
-									// Also apply BPM setting for legacy binds
-									// We assume this is a Nintendo controller, BPM will check if it is
-									// Defer this, as we are probably under a setting lock
-									Host::RunOnCPUThread([] {
-										if (!Host::ContainsBaseSettingValue("UI", "SDL2NintendoLayout"))
-										{
-											Host::SetBaseStringSettingValue("UI", "SDL2NintendoLayout", "auto");
-											Host::CommitBaseSettingChanges();
-											// Get FSUI to recheck setting
-											if (FullscreenUI::IsInitialized())
-												FullscreenUI::GamepadLayoutChanged();
-										}
-									});
-								}
-								key.data = pos;
-							}
-							break;
-						}
-					}
-
-					key.needs_migration = true;
-					return key;
-				}
-				else if (std::find(m_gamepads_needing_migration.begin(), m_gamepads_needing_migration.end(), key.source_index) ==
-						 m_gamepads_needing_migration.end())
-				{
-					// flag the device to migrate later
-					m_gamepads_needing_migration.push_back(key.source_index);
-					return std::nullopt;
-				}
-			}
-		}
-	}
-
-	if (binding.starts_with("+Axis") || binding.starts_with("-Axis"))
-	{
-		const std::string_view axis_name(binding.substr(1));
-
-		std::string_view end;
-		if (auto value = StringUtil::FromChars<u32>(axis_name.substr(4), 10, &end))
-		{
-			key.source_subtype = InputSubclass::ControllerAxis;
-			key.data = *value - 6 + std::size(s_sdl_axis_setting_names);
-			key.modifier = (binding[0] == '-') ? InputModifier::Negate : InputModifier::None;
-			key.invert = (end == "~");
-
-			key.needs_migration = true;
-			return key;
-		}
-	}
-	else if (binding.starts_with("FullAxis"))
-	{
-		std::string_view end;
-		if (auto value = StringUtil::FromChars<u32>(binding.substr(8), 10, &end))
-		{
-			key.source_subtype = InputSubclass::ControllerAxis;
-			key.data = *value - 6 + std::size(s_sdl_axis_setting_names);
-			key.modifier = InputModifier::FullAxis;
-			key.invert = (end == "~");
-
-			key.needs_migration = true;
-			return key;
-		}
-	}
-	else if (binding.starts_with("Button"))
-	{
-		if (auto value = StringUtil::FromChars<u32>(binding.substr(6)))
-		{
-			key.source_subtype = InputSubclass::ControllerButton;
-			key.data = *value - 21 + std::size(s_sdl_button_setting_names);
-
-			key.needs_migration = true;
-			return key;
-		}
-	}
-	// End Migrations
-
 	if (binding.ends_with("Motor"))
 	{
 		key.source_subtype = InputSubclass::ControllerMotor;
@@ -1052,7 +924,7 @@ std::optional<InputBindingKey> SDLInputSource::ParseKeyString(const std::string_
 	return std::nullopt;
 }
 
-TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display, bool migration)
+TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display)
 {
 	TinyString ret;
 
@@ -1105,7 +977,7 @@ TinyString SDLInputSource::ConvertKeyToString(InputBindingKey key, bool display,
 				if (key.data < std::size(s_sdl_axis_setting_names))
 					ret.format("SDL-{}/{}{}", static_cast<u32>(key.source_index), modifier, s_sdl_axis_setting_names[key.data]);
 				else
-					ret.format("SDL-{}/{}JoyAxis{}{}", static_cast<u32>(key.source_index), modifier, key.data - std::size(s_sdl_axis_setting_names), (key.invert && (migration || !ShouldIgnoreInversion())) ? "~" : "");
+					ret.format("SDL-{}/{}JoyAxis{}{}", static_cast<u32>(key.source_index), modifier, key.data - std::size(s_sdl_axis_setting_names), (key.invert && !ShouldIgnoreInversion()) ? "~" : "");
 			}
 		}
 		else if (key.source_subtype == InputSubclass::ControllerButton)
@@ -1516,22 +1388,6 @@ bool SDLInputSource::OpenDevice(SDL_JoystickID index, bool is_gamepad)
 	{
 		std::unique_lock lock(m_controllers_key_mutex);
 		m_controllers.push_back(std::move(cd));
-
-		if (gamepad)
-		{
-			// Perform SDL2-SDL3 migrations that require inspecting the gamepad
-			auto idx = std::find(m_gamepads_needing_migration.begin(), m_gamepads_needing_migration.end(), player_id);
-			if (idx != m_gamepads_needing_migration.end())
-			{
-				m_gamepads_needing_migration.erase(idx);
-
-				// ParseKeyString will need the lock when migrating
-				// unlock here so we don't deadlock reloading binds
-				lock.unlock();
-				// Reload bindings to perform migration
-				VMManager::ReloadInputBindings(true);
-			}
-		}
 	}
 
 	InputManager::OnInputDeviceConnected(fmt::format("SDL-{}", player_id), name);
