@@ -82,6 +82,8 @@ for lib in "${MANUAL_LIBS[@]}"; do
 	EXTRA_LIBS_ARGS+=( "--library=$srcpath" )
 done
 
+EXTRA_LIBS_ARGS+=( "--library=/lib/x86_64-linux-gnu/libX11.so.6" )
+
 # Why the nastyness? linuxdeploy strips our main binary, and there's no option to turn it off.
 # It also doesn't strip the Qt libs. We can't strip them after running linuxdeploy, because
 # patchelf corrupts the libraries (but they still work), but patchelf+strip makes them crash
