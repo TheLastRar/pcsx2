@@ -83,6 +83,7 @@ for lib in "${MANUAL_LIBS[@]}"; do
 done
 
 EXTRA_LIBS_ARGS+=( "--library=/lib/x86_64-linux-gnu/libX11.so.6" )
+EXTRA_LIBS_ARGS+=( "--library=/lib/x86_64-linux-gnu/libz.so.1" )
 
 # Why the nastyness? linuxdeploy strips our main binary, and there's no option to turn it off.
 # It also doesn't strip the Qt libs. We can't strip them after running linuxdeploy, because
